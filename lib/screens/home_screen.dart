@@ -28,16 +28,16 @@ class HomeScreenState extends State<HomeScreen> {
                   'Welcome',
                   style: TextStyle(
                     color: Color(0xFF651616),
-                    fontSize: 20,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 7),
                 Text(
                   'Paws and Claws Pet Station!', //connect to the db, this should show the name of the store.
                   style: TextStyle(
                     color: Color(0xFF651616),
-                    fontSize: 17,
+                    fontSize: 18,
                   ),
                 ),
               ],
