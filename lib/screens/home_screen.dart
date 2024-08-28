@@ -7,10 +7,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   int selectedYear = years.first;
 
   @override
@@ -19,11 +19,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: appBar(context),
       body: ListView(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Welcome',
                   style: TextStyle(
                     color: Color(0xFF651616),
@@ -31,14 +32,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Positioned(
-                  top: 37,
-                  child: Text(
-                    'Paws and Claws Pet Station!',
-                    style: TextStyle(
-                      color: Color(0xFF651616),
-                      fontSize: 17,
-                    ),
+                SizedBox(height: 10),
+                Text(
+                  'Paws and Claws Pet Station!', //connect to the db, this should show the name of the store.
+                  style: TextStyle(
+                    color: Color(0xFF651616),
+                    fontSize: 17,
                   ),
                 ),
               ],
@@ -48,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Container(
               width: 388,
               height: 267,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 boxShadow: [
                   BoxShadow(
                     color: Color(0x3F000000),
@@ -118,9 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 17,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                          height: 0,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),

@@ -12,12 +12,12 @@ class ServicesScreenState extends State<ServicesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
-        children: [
+        children: const [
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                const Text(
+                Text(
                   "Pet Grooming",
                   style: TextStyle(
                     fontSize: 20,
