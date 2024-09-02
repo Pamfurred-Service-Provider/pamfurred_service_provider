@@ -51,6 +51,9 @@ dependencies:
   line_icons: ^2.0.3
   salomon_bottom_bar: ^3.3.2
 
+  #Local image picker
+  image_picker: ^1.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

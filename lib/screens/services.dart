@@ -14,7 +14,7 @@ class ServicesScreenState extends State<ServicesScreen> {
       body: ListView(
         children: const [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.0),
             child: Row(
               children: [
                 Text(
@@ -25,8 +25,8 @@ class ServicesScreenState extends State<ServicesScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 11), // Space between the two texts
-                const Text(
+                SizedBox(width: 11), // Space between the two texts
+                Text(
                   "• Edit Category",
                   style: TextStyle(
                     fontSize: 16,

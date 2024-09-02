@@ -95,7 +95,7 @@ class HomeScreenState extends State<HomeScreen> {
                             value: year,
                             child: Text(
                               year.toString(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 10,
                               ),
