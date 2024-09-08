@@ -54,6 +54,12 @@ dependencies:
   #Local image picker
   image_picker: ^1.0.0
 
+  #Image cropper
+  image_cropper: ^8.0.2
+
+  #Permisson holder
+  permission_handler: ^10.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
