@@ -13,6 +13,12 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   int selectedYear = years.first;
 
+  //Static Data
+  final List<String> store = [
+    'Paws and Claws Pet Station',
+    'Groomers on the Go'
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

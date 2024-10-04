@@ -2,7 +2,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/main_screen.dart';
-// import 'package:service_provider/screens/notification_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/edit_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
+import 'package:service_provider/components/pet_boarding.dart';
+import 'package:service_provider/components/veterinary.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -13,6 +16,7 @@ class ServicesScreen extends StatefulWidget {
 class ServicesScreenState extends State<ServicesScreen> {
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
+  String? selectedCategory = 'Pet Grooming'; //default selected category
 
   // Method to navigate to the AddServiceScreen and get the new service
   void _navigateToAddService(BuildContext context) async {
@@ -65,12 +69,70 @@ class ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
+  void _showCategoryModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Pet Grooming'),
+              onTap: () {
+                setState(() {
+                  selectedCategory = 'Pet Grooming';
+                });
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ServicesScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Pet Boarding'),
+              onTap: () {
+                setState(() {
+                  selectedCategory = 'Pet Boarding';
+                });
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PetBoardingScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Veterinary'),
+              onTap: () {
+                setState(() {
+                  selectedCategory = 'Veterinary';
+                });
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VeterinaryScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: ListView(
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(16.0),
             child: Row(
               children: [
@@ -82,12 +144,16 @@ class ServicesScreenState extends State<ServicesScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Spacer(),
                 SizedBox(width: 15),
-                Text(
-                  "• Edit Category",
-                  style: TextStyle(
-                    fontSize: 16,
-                    decoration: TextDecoration.underline,
+                GestureDetector(
+                  onTap: () => _showCategoryModal(context),
+                  child: const Text(
+                    "• Edit Category",
+                    style: TextStyle(
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
               ],
