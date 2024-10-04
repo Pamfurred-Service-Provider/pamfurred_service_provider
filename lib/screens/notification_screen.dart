@@ -61,42 +61,45 @@ class NotificationScreenState extends State<NotificationScreen> {
   Widget buildAppointmentCard(Map<String, String> appointment) {
     return Column(
       children: [
-        Card(
-          color: Colors.white,
-          elevation: 10,
-          child: Padding(
-            padding: const EdgeInsets.all(15),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        appointment['date']!,
-                        // style: const TextStyle(
-                        //   color: Colors.black54,
-                        //   fontSize: 16,
-                        // ),
-                      ),
-                      Text(
-                        appointment['time']!,
-                        // style: const TextStyle(
-                        //   color: Colors.black54,
-                        //   fontSize: 16,
-                        // ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        appointment['name']!,
-                        style: const TextStyle(
-                          fontSize: 16,
+        Padding(
+          padding: const EdgeInsets.all(8), // Adds padding on all sides
+          child: Card(
+            color: Colors.white,
+            elevation: 10,
+            child: Padding(
+              padding: const EdgeInsets.all(15),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          appointment['date']!,
+                          // style: const TextStyle(
+                          //   color: Colors.black54,
+                          //   fontSize: 16,
+                          // ),
                         ),
-                      ),
-                    ],
+                        Text(
+                          appointment['time']!,
+                          // style: const TextStyle(
+                          //   color: Colors.black54,
+                          //   fontSize: 16,
+                          // ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          appointment['name']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

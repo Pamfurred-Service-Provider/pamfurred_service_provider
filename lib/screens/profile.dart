@@ -25,6 +25,7 @@ List<String> petsList = []; // List to store pets
 class ProfileScreenState extends State<ProfileScreen> {
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
+
   String dropdownValue = number.first; //dropdown for # of pets catered per day
 
   final TextEditingController establishmentNameController =
@@ -100,9 +101,26 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   // Method to remove a pet from the list
   void _removePet(int index) {
-    setState(() {
-      petsList.removeAt(index); // Remove pet from the list
-    });
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Pet'),
+        content: const Text('Are you sure you want to delete this pet?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(), // Close dialog
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() => petsList.removeAt(index)); // Remove pet
+              Navigator.of(context).pop(); // Close dialog
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
 // Dialog to input pet name
@@ -588,7 +606,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                       TextField(
                         controller: exactAddressController,
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(
+                          border: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(
                               Radius.circular(12.0),
                             ),
