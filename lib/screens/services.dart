@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/edit_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
-import 'package:service_provider/components/pet_boarding.dart';
-import 'package:service_provider/components/veterinary.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -16,7 +13,7 @@ class ServicesScreen extends StatefulWidget {
 class ServicesScreenState extends State<ServicesScreen> {
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
-  String? selectedCategory = 'Pet Grooming'; //default selected category
+  String? selectedCategory = 'Pet Grooming'; // Default selected category
 
   // Method to navigate to the AddServiceScreen and get the new service
   void _navigateToAddService(BuildContext context) async {
@@ -69,6 +66,7 @@ class ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
+  // Method to show a modal to select category
   void _showCategoryModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -83,12 +81,6 @@ class ServicesScreenState extends State<ServicesScreen> {
                   selectedCategory = 'Pet Grooming';
                 });
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ServicesScreen(),
-                  ),
-                );
               },
             ),
             ListTile(
@@ -98,12 +90,6 @@ class ServicesScreenState extends State<ServicesScreen> {
                   selectedCategory = 'Pet Boarding';
                 });
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PetBoardingScreen(),
-                  ),
-                );
               },
             ),
             ListTile(
@@ -113,12 +99,6 @@ class ServicesScreenState extends State<ServicesScreen> {
                   selectedCategory = 'Veterinary';
                 });
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => VeterinaryScreen(),
-                  ),
-                );
               },
             ),
           ],
@@ -133,19 +113,19 @@ class ServicesScreenState extends State<ServicesScreen> {
       body: ListView(
         children: [
           Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
                 Text(
-                  "Pet Grooming",
-                  style: TextStyle(
+                  selectedCategory ?? 'Pet Grooming', // Dynamic text
+                  style: const TextStyle(
                     fontSize: 20,
                     color: Color.fromRGBO(160, 62, 6, 1),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Spacer(),
-                SizedBox(width: 15),
+                const Spacer(),
+                const SizedBox(width: 15),
                 GestureDetector(
                   onTap: () => _showCategoryModal(context),
                   child: const Text(

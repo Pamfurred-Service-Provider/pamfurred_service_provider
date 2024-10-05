@@ -268,7 +268,6 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
             ],
             controller: priceController,
             decoration: const InputDecoration(
-              labelText: 'Input Price',
               prefixText: '₱ ',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(12.0)),
