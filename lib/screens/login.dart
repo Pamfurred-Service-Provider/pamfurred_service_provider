@@ -2,7 +2,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:service_provider/components/screen_transitions.dart';
-import 'package:service_provider/screens/home_screen.dart';
+import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/screens/register.dart';
 import '../components/globals.dart';
 
@@ -17,7 +17,6 @@ class LoginScreenState extends State<LoginScreen> {
   final formKey = GlobalKey<FormState>();
 
   final emailController = TextEditingController();
-
   final passwordController = TextEditingController();
   bool _obscureText = true;
 
@@ -54,7 +53,7 @@ class LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Form(
           key: formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
+          autovalidateMode: AutovalidateMode.disabled,
           child: SizedBox(
             height: double.infinity,
             child: Column(
@@ -82,13 +81,12 @@ class LoginScreenState extends State<LoginScreen> {
                             child: TextFormField(
                               // validator
                               validator: (value) {
-                                if (value == '') {
+                                if (value == null || value.isEmpty) {
                                   return 'Please enter email address';
-                                } else {
-                                  return (!EmailValidator.validate(value!))
-                                      ? 'Invalid Email Address'
-                                      : null;
+                                } else if (!EmailValidator.validate(value)) {
+                                  return 'Invalid Email Address';
                                 }
+                                return null;
                               },
                               cursorColor: const Color.fromRGBO(74, 74, 74, 1),
                               focusNode: emailFocusNode,
@@ -135,9 +133,11 @@ class LoginScreenState extends State<LoginScreen> {
                               obscureText: _obscureText,
                               // validator
                               validator: (value) {
-                                return (value == '')
-                                    ? 'Please enter password'
-                                    : null;
+                                if (value == null || value.isEmpty) {
+                                  return "Please enter password";
+                                }
+
+                                return null;
                               },
                               decoration: InputDecoration(
                                 contentPadding: const EdgeInsets.all(10.0),
@@ -215,12 +215,10 @@ class LoginScreenState extends State<LoginScreen> {
                             child: TextButton(
                               onPressed: () {
                                 // validator
-                                var isFormValid =
-                                    formKey.currentState!.validate();
-                                if (isFormValid) {
+                                if (formKey.currentState!.validate()) {
                                   // Save to database
                                   Navigator.push(context,
-                                      crossFadeRoute(const HomeScreen()));
+                                      crossFadeRoute(const MainScreen()));
                                 }
                               },
                               style: ButtonStyle(
