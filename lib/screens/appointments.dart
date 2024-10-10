@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/screens/appointment_details.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -8,6 +9,51 @@ class AppointmentsScreen extends StatefulWidget {
 }
 
 class AppointmentsScreenState extends State<AppointmentsScreen> {
+  final List<Map<String, dynamic>> todayAppointments = [
+    {
+      'id': '1445547gg5fg1',
+      'date': 'January 2, 2024',
+      'name': 'Bob Niño Golosinda',
+      'time': '09:00 AM - 11:00 AM',
+      'status': 'Pending',
+      'phone': '09945876258',
+      'category': 'Dog',
+      'type': 'Pet Salon',
+      'total': '350.00',
+      'services': [
+        {'service': 'Nail Clipping', 'price': '100.00'},
+        {'service': 'Haircut', 'price': '250.00'},
+      ],
+    },
+    {
+      'id': '1445547gg5fg1',
+      'name': 'Lynie Rose Gaa',
+      'date': 'January 2, 2024',
+      'time': '11:00 AM - 01:00 PM',
+      'status': 'Upcoming',
+      'phone': '09945876258',
+      'category': 'Dog',
+      'type': 'Pet Salon',
+      'total': '350.00',
+      'services': [
+        {'service': 'Nail Clipping', 'price': '100.00'},
+        {'service': 'Haircut', 'price': '250.00'},
+      ],
+    },
+    {
+      'name': 'Aillen Gonzaga',
+      'date': 'January 2, 2024',
+      'time': '01:00 PM - 03:00 PM',
+      'status': 'Upcoming',
+    },
+    {
+      'name': 'Arny A Ucab',
+      'date': 'January 2, 2024',
+      'time': '03:00 PM - 05:00 PM',
+      'status': 'Upcoming',
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -25,100 +71,78 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
             isScrollable: false,
             labelPadding: EdgeInsets.symmetric(horizontal: 5.0),
             tabs: [
-              Padding(
-                padding: EdgeInsets.all(1.0),
-                child: Tab(text: 'Today'),
-              ),
-              Padding(
-                padding: EdgeInsets.all(1.0),
-                child: Tab(text: 'Upcoming'),
-              ),
-              Padding(
-                padding: EdgeInsets.all(1.0),
-                child: Tab(text: 'All'),
-              ),
-              Padding(
-                padding: EdgeInsets.all(1.0),
-                child: Tab(text: 'Done'),
-              ),
-              Padding(
-                padding: EdgeInsets.all(1.0),
-                child: Tab(text: 'Cancelled'),
-              ),
+              Tab(text: 'Today'),
+              Tab(text: 'Upcoming'),
+              Tab(text: 'All'),
+              Tab(text: 'Done'),
+              Tab(text: 'Cancelled'),
             ],
           ),
         ),
         body: TabBarView(
-          children: [
-            _buildCallLogTab(),
-            _buildCallLogTab(),
-            _buildCallLogTab(),
-            _buildCallLogTab(),
-            _buildCallLogTab(),
-          ],
+          children: List.generate(5, (_) => _buildAppointmentsTab()),
         ),
       ),
     );
   }
 
-  Widget _buildCallLogTab() {
-    final List<String> Name = [
-      'Bob Niño Golosinda',
-      'Lynie Rose Gaa',
-      'Aillen Gonzaga',
-      'Arny Ucab'
-    ];
-    final List<String> Date = [
-      "January 2, 2024",
-      "January 2, 2024",
-      "January 2, 2024",
-      "January 2, 2024"
-    ];
-    final List<String> Time = ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM"];
-
+  Widget _buildAppointmentsTab() {
     return ListView.separated(
       padding: const EdgeInsets.all(8),
-      itemCount: Name.length,
-      itemBuilder: (BuildContext context, int index) {
-        return Card(
-          color: Colors.white,
-          borderOnForeground: true,
-          elevation: 10,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                title: Text(
-                  "${Name[index]}",
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      Date[index],
-                      style: const TextStyle(color: Colors.black54),
-                    ),
-                    Text(
-                      Time[index],
-                      style: const TextStyle(color: Colors.black54),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  TextButton(
-                    child: const Text('Upcoming'),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-            ],
+      itemCount: todayAppointments.length,
+      itemBuilder: (context, index) {
+        return buildAppointmentCard(todayAppointments[index]);
+      },
+      separatorBuilder: (context, index) => const Divider(),
+    );
+  }
+
+  Widget buildAppointmentCard(Map<String, dynamic> appointment) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AppointmentDetailScreen(
+              appointment: appointment,
+            ),
           ),
         );
       },
-      separatorBuilder: (BuildContext context, int index) => const Divider(),
+      child: Card(
+        color: Colors.white,
+        elevation: 10,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              title: Text(appointment['name']),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    appointment['date'],
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                  Text(
+                    appointment['time'],
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                TextButton(
+                  child: Text(appointment['status']),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
