@@ -18,7 +18,7 @@ AppBar appBar(BuildContext context) {
     ),
     actions: [
       Padding(
-        padding: EdgeInsets.fromLTRB(10, 35, 15, 10),
+        padding: const EdgeInsets.fromLTRB(10, 35, 15, 10),
         child: IconButton(
           icon: const Icon(Icons.calendar_month, size: 30),
           onPressed: () {

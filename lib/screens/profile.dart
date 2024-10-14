@@ -13,7 +13,10 @@ class ProfileScreen extends StatefulWidget {
 }
 
 //Static Data
-final List<String> store = ['Paws and Claws Pet Station', 'Groomers on the Go'];
+final List<String> store = [
+  'Paws dand Claws Pet Station',
+  'Groomers on the Go'
+];
 const List<String> number = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 final Map<DateTime, bool> _availability = {
   DateTime.utc(2024, 9, 10): false, // Fully booked
@@ -66,27 +69,11 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  CalendarFormat _calendarFormat = CalendarFormat.month;
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
+  final CalendarFormat _calendarFormat = CalendarFormat.month;
+  final DateTime _focusedDay = DateTime.now();
 
   bool _isDayAvailable(DateTime day) {
     return _availability[DateTime.utc(day.year, day.month, day.day)] ?? true;
-  }
-
-  Future<void> _selectDate(
-      BuildContext context, TextEditingController controller) async {
-    DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2030),
-    );
-    if (pickedDate != null) {
-      setState(() {
-        controller.text = "${pickedDate.toLocal()}".split(' ')[0];
-      });
-    }
   }
 
 // Method to add pet to the list

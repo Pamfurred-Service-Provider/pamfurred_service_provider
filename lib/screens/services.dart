@@ -175,7 +175,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '\₱${service['price']}',
+                              '₱${service['price']}',
                             ),
                           ],
                         ),
@@ -208,7 +208,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 20),
           // Centered Add More button
           Center(
@@ -254,7 +254,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '\₱${package['price']}',
+                              '₱${package['price']}',
                             ),
                           ],
                         ),
@@ -287,7 +287,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 20),
           // Centered Add More button
           Center(

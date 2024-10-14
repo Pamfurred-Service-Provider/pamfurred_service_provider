@@ -4,8 +4,7 @@ import 'package:intl/intl.dart';
 class AppointmentTimeSlotScreen extends StatefulWidget {
   final DateTime selectedDate;
 
-  const AppointmentTimeSlotScreen({Key? key, required this.selectedDate})
-      : super(key: key);
+  const AppointmentTimeSlotScreen({super.key, required this.selectedDate});
 
   @override
   State<AppointmentTimeSlotScreen> createState() =>

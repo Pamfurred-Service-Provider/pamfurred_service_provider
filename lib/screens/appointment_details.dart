@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class AppointmentDetailScreen extends StatelessWidget {
   final Map<String, dynamic> appointment;
 
-  const AppointmentDetailScreen({Key? key, required this.appointment})
-      : super(key: key);
+  const AppointmentDetailScreen({super.key, required this.appointment});
 
   @override
   Widget build(BuildContext context) {

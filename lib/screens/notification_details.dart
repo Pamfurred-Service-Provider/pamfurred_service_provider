@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class NotificationDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> appointment;
 
-  const NotificationDetailsScreen({Key? key, required this.appointment})
-      : super(key: key);
+  const NotificationDetailsScreen({super.key, required this.appointment});
 
   @override
   Widget build(BuildContext context) {

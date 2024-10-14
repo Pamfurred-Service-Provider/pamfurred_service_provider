@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EditServiceScreen extends StatefulWidget {
-  const EditServiceScreen({Key? key, this.serviceData}) : super(key: key);
+  const EditServiceScreen({super.key, this.serviceData});
   final Map<String, dynamic>?
       serviceData; //gamit ni sya para atong clickable nga card sa services
 
@@ -108,7 +108,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
                         BorderRadius.zero, // No rounding to keep it square
                     image: DecorationImage(
                       image: _image == null
-                          ? AssetImage('assets/image.png')
+                          ? const AssetImage('assets/image.png')
                           : FileImage(_image!) as ImageProvider,
                       fit: BoxFit.cover,
                     ),
@@ -233,21 +233,21 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
                 child: TextField(
                   controller: minWeightController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: 10),
-              Text("to"),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
+              const Text("to"),
+              const SizedBox(width: 10),
               Expanded(
                 child: TextField(
                   controller: maxWeightController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     ),
@@ -321,7 +321,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
               ElevatedButton(
                 onPressed: _saveService,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 100, 176, 81),
+                  backgroundColor: const Color.fromARGB(255, 100, 176, 81),
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Save'),

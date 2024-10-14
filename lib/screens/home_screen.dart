@@ -25,12 +25,12 @@ class HomeScreenState extends State<HomeScreen> {
       appBar: appBar(context),
       body: ListView(
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Welcome',
                   style: TextStyle(
                     color: Color(0xFF651616),
@@ -38,10 +38,10 @@ class HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 7),
+                const SizedBox(height: 10),
                 Text(
-                  'Paws and Claws Pet Station!', //connect to the db, this should show the name of the store.
-                  style: TextStyle(
+                  store[0],
+                  style: const TextStyle(
                     color: Color(0xFF651616),
                     fontSize: 18,
                   ),

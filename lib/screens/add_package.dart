@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddPackageScreen extends StatefulWidget {
-  const AddPackageScreen({Key? key, this.packageData}) : super(key: key);
+  const AddPackageScreen({super.key, this.packageData});
   final Map<String, dynamic>?
       packageData; //gamit ni sya para atong clickable nga card sa services
 
@@ -183,7 +183,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                         BorderRadius.zero, // No rounding to keep it square
                     image: DecorationImage(
                       image: _image == null
-                          ? AssetImage('assets/image.png')
+                          ? const AssetImage('assets/image.png')
                           : FileImage(_image!),
                       fit: BoxFit.cover, // Cover the container
                     ),
@@ -346,33 +346,33 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
               ),
             ),
           ),
-          SizedBox(height: 10),
-          Text(
+          const SizedBox(height: 10),
+          const Text(
             "Input Weight (in kg)",
             style: TextStyle(fontSize: 16),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: minWeightController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     ),
                   ),
                 ),
               ),
-              SizedBox(width: 10),
-              Text("to"),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
+              const Text("to"),
+              const SizedBox(width: 10),
               Expanded(
                 child: TextField(
                   controller: maxWeightController,
                   keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     ),
@@ -446,7 +446,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
               ElevatedButton(
                 onPressed: _savePackage,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 100, 176, 81),
+                  backgroundColor: const Color.fromARGB(255, 100, 176, 81),
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Save'),

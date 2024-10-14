@@ -60,8 +60,7 @@ class NotificationScreenState extends State<NotificationScreen> {
             ),
           ),
           ...todayAppointments
-              .map((appointment) => buildAppointmentCard(appointment))
-              .toList(),
+              .map((appointment) => buildAppointmentCard(appointment)),
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(

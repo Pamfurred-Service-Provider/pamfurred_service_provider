@@ -112,36 +112,30 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
       child: Card(
         color: Colors.white,
         elevation: 10,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            ListTile(
-              title: Text(appointment['name']),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    appointment['date'],
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                  Text(
-                    appointment['time'],
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+        child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+          ListTile(
+            title: Text(appointment['name']),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                TextButton(
-                  child: Text(appointment['status']),
-                  onPressed: () {},
+                Text(
+                  appointment['date'],
+                  style: const TextStyle(color: Colors.black54),
+                ),
+                Text(
+                  appointment['time'],
+                  style: const TextStyle(color: Colors.black54),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              Text(appointment['status']),
+            ],
+          ),
+        ]),
       ),
     );
   }
