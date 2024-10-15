@@ -17,11 +17,10 @@ class MostAvailedChart extends StatefulWidget {
 
 class MostAvailedChartState extends State<MostAvailedChart> {
   final Color normalColor = const Color(0xFFD14C01).withOpacity(0.7);
-  final Color secondColor = const Color.fromARGB(255, 2, 58, 211)
-      .withOpacity(0.7); // Example color for stacking
-  final Color thirdColor = const Color.fromARGB(255, 115, 127, 148)
-      .withOpacity(0.7); // Another example color for stacking
-
+  final Color secondColor =
+      const Color.fromARGB(255, 2, 58, 211).withOpacity(0.7);
+  final Color thirdColor =
+      const Color.fromARGB(255, 115, 127, 148).withOpacity(0.7);
   Widget buildLegend() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +158,7 @@ class MostAvailedChartState extends State<MostAvailedChart> {
             ),
           ),
         ),
-        buildLegend(), // Call the legend widget here
+        buildLegend(), //called widget legend
       ],
     );
   }

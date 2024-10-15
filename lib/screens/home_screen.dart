@@ -49,7 +49,7 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: appBar(context),
       body: ListView(
-        padding: const EdgeInsets.all(16.0), // Padding for the entire ListView
+        padding: const EdgeInsets.all(16.0),
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +73,6 @@ class HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
             ],
           ),
-          // First Revenue Chart
           Card(
             color: Colors.white,
             elevation: 10,
@@ -83,18 +82,16 @@ class HomeScreenState extends State<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.all(15), // Padding inside the card
               child: Column(
-                // Use a Column to arrange text and chart vertically
-                crossAxisAlignment:
-                    CrossAxisAlignment.start, // Align text to the start
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    ' Monthly Revenue', // Title for the chart
+                    ' Monthly Revenue',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.normal,
                     ),
                   ),
-                  const SizedBox(height: 10), // Space between title and chart
+                  const SizedBox(height: 10),
                   RevenueChart(
                     data: data,
                     labels: labels,
@@ -104,9 +101,7 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 20),
-          // Second Chart
           Card(
             color: Colors.white,
             elevation: 10,
@@ -116,12 +111,10 @@ class HomeScreenState extends State<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.all(15), // Padding inside the card
               child: Column(
-                // Use a Column to arrange text and chart vertically
-                crossAxisAlignment:
-                    CrossAxisAlignment.start, // Align text to the start
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    ' Most Availed Services', // Title for the chart
+                    ' Most Availed Services',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.normal,
