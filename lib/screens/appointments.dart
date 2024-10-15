@@ -13,9 +13,9 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
     {
       'id': '1445547gg5fg1',
       'date': 'January 2, 2024',
+      'status': 'Pending',
       'name': 'Bob Niño Golosinda',
       'time': '09:00 AM - 11:00 AM',
-      'status': 'Pending',
       'phone': '09945876258',
       'category': 'Dog',
       'type': 'Pet Salon',
@@ -29,8 +29,8 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
       'id': '1445547gg5fg1',
       'name': 'Lynie Rose Gaa',
       'date': 'January 2, 2024',
+      'status': 'Done',
       'time': '11:00 AM - 01:00 PM',
-      'status': 'Upcoming',
       'phone': '09945876258',
       'category': 'Dog',
       'type': 'Pet Salon',
@@ -50,9 +50,15 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
       'name': 'Arny A Ucab',
       'date': 'January 2, 2024',
       'time': '03:00 PM - 05:00 PM',
-      'status': 'Upcoming',
+      'status': 'Cancelled',
     },
   ];
+  final Map<String, Color> statusColors = {
+    'Pending': const Color.fromRGBO(255, 143, 0, 1),
+    'Upcoming': Colors.orange,
+    'Done': Colors.green,
+    'Cancelled': const Color.fromRGBO(160, 62, 6, 1),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -80,18 +86,38 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
           ),
         ),
         body: TabBarView(
-          children: List.generate(5, (_) => _buildAppointmentsTab()),
+          children: [
+            _buildAppointmentsTab(status: 'Today'),
+            _buildAppointmentsTab(status: 'Upcoming'),
+            _buildAppointmentsTab(status: 'All'),
+            _buildAppointmentsTab(status: 'Done'),
+            _buildAppointmentsTab(status: 'Cancelled'),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAppointmentsTab() {
+  Widget _buildAppointmentsTab({required String status}) {
+    List<Map<String, dynamic>> filteredAppointments;
+
+    if (status == 'All') {
+      filteredAppointments = todayAppointments;
+    } else {
+      filteredAppointments = todayAppointments
+          .where((appointment) => appointment['status'] == status)
+          .toList();
+    }
+    if (filteredAppointments.isEmpty) {
+      return Center(
+        child: Text('No appointments for $status'),
+      );
+    }
     return ListView.separated(
       padding: const EdgeInsets.all(8),
-      itemCount: todayAppointments.length,
+      itemCount: filteredAppointments.length,
       itemBuilder: (context, index) {
-        return buildAppointmentCard(todayAppointments[index]);
+        return buildAppointmentCard(filteredAppointments[index]);
       },
       separatorBuilder: (context, index) => const Divider(),
     );
@@ -104,8 +130,12 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => AppointmentDetailScreen(
-              appointment: appointment,
-            ),
+                appointment: appointment,
+                updateStatus: (newStatus) {
+                  setState(() {
+                    appointment['status'] = newStatus;
+                  });
+                }),
           ),
         );
       },
@@ -129,11 +159,19 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
               ],
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              Text(appointment['status']),
-            ],
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                Text(
+                  appointment['status'],
+                  style: TextStyle(
+                      color: statusColors[appointment['status']] ??
+                          Colors.black87),
+                ),
+              ],
+            ),
           ),
         ]),
       ),

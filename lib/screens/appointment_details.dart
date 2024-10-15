@@ -1,9 +1,31 @@
 import 'package:flutter/material.dart';
 
-class AppointmentDetailScreen extends StatelessWidget {
+class AppointmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> appointment;
+  final Function(String) updateStatus;
 
-  const AppointmentDetailScreen({super.key, required this.appointment});
+  const AppointmentDetailScreen(
+      {super.key, required this.appointment, required this.updateStatus});
+
+  @override
+  _AppointmentDetailScreenState createState() =>
+      _AppointmentDetailScreenState();
+}
+
+class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
+  late String dropdownValue;
+  final List<String> statusOptions = [
+    'Done',
+    'Pending',
+    'Cancelled',
+    'Upcoming'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    dropdownValue = widget.appointment['status'];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,33 +33,40 @@ class AppointmentDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Appointment Details"),
       ),
-      body: ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(18.0),
-            child: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: ListView(
+          children: [
+            Center(
               child: Text(
-                "Appointment ID: " '${appointment['id']}',
+                "Appointment ID: ${widget.appointment['id']}",
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18.0),
-            child: Column(
+            const SizedBox(height: 10),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Status:',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Text(
-                  '${appointment['status']}',
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromRGBO(255, 143, 0, 1)),
+                DropdownButton<String>(
+                  value: dropdownValue,
+                  items: statusOptions
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      dropdownValue = newValue!;
+                      widget.updateStatus(newValue);
+                    });
+                  },
                 ),
                 const SizedBox(height: 10),
                 const Text(
@@ -45,7 +74,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['date']}',
+                  '${widget.appointment['date']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -54,7 +83,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['time']}',
+                  '${widget.appointment['time']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -63,7 +92,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['name']}',
+                  '${widget.appointment['name']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -72,7 +101,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['phone']}',
+                  '${widget.appointment['phone']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -81,7 +110,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['category']}',
+                  '${widget.appointment['category']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -90,43 +119,37 @@ class AppointmentDetailScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['type']}',
+                  '${widget.appointment['type']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Service Availed:',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 5),
-                    if (appointment['services'] != null &&
-                        appointment['services'] is List)
-                      ...List<Widget>.generate(appointment['services'].length,
-                          (index) {
-                        var service = appointment['services'][index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '${service['service']}', // Display the service name
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                              Text(
-                                '₱ ${service['price']}', // Display the corresponding price
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                  ],
+                const Text(
+                  'Service Availed:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+                const SizedBox(height: 5),
+                if (widget.appointment['services'] != null &&
+                    widget.appointment['services'] is List)
+                  ...List<Widget>.generate(
+                      widget.appointment['services'].length, (index) {
+                    var service = widget.appointment['services'][index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${service['service']}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            '₱ ${service['price']}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -140,7 +163,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '₱ ${appointment['total']}',
+                      '₱ ${widget.appointment['total']}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -151,8 +174,8 @@ class AppointmentDetailScreen extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
