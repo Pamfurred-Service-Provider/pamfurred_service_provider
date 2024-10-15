@@ -32,7 +32,7 @@ class HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Welcomes',
+                  'Welcome',
                   style: TextStyle(
                     color: Color(0xFF651616),
                     fontSize: 24,
@@ -70,12 +70,12 @@ class HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(15),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Color(0xFFFFFDF9), // Background color for the card
+                    color: const Color(
+                        0xFFFFFDF9), // Background color for the card
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.all(8.0), // Adjust padding as needed
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
                     child: RevenueChart(
                       data: [
                         10,
@@ -90,7 +90,7 @@ class HomeScreenState extends State<HomeScreen> {
                         100,
                         100,
                         100
-                      ], // Example data
+                      ], //x data
                       labels: [
                         'Jan',
                         'Feb',
@@ -104,7 +104,7 @@ class HomeScreenState extends State<HomeScreen> {
                         'Oct',
                         'Nov',
                         'Dec'
-                      ], // Example labels
+                      ],
                     ),
                   ),
                 ),
