@@ -1,4 +1,3 @@
-// revenue_chart.dart
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -6,15 +5,18 @@ class RevenueChart extends StatefulWidget {
   final List<double> data;
   final List<String> labels;
 
-  const RevenueChart({super.key, required this.data, required this.labels});
+  const RevenueChart(
+      {super.key,
+      required this.data,
+      required this.labels,
+      required List<Map<String, dynamic>> revenueData});
 
   @override
-  _RevenueChartState createState() => _RevenueChartState();
+  RevenueChartState createState() => RevenueChartState();
 }
 
-class _RevenueChartState extends State<RevenueChart> {
-  final Color normalColor = Color(0xFFD14C01).withOpacity(0.10);
-  final Color toplColor = Color.fromARGB(255, 158, 58, 16);
+class RevenueChartState extends State<RevenueChart> {
+  final Color normalColor = const Color(0xFFD14C01).withOpacity(0.7);
 
   Widget _bottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontSize: 10);
@@ -29,23 +31,17 @@ class _RevenueChartState extends State<RevenueChart> {
     if (value == meta.max) return Container();
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      child: Text('₱${value.toInt()}',
-          style: const TextStyle(fontSize: 10)), // Format as Philippine pesos
+      child: Text('${value.toInt()}', style: const TextStyle(fontSize: 10)),
     );
   }
 
   List<BarChartGroupData> _getData() {
-    double barsWidth = 15.0; // Increase the bar width for thicker bars
+    double barsWidth = 17.0;
     double barsSpace = 5.0;
 
     return widget.data.asMap().entries.map((entry) {
       int index = entry.key;
       double value = entry.value;
-
-      // Define the height for the different color sections
-      double bottomSectionHeight = value * 0.97; // 70% normal color
-      double topSectionHeight =
-          value - bottomSectionHeight; // Remaining height for top color
 
       return BarChartGroupData(
         x: index,
@@ -55,12 +51,6 @@ class _RevenueChartState extends State<RevenueChart> {
             toY: value,
             color: normalColor,
             width: barsWidth,
-            rodStackItems: [
-              BarChartRodStackItem(
-                  0, bottomSectionHeight, normalColor), // Bottom color
-              BarChartRodStackItem(
-                  bottomSectionHeight, value, toplColor), // Top color
-            ],
             borderRadius: BorderRadius.circular(0),
           ),
         ],
@@ -88,9 +78,11 @@ class _RevenueChartState extends State<RevenueChart> {
               ),
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    getTitlesWidget: _leftTitles),
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: _leftTitles,
+                  interval: 1000,
+                ),
               ),
               topTitles:
                   const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -105,7 +97,7 @@ class _RevenueChartState extends State<RevenueChart> {
               drawVerticalLine: false,
             ),
             borderData: FlBorderData(show: false),
-            groupsSpace: 100,
+            groupsSpace: 15,
             barGroups: _getData(),
           ),
         ),
