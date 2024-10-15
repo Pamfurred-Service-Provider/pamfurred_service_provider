@@ -8,11 +8,10 @@ class AppointmentDetailScreen extends StatefulWidget {
       {super.key, required this.appointment, required this.updateStatus});
 
   @override
-  _AppointmentDetailScreenState createState() =>
-      _AppointmentDetailScreenState();
+  AppointmentDetailScreenState createState() => AppointmentDetailScreenState();
 }
 
-class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
+class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   late String dropdownValue;
   final List<String> statusOptions = [
     'Done',
