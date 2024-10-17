@@ -13,12 +13,7 @@ class AppointmentDetailScreen extends StatefulWidget {
 
 class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   late String dropdownValue;
-  final List<String> statusOptions = [
-    'Done',
-    'Pending',
-    'Cancelled',
-    'Upcoming'
-  ];
+  final List<String> statusOptions = ['Done', 'Cancelled', 'Upcoming'];
 
   @override
   void initState() {

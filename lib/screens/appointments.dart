@@ -13,7 +13,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
     {
       'id': '1445547gg5fg1',
       'date': 'January 2, 2024',
-      'status': 'Pending',
+      'status': 'Upcoming',
       'name': 'Bob Niño Golosinda',
       'time': '09:00 AM - 11:00 AM',
       'phone': '09945876258',
@@ -54,8 +54,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
     },
   ];
   final Map<String, Color> statusColors = {
-    'Pending': const Color.fromRGBO(255, 143, 0, 1),
-    'Upcoming': Colors.orange,
+    'Upcoming': const Color.fromRGBO(255, 143, 0, 1),
     'Done': Colors.green,
     'Cancelled': const Color.fromRGBO(160, 62, 6, 1),
   };

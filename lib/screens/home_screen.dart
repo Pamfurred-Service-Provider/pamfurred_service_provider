@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/revenue_chart.dart';
 import 'package:service_provider/components/most_availed_chart.dart';
+import 'package:service_provider/components/annual_appointments_chart.dart';
 
 final List<int> years = [2023, 2024];
 
@@ -21,23 +22,50 @@ class HomeScreenState extends State<HomeScreen> {
     'Groomers on the Go'
   ];
   final List<Map<String, dynamic>> revenueData = [
-    {'month': 'Jan', 'value': 1000.00},
-    {'month': 'Feb', 'value': 1500.00},
+    {'month': 'Jan', 'value': 2000.00},
+    {'month': 'Feb', 'value': 5000.00},
     {'month': 'Mar', 'value': 1700.00},
+    {'month': 'Apr', 'value': 2000.00},
+    {'month': 'May', 'value': 3000.00},
+    {'month': 'Jun', 'value': 4080.00},
+    {'month': 'Jul', 'value': 5480.00},
+    {'month': 'Aug', 'value': 5050.00},
+    {'month': 'Sep', 'value': 6540.00},
+    {'month': 'Oct', 'value': 7000.00},
+    {'month': 'Nov', 'value': 8000.00},
+    {'month': 'Dec', 'value': 3152.00},
+  ];
+  final List<Map<String, dynamic>> mostAvailedData = [
+    {
+      'service': 'Nail Clipping',
+      'counts': [50, 30, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
+    }, // Monthly counts of service availed
+    {
+      'service': 'Hair Color',
+      'counts': [50, 10, 30, 15, 25, 35, 45, 55, 25, 35, 45, 55]
+    },
+    {
+      'service': 'Bathe',
+      'counts': [30, 10, 30, 15, 25, 35, 15, 55, 25, 35, 45, 8]
+    },
+    {
+      'service': 'Oral Care',
+      'counts': [50, 30, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
+    },
+  ];
+  final List<Map<String, dynamic>> annualAppointmentData = [
+    {'month': 'Jan', 'value': 3000.00},
+    {'month': 'Feb', 'value': 1500.00},
+    {'month': 'Mar', 'value': 1750.00},
     {'month': 'Apr', 'value': 2000.00},
     {'month': 'May', 'value': 3000.00},
     {'month': 'Jun', 'value': 4080.00},
     {'month': 'Jul', 'value': 5480.00},
     {'month': 'Aug', 'value': 1080.00},
     {'month': 'Sep', 'value': 6540.00},
-    {'month': 'Oct', 'value': 7000.00},
+    {'month': 'Oct', 'value': 6540.00},
     {'month': 'Nov', 'value': 8000.00},
-    {'month': 'Dec', 'value': 3152.00},
-  ];
-  final List<List<int>> mostAvailedData = [
-    [50, 40, 20, 60, 80, 50, 70, 40, 60, 90, 100, 70], //12 months data
-    [30, 30, 50, 30, 40, 60, 20, 70, 30, 20, 50, 90], // Second service
-    [10, 20, 30, 40, 20, 10, 30, 50, 60, 70, 80, 90], // Third service
+    {'month': 'Dec', 'value': 8000.00},
   ];
 
   @override
@@ -124,6 +152,64 @@ class HomeScreenState extends State<HomeScreen> {
                   MostAvailedChart(
                     data: mostAvailedData, // Pass the data for stacking
                     labels: labels,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Card(
+            color: Colors.white,
+            elevation: 10,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(15), // Padding inside the card
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    ' Annual Appointments',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  AnnualAppointmentsChart(
+                    data: data,
+                    labels: labels,
+                    annualAppointmentData: const [],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Card(
+            color: Colors.white,
+            elevation: 10,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(15), // Padding inside the card
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Satisfaction Rating',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  AnnualAppointmentsChart(
+                    data: data,
+                    labels: labels,
+                    annualAppointmentData: const [],
                   ),
                 ],
               ),

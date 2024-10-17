@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 class MostAvailedChart extends StatefulWidget {
-  final List<List<int>> data;
+  final List<Map<String, dynamic>> data;
   final List<String> labels;
 
   const MostAvailedChart({
@@ -16,24 +16,53 @@ class MostAvailedChart extends StatefulWidget {
 }
 
 class MostAvailedChartState extends State<MostAvailedChart> {
-  final Color normalColor = const Color(0xFFD14C01).withOpacity(0.7);
-  final Color secondColor =
-      const Color.fromARGB(255, 2, 58, 211).withOpacity(0.7);
-  final Color thirdColor =
-      const Color.fromARGB(255, 115, 127, 148).withOpacity(0.7);
+  final Map<String, Color> serviceColors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    initializeServiceColors();
+  }
+
+  void initializeServiceColors() {
+    // Assign a unique color to each service
+    List<Color> colors = [
+      Colors.orange.withOpacity(0.7),
+      Colors.blue.withOpacity(0.7),
+      Colors.grey.withOpacity(0.7),
+      Colors.green.withOpacity(0.7),
+      Colors.red.withOpacity(0.7),
+      Colors.purple.withOpacity(0.7),
+      Colors.teal.withOpacity(0.7),
+      Colors.pink.withOpacity(0.7),
+      Colors.yellow.withOpacity(0.7),
+      Colors.indigo.withOpacity(0.7),
+      Colors.brown.withOpacity(0.7),
+    ];
+    int colorIndex = 0;
+    for (var service in widget.data) {
+      final serviceName = service['service'];
+      if (!serviceColors.containsKey(serviceName)) {
+        serviceColors[serviceName] = colors[colorIndex % colors.length];
+        colorIndex++;
+      }
+    }
+  }
+
   Widget buildLegend() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        buildLegendItem(normalColor, "Nail Clip"),
-        buildLegendItem(secondColor, "Hair Color"),
-        buildLegendItem(thirdColor, "Hair Trim"),
-      ],
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 10.0,
+      runSpacing: 10.0,
+      children: serviceColors.entries.map((entry) {
+        return buildLegendItem(entry.value, entry.key);
+      }).toList(),
     );
   }
 
   Widget buildLegendItem(Color color, String text) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 30,
@@ -43,18 +72,29 @@ class MostAvailedChartState extends State<MostAvailedChart> {
             color: color,
           ),
         ),
-        const SizedBox(height: 20),
-        Text(
-          text,
-          style: const TextStyle(fontSize: 12),
-        ),
+        const SizedBox(width: 5),
+        Text(text, style: const TextStyle(fontSize: 12)),
       ],
     );
   }
 
   Widget _bottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontSize: 10);
-    String text = widget.labels[value.toInt() % widget.labels.length];
+    List<String> monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    String text = monthNames[value.toInt() % monthNames.length];
     return SideTitleWidget(
       axisSide: meta.axisSide,
       child: Text(text, style: style),
@@ -72,38 +112,39 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   List<BarChartGroupData> _getData() {
     double barsWidth = 17.0;
 
-    return List.generate(widget.labels.length, (index) {
+    return List.generate(12, (monthIndex) {
+      List<BarChartRodStackItem> stackItems = [];
+      double cumulativeHeight = 0.0;
+
+      for (var service in widget.data) {
+        final serviceName = service['service'];
+        final count = monthIndex < service['counts'].length
+            ? service['counts'][monthIndex]
+            : 0;
+        final serviceColor =
+            serviceColors[serviceName] ?? Colors.black.withOpacity(0.7);
+
+        stackItems.add(
+          BarChartRodStackItem(
+            cumulativeHeight,
+            cumulativeHeight + count.toDouble(),
+            serviceColor,
+          ),
+        );
+
+        // Update cumulative height for stacking
+        cumulativeHeight += count.toDouble();
+      }
+
       return BarChartGroupData(
-        x: index,
+        x: monthIndex,
         barRods: [
           BarChartRodData(
-            toY: widget.data[0][index].toDouble() +
-                widget.data[1][index].toDouble() +
-                widget.data[2][index].toDouble(),
-            color: normalColor,
+            toY: cumulativeHeight,
+            color: Colors.transparent, // Use transparent color for the main rod
             width: barsWidth,
+            rodStackItems: stackItems,
             borderRadius: BorderRadius.circular(0),
-            rodStackItems: [
-              BarChartRodStackItem(
-                0,
-                widget.data[0][index].toDouble(),
-                normalColor,
-              ),
-              BarChartRodStackItem(
-                widget.data[0][index].toDouble(),
-                widget.data[0][index].toDouble() +
-                    widget.data[1][index].toDouble(),
-                secondColor,
-              ),
-              BarChartRodStackItem(
-                widget.data[0][index].toDouble() +
-                    widget.data[1][index].toDouble(),
-                widget.data[0][index].toDouble() +
-                    widget.data[1][index].toDouble() +
-                    widget.data[2][index].toDouble(),
-                thirdColor,
-              ),
-            ],
           ),
         ],
       );
@@ -158,7 +199,7 @@ class MostAvailedChartState extends State<MostAvailedChart> {
             ),
           ),
         ),
-        buildLegend(), //called widget legend
+        buildLegend(), // Called widget legend
       ],
     );
   }
