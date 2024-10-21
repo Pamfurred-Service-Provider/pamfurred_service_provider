@@ -13,10 +13,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 //Static Data
-final List<String> store = [
-  'Paws dand Claws Pet Station',
-  'Groomers on the Go'
-];
+final List<String> store = ['Paws and Claws Pet Station', 'Groomers on the Go'];
 const List<String> number = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 final Map<DateTime, bool> _availability = {
   DateTime.utc(2024, 9, 10): false, // Fully booked

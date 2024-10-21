@@ -27,16 +27,17 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   void initializeServiceColors() {
     // Assign a unique color to each service
     List<Color> colors = [
-      Colors.orange.withOpacity(0.7),
-      Colors.blue.withOpacity(0.7),
-      Colors.grey.withOpacity(0.7),
-      Colors.green.withOpacity(0.7),
-      Colors.red.withOpacity(0.7),
+      const Color.fromRGBO(255, 87, 51, 1),
+      const Color.fromRGBO(255, 215, 0, 1),
+      const Color.fromRGBO(76, 175, 80, 1),
+      Colors.indigo.withOpacity(0.7),
       Colors.purple.withOpacity(0.7),
+      Colors.redAccent.withOpacity(0.7),
+      Colors.orange.withOpacity(0.7),
+      Colors.blue.withOpacity(0.9),
       Colors.teal.withOpacity(0.7),
       Colors.pink.withOpacity(0.7),
       Colors.yellow.withOpacity(0.7),
-      Colors.indigo.withOpacity(0.7),
       Colors.brown.withOpacity(0.7),
     ];
     int colorIndex = 0;

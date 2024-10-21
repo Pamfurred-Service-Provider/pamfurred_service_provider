@@ -3,6 +3,10 @@ import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/revenue_chart.dart';
 import 'package:service_provider/components/most_availed_chart.dart';
 import 'package:service_provider/components/annual_appointments_chart.dart';
+import 'package:service_provider/components/satisfaction_rating_chart.dart';
+import 'package:service_provider/screens/appointments.dart';
+import 'package:service_provider/screens/feedbacks.dart';
+import 'package:service_provider/screens/services.dart';
 
 final List<int> years = [2023, 2024];
 
@@ -22,9 +26,9 @@ class HomeScreenState extends State<HomeScreen> {
     'Groomers on the Go'
   ];
   final List<Map<String, dynamic>> revenueData = [
-    {'month': 'Jan', 'value': 2000.00},
+    {'month': 'Jan', 'value': 2500.00},
     {'month': 'Feb', 'value': 5000.00},
-    {'month': 'Mar', 'value': 1700.00},
+    {'month': 'Mar', 'value': 1000.00},
     {'month': 'Apr', 'value': 2000.00},
     {'month': 'May', 'value': 3000.00},
     {'month': 'Jun', 'value': 4080.00},
@@ -50,13 +54,13 @@ class HomeScreenState extends State<HomeScreen> {
     },
     {
       'service': 'Oral Care',
-      'counts': [50, 30, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
+      'counts': [50, 35, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
     },
   ];
   final List<Map<String, dynamic>> annualAppointmentData = [
     {'month': 'Jan', 'value': 3000.00},
-    {'month': 'Feb', 'value': 1500.00},
-    {'month': 'Mar', 'value': 1750.00},
+    {'month': 'Feb', 'value': 1000.00},
+    {'month': 'Mar', 'value': 5000.00},
     {'month': 'Apr', 'value': 2000.00},
     {'month': 'May', 'value': 3000.00},
     {'month': 'Jun', 'value': 4080.00},
@@ -67,6 +71,65 @@ class HomeScreenState extends State<HomeScreen> {
     {'month': 'Nov', 'value': 8000.00},
     {'month': 'Dec', 'value': 8000.00},
   ];
+  final List<Map<String, dynamic>> satisfactionData = [
+    {
+      'label': 'Satisfied',
+      'value': 95.0,
+      'color': const Color.fromRGBO(251, 188, 4, 1)
+    },
+    {
+      'label': 'Neutral',
+      'value': 2.0,
+      'color': const Color.fromRGBO(102, 22, 22, 1)
+    },
+    {
+      'label': 'Negative',
+      'value': 2.5,
+      'color': const Color.fromRGBO(255, 0, 0, 1)
+    },
+  ];
+  final List<String> cardTitles = [
+    'Appointments \nToday',
+    'Pending \nAppointments',
+    'Cancelled Appointments',
+    'Services',
+    'Packages',
+    'Feedback'
+  ];
+  void navigateToScreen(String title) {
+    if (title == 'Appointments Today') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
+      );
+    } else if (title == 'Pending Appointments') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
+      );
+    } else if (title == 'Cancelled Appointments') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
+      );
+    } else if (title == 'Services') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+      );
+    } else if (title == 'Packages') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+      );
+    } else if (title == 'Feedback') {
+      // You can navigate to a feedback screen or another screen for feedback
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const FeedbacksScreen()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +155,7 @@ class HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                store[0],
+                store[1],
                 style: const TextStyle(
                   color: Color(0xFF651616),
                   fontSize: 18,
@@ -206,14 +269,75 @@ class HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  AnnualAppointmentsChart(
-                    data: data,
-                    labels: labels,
-                    annualAppointmentData: const [],
+                  SatisfactionRatingChart(
+                    data: satisfactionData,
                   ),
                 ],
               ),
             ),
+          ),
+          const SizedBox(height: 20),
+          GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 1.0,
+              crossAxisSpacing: 16.0,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: 6,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  navigateToScreen(cardTitles[index]);
+                },
+                child: Card(
+                  color: Colors.white,
+                  elevation: 10,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              cardTitles[index],
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Align(
+                        //   alignment: Alignment.topRight,
+                        //   child: Container(
+                        //     padding: const EdgeInsets.all(4),
+                        //     decoration: BoxDecoration(
+                        //       color: Colors.red,
+                        //       borderRadius: BorderRadius.circular(12),
+                        //     ),
+                        //     child: const Text(
+                        //       '10', // Notification number
+                        //       style: TextStyle(
+                        //         color: Colors.white,
+                        //         fontWeight: FontWeight.bold,
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

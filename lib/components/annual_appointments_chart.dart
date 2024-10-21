@@ -51,7 +51,7 @@ class AnnualAppointmentsChartState extends State<AnnualAppointmentsChart> {
         padding: const EdgeInsets.only(top: 16),
         child: LineChart(
           LineChartData(
-            lineTouchData: const LineTouchData(enabled: false),
+            lineTouchData: const LineTouchData(enabled: true),
             titlesData: FlTitlesData(
               show: true,
               bottomTitles: AxisTitles(
@@ -84,7 +84,7 @@ class AnnualAppointmentsChartState extends State<AnnualAppointmentsChart> {
             lineBarsData: [
               LineChartBarData(
                 spots: _getLineChartData(),
-                isCurved: true,
+                isCurved: false,
                 barWidth: 3,
                 color: normalColor,
                 dotData: const FlDotData(show: false),
