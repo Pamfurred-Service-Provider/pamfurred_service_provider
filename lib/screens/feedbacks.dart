@@ -8,30 +8,43 @@ class FeedbacksScreen extends StatefulWidget {
 }
 
 class FeedbacksScreenState extends State<FeedbacksScreen> {
-  final double staticRating = 3.0; // Static average rating
-  final List<Review> reviews = [
-    Review(
-      name: "John Doe",
-      reviewText: "Great service, very satisfied!",
-      rating: 4.0,
-      reviewDate: "2024-10-01",
-    ),
-    Review(
-      name: "Jane Smith",
-      reviewText: "It was okay, nothing special.",
-      rating: 2.5,
-      reviewDate: "2024-10-02",
-    ),
-    Review(
-      name: "Alice Johnson",
-      reviewText: "Absolutely loved it! Highly recommend.",
-      rating: 5.0,
-      reviewDate: "2024-10-03",
-    ),
+  final List<Map<String, dynamic>> reviews = [
+    {
+      "name": "John ",
+      "review": "Great service!",
+      "rating": 4,
+      "date": "2024-10-20"
+    },
+    {
+      "name": "Jane ",
+      "review": "Could be better.",
+      "rating": 3,
+      "date": "2024-10-19"
+    },
+    {
+      "name": "Alex ",
+      "review": "Loved the care my pet received.",
+      "rating": 4,
+      "date": "2024-10-18"
+    },
+    {
+      "name": "Alex ",
+      "review": "Loved the care my pet received.",
+      "rating": 1,
+      "date": "2024-10-18"
+    },
   ];
+// Method to calculate average rating //found tapad sa stars, ubos sa text
+  double calculateAverageRating() {
+    if (reviews.isEmpty) return 0.0;
+    double totalRating =
+        reviews.fold(0.0, (sum, review) => sum + review['rating']);
+    return totalRating / reviews.length;
+  }
 
   @override
   Widget build(BuildContext context) {
+    double averageRating = calculateAverageRating();
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -61,19 +74,20 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                   children: [
                     ...List.generate(5, (index) {
                       return Icon(
-                        index < staticRating ? Icons.star : Icons.star_border,
-                        color:
-                            index < staticRating ? Colors.yellow : Colors.grey,
+                        index < averageRating ? Icons.star : Icons.star_border,
+                        color: index < averageRating
+                            ? const Color.fromRGBO(209, 76, 1, 1)
+                            : Colors.grey,
                       );
                     }),
                     const SizedBox(width: 5),
                     Text(
-                      "(${staticRating.toStringAsFixed(1)})", // Display rating with one decimal point
+                      "(${averageRating.toStringAsFixed(1)})", // Display rating with one decimal point
                       style: const TextStyle(fontSize: 17),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20), // Space before total label
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -82,22 +96,22 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(
-                        width: 5), // Space between total label and number
+                    const SizedBox(width: 5),
                     Text(
                       '${reviews.length}', // Display number of reviews
                       style: const TextStyle(fontSize: 18),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10), // Space after total label
-                // Here you can add static review cards
-                ...reviews.map((review) => ReviewCard(
-                      name: review.name,
-                      reviewText: review.reviewText,
-                      rating: review.rating,
-                      reviewDate: review.reviewDate,
-                    )),
+                const SizedBox(height: 10),
+                ...reviews.map((review) {
+                  return ReviewCard(
+                    name: review['name'],
+                    reviewText: review['review'],
+                    rating: review['rating'].toDouble(),
+                    reviewDate: review['date'],
+                  );
+                }),
               ],
             ),
           ),
@@ -131,7 +145,7 @@ class ReviewCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              name, // Name with asterisks for security
+              name,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -139,7 +153,7 @@ class ReviewCard extends StatelessWidget {
             ),
             const SizedBox(height: 5),
             Text(
-              reviewText, // Review text
+              reviewText,
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 5),
@@ -148,7 +162,9 @@ class ReviewCard extends StatelessWidget {
                 ...List.generate(5, (index) {
                   return Icon(
                     index < rating ? Icons.star : Icons.star_border,
-                    color: index < rating ? Colors.yellow : Colors.grey,
+                    color: index < rating
+                        ? const Color.fromRGBO(209, 76, 1, 1)
+                        : Colors.grey,
                   );
                 }),
                 const SizedBox(width: 5),
@@ -158,7 +174,7 @@ class ReviewCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  reviewDate, // Review date
+                  reviewDate,
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],

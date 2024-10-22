@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:badges/badges.dart' as badges;
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/revenue_chart.dart';
 import 'package:service_provider/components/most_availed_chart.dart';
@@ -90,46 +91,53 @@ class HomeScreenState extends State<HomeScreen> {
   ];
   final List<String> cardTitles = [
     'Appointments \nToday',
-    'Pending \nAppointments',
+    'Upcoming \nAppointments',
     'Cancelled Appointments',
     'Services',
     'Packages',
     'Feedback'
   ];
   void navigateToScreen(String title) {
+    int initialTabIndex = 0;
+
     if (title == 'Appointments Today') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
-      );
-    } else if (title == 'Pending Appointments') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
-      );
+      initialTabIndex = 0; // "Today" tab
+    } else if (title == 'Upcoming \nAppointments') {
+      initialTabIndex = 1; // "Upcoming" tab
     } else if (title == 'Cancelled Appointments') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
-      );
-    } else if (title == 'Services') {
+      initialTabIndex = 4; // "Cancelled" tab
+    } else if (title == 'Services' || title == 'Packages') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ServicesScreen()),
       );
-    } else if (title == 'Packages') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ServicesScreen()),
-      );
+      return; // Prevents further navigation to AppointmentsScreen
     } else if (title == 'Feedback') {
-      // You can navigate to a feedback screen or another screen for feedback
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const FeedbacksScreen()),
       );
+      return; // Prevents further navigation to AppointmentsScreen
     }
+
+    // Navigate to AppointmentsScreen if it's an appointment related title
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AppointmentsScreen(initialTabIndex: initialTabIndex),
+      ),
+    );
   }
+
+  final List<int> notificationCounts = [
+    5,
+    2,
+    0,
+    3,
+    1,
+    4
+  ]; //static data for notification
 
   @override
   Widget build(BuildContext context) {
@@ -292,49 +300,54 @@ class HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   navigateToScreen(cardTitles[index]);
                 },
-                child: Card(
-                  color: Colors.white,
-                  elevation: 10,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              cardTitles[index],
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                child: Stack(
+                  children: [
+                    Card(
+                      color: Colors.white,
+                      elevation: 10,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  cardTitles[index],
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                        // Align(
-                        //   alignment: Alignment.topRight,
-                        //   child: Container(
-                        //     padding: const EdgeInsets.all(4),
-                        //     decoration: BoxDecoration(
-                        //       color: Colors.red,
-                        //       borderRadius: BorderRadius.circular(12),
-                        //     ),
-                        //     child: const Text(
-                        //       '10', // Notification number
-                        //       style: TextStyle(
-                        //         color: Colors.white,
-                        //         fontWeight: FontWeight.bold,
-                        //       ),
-                        //     ),
-                        //   ),
-                        // ),
-                      ],
+                      ),
                     ),
-                  ),
+                    //for the norification number.
+                    if (notificationCounts[index] > 0)
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: badges.Badge(
+                          badgeContent: Text(
+                            notificationCounts[index].toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          badgeStyle:
+                              const badges.BadgeStyle(badgeColor: Colors.red),
+                        ),
+                      ),
+                  ],
                 ),
               );
             },

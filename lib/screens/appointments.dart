@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:service_provider/screens/appointment_details.dart';
 
 class AppointmentsScreen extends StatefulWidget {
-  const AppointmentsScreen({super.key});
+  final int initialTabIndex;
+  const AppointmentsScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<AppointmentsScreen> createState() => AppointmentsScreenState();
 }
 
-class AppointmentsScreenState extends State<AppointmentsScreen> {
+class AppointmentsScreenState extends State<AppointmentsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final List<Map<String, dynamic>> todayAppointments = [
     {
       'id': '1445547gg5fg1',
@@ -58,41 +61,52 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
     'Done': Colors.green,
     'Cancelled': const Color.fromRGBO(160, 62, 6, 1),
   };
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+        length: 5, vsync: this, initialIndex: widget.initialTabIndex);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 5,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Appointments"),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          bottom: const TabBar(
-            isScrollable: false,
-            labelPadding: EdgeInsets.symmetric(horizontal: 5.0),
-            tabs: [
-              Tab(text: 'Today'),
-              Tab(text: 'Upcoming'),
-              Tab(text: 'All'),
-              Tab(text: 'Done'),
-              Tab(text: 'Cancelled'),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Appointments"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
-        body: TabBarView(
-          children: [
-            _buildAppointmentsTab(status: 'Today'),
-            _buildAppointmentsTab(status: 'Upcoming'),
-            _buildAppointmentsTab(status: 'All'),
-            _buildAppointmentsTab(status: 'Done'),
-            _buildAppointmentsTab(status: 'Cancelled'),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: false,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 5.0),
+          tabs: const [
+            Tab(text: 'Today'),
+            Tab(text: 'Upcoming'),
+            Tab(text: 'All'),
+            Tab(text: 'Done'),
+            Tab(text: 'Cancelled'),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildAppointmentsTab(status: 'Today'),
+          _buildAppointmentsTab(status: 'Upcoming'),
+          _buildAppointmentsTab(status: 'All'),
+          _buildAppointmentsTab(status: 'Done'),
+          _buildAppointmentsTab(status: 'Cancelled'),
+        ],
       ),
     );
   }
@@ -124,8 +138,8 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
 
   Widget buildAppointmentCard(Map<String, dynamic> appointment) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final updatedStatus = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => AppointmentDetailScreen(
@@ -137,6 +151,11 @@ class AppointmentsScreenState extends State<AppointmentsScreen> {
                 }),
           ),
         );
+        if (updatedStatus != null) {
+          setState(() {
+            appointment['status'] = updatedStatus;
+          });
+        }
       },
       child: Card(
         color: Colors.white,
