@@ -16,12 +16,22 @@ class MainScreenState extends State<MainScreen> {
   int currentIndex = 0;
   final PageController _pageController = PageController();
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ServicesScreen(),
-    const NotificationScreen(),
-    const ProfileScreen(),
-  ];
+  final List<Widget> _screens = [];
+  @override
+  void initState() {
+    super.initState();
+    _screens.addAll([
+      HomeScreen(
+        onCardTap: () {
+          _pageController
+              .jumpToPage(1); // Navigates to ServicesScreen (index 1)
+        },
+      ),
+      const ServicesScreen(),
+      const NotificationScreen(),
+      const ProfileScreen(),
+    ]);
+  }
 
   @override
   void dispose() {

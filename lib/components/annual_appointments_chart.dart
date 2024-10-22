@@ -51,13 +51,14 @@ class AnnualAppointmentsChartState extends State<AnnualAppointmentsChart> {
         padding: const EdgeInsets.only(top: 16),
         child: LineChart(
           LineChartData(
-            lineTouchData: const LineTouchData(enabled: true),
+            lineTouchData: const LineTouchData(enabled: false),
             titlesData: FlTitlesData(
               show: true,
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 28,
+                    reservedSize: 40,
+                    interval: 1,
                     getTitlesWidget: _bottomTitles),
               ),
               leftTitles: AxisTitles(

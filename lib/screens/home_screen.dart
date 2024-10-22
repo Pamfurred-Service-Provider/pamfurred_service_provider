@@ -8,11 +8,12 @@ import 'package:service_provider/components/satisfaction_rating_chart.dart';
 import 'package:service_provider/screens/appointments.dart';
 import 'package:service_provider/screens/feedbacks.dart';
 import 'package:service_provider/screens/services.dart';
+import 'package:service_provider/components/year_dropdown.dart';
 
 final List<int> years = [2023, 2024];
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required Null Function() onCardTap});
 
   @override
   State<HomeScreen> createState() => HomeScreenState();
@@ -20,7 +21,6 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   int selectedYear = years.first;
-
   // Static Data
   final List<String> store = [
     'Paws and Claws Pet Station',
@@ -98,6 +98,14 @@ class HomeScreenState extends State<HomeScreen> {
     'Feedback'
   ];
   void navigateToScreen(String title) {
+    if (title == 'Services' || title == 'Packages') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+      );
+      return; // Prevents further navigation to AppointmentsScreen
+    }
+
     int initialTabIndex = 0;
 
     if (title == 'Appointments Today') {
@@ -106,12 +114,6 @@ class HomeScreenState extends State<HomeScreen> {
       initialTabIndex = 1; // "Upcoming" tab
     } else if (title == 'Cancelled Appointments') {
       initialTabIndex = 4; // "Cancelled" tab
-    } else if (title == 'Services' || title == 'Packages') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ServicesScreen()),
-      );
-      return; // Prevents further navigation to AppointmentsScreen
     } else if (title == 'Feedback') {
       Navigator.push(
         context,
@@ -138,6 +140,11 @@ class HomeScreenState extends State<HomeScreen> {
     1,
     4
   ]; //static data for notification
+  void updateDataForYear(int year) {
+    setState(() {
+      selectedYear = year;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,12 +190,22 @@ class HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    ' Monthly Revenue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        ' Monthly Revenue',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      YearDropdown(
+                        years: years,
+                        initialYear: selectedYear,
+                        onYearChanged: updateDataForYear,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   RevenueChart(
@@ -200,7 +217,6 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
           Card(
             color: Colors.white,
             elevation: 10,
@@ -212,12 +228,22 @@ class HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    ' Most Availed Services',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        ' Most Availed Services',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      YearDropdown(
+                        years: years,
+                        initialYear: selectedYear,
+                        onYearChanged: updateDataForYear,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   MostAvailedChart(
@@ -228,7 +254,6 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
           Card(
             color: Colors.white,
             elevation: 10,
@@ -240,12 +265,22 @@ class HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    ' Annual Appointments',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        ' Annual Appointments',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      YearDropdown(
+                        years: years,
+                        initialYear: selectedYear,
+                        onYearChanged: updateDataForYear,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   AnnualAppointmentsChart(
@@ -257,7 +292,6 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
           Card(
             color: Colors.white,
             elevation: 10,
@@ -269,12 +303,22 @@ class HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Satisfaction Rating',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Satisfaction Rating',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      YearDropdown(
+                        years: years,
+                        initialYear: selectedYear,
+                        onYearChanged: updateDataForYear,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   SatisfactionRatingChart(
@@ -284,13 +328,13 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 5),
           GridView.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 1.0,
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16,
+              crossAxisSpacing: 5.0,
+              mainAxisSpacing: 5,
             ),
             itemCount: 6,
             shrinkWrap: true,
