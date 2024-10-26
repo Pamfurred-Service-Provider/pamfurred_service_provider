@@ -129,6 +129,7 @@ class NotificationScreenState extends State<NotificationScreen> {
           ),
           const Divider(
             indent: 16.0,
+            endIndent: 16.0,
           ),
         ],
       ),

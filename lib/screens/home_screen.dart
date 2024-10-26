@@ -21,7 +21,14 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   int selectedYear = years.first;
+  int selectedIndex = 0;
   // Static Data
+  void onButtomNavTap(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
+  }
+
   final List<String> store = [
     'Paws and Claws Pet Station',
     'Groomers on the Go'
