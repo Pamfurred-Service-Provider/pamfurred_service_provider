@@ -135,7 +135,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                       const Text("Details:",
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
-                      ElevatedButton(
+                      TextButton(
                         onPressed: _navigateToEditProfile,
                         child: const Row(
                           children: [
@@ -165,12 +165,14 @@ class ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 20),
                       const Text("Pets to Cater:"),
-                      if (profileData['pets to cater'] != null &&
-                          profileData['pets to cater'] is List)
-                        ...List<Widget>.generate(
-                          profileData['pets to cater'].length,
-                          (index) => Text(profileData['pets to cater'][index]),
-                        ),
+                      if (profileData['petsList'] != null &&
+                          profileData['petsList'] is List &&
+                          profileData['petsList'].isNotEmpty)
+                        ...profileData['petsList']
+                            .map<Widget>((pet) => Text(pet.toString()))
+                            .toList()
+                      else
+                        const Text("No pets specified"),
                       const SizedBox(height: 10),
                       Text(
                           "Number of Pets Catered per day: ${profileData['number of pets'] ?? ''}"),

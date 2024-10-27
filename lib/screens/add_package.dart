@@ -123,30 +123,23 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       minWeightController.text = widget.packageData?['minWeight'] ?? '';
       maxWeightController.text = widget.packageData?['maxWeight'] ?? '';
       sizes = widget.packageData?['size'] ?? 'Small';
+      inclusionsController.text = widget.packageData?['inclusionList'] ?? '';
       packageType = widget.packageData?['packageType'] ?? 'Pet Salon';
       availability = widget.packageData?['availability'] ?? 'Available';
       _image = widget.packageData?['image']; // Load the image if it exists
       // Initialize inclusionList from packageData
-      List<dynamic> inclusions = widget.packageData?['inclusion'] ?? [];
-      inclusionList =
-          inclusions.cast<String>(); // Ensure it's a list of Strings
+      inclusionList = widget.packageData?['inclusionList'] ??
+          []; // Ensure it's a list of Strings
     }
   }
 
   void _savePackage() {
-    if (nameController.text.isEmpty || priceController.text.isEmpty) {
-      // Show an alert if name or price is empty
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name and price cannot be empty')),
-      );
-      return;
-    }
     final newPackage = {
       'name': nameController.text,
       'description': descController.text,
       'price': priceController.text,
       'size': sizes,
-      'inclusion': inclusionList,
+      'inclusionList': inclusionList,
       'minWeight': minWeightController.text,
       'maxWeight': maxWeightController.text,
       'packageType': packageType,

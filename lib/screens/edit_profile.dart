@@ -144,6 +144,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       barangayController.text = widget.profileData?['barangay'] ?? '';
       streetController.text = widget.profileData?['street'] ?? '';
       doorNoController.text = widget.profileData?['door no'] ?? '';
+      dropdownValue = widget.profileData?['number of pets'] ?? number.first;
+      petsList = widget.profileData?['petsList'] ?? [];
     }
   }
 
@@ -153,7 +155,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       'time open': timeOpenController.text,
       'time close': timeCloseController.text,
       'pets to cater': petsToCaterController.text,
-      'number of pets': numberOfPetsCaterController.text,
+      'petsList': petsList,
+      'number of pets': dropdownValue,
       'date picker': datePickerController.text,
       'exact address': exactAddressController.text,
       'city': cityController.text,
@@ -302,7 +305,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
-
                 // Add more pets button
                 ElevatedButton.icon(
                   onPressed: _addPet, // Add pet when pressed

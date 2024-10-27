@@ -59,14 +59,6 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
   }
 
   void _saveService() {
-    if (nameController.text.isEmpty || priceController.text.isEmpty) {
-      // Show an alert if name or price is empty
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name and price cannot be empty')),
-      );
-      return;
-    }
-
     final newService = {
       'name': nameController.text,
       'description': descController.text,

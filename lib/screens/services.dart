@@ -249,7 +249,28 @@ class ServicesScreenState extends State<ServicesScreen> {
                               )
                             : const Icon(Icons.image, size: 50),
                         title: Text(package['name']),
-                        subtitle: Text(package['description']),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(package['description'] ?? ''),
+                            const SizedBox(height: 5),
+                            const Text("Inclusions:"),
+                            if (package['inclusionList'] != null &&
+                                package['inclusionList'] is List &&
+                                package['inclusionList'].isNotEmpty)
+                              ...package['inclusionList']
+                                  .map<Widget>(
+                                    (item) => Text(
+                                      "- $item",
+                                      style:
+                                          const TextStyle(color: Colors.grey),
+                                    ),
+                                  )
+                                  .toList()
+                            else
+                              const Text("No inclusion specified"),
+                          ],
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
