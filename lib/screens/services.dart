@@ -170,7 +170,11 @@ class ServicesScreenState extends State<ServicesScreen> {
                               )
                             : const Icon(Icons.image, size: 50),
                         title: Text(service['name']),
-                        subtitle: Text(service['description']),
+                        subtitle: Text(
+                          service['description'].length > 50
+                              ? '${service['description'].substring(0, 50)}... See more'
+                              : service['description'],
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -233,12 +237,10 @@ class ServicesScreenState extends State<ServicesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Row(
                 children: [
-                  // The card displaying service information
+                  // The card displaying package information
                   Expanded(
                     child: Card(
-                      margin: const EdgeInsets.only(
-                          right:
-                              10), // To give some space between card and icon
+                      margin: const EdgeInsets.only(right: 10),
                       child: ListTile(
                         leading: package['image'] != null
                             ? Image.file(
@@ -252,7 +254,12 @@ class ServicesScreenState extends State<ServicesScreen> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(package['description'] ?? ''),
+                            Text(
+                              package['description'] != null &&
+                                      package['description'].length > 50
+                                  ? '${package['description'].substring(0, 50)}... See more'
+                                  : package['description'] ?? '',
+                            ),
                             const SizedBox(height: 5),
                             const Text("Inclusions:"),
                             if (package['inclusionList'] != null &&
