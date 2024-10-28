@@ -187,6 +187,9 @@ class ProfileScreenState extends State<ProfileScreen> {
                       Text(
                           "Full Address: ${profileData['city'] ?? ''} ${profileData['barangay'] ?? ''}"),
                       const SizedBox(height: 10),
+                      Text(
+                          "Full Address: ${profileData['exact address'] ?? ''}"),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),

@@ -168,6 +168,28 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     Navigator.pop(context, updatedProfile);
   }
 
+  Future<void> navigateToPinAddress() async {
+    // Navigate to PinAddress and wait for the result
+    final Map<String, dynamic>? selectedLocation = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PinAddress(),
+      ),
+    );
+
+    // If a location is returned, set it in the controller
+    if (selectedLocation != null) {
+      setState(() {
+        exactAddressController.text =
+            'City: ${selectedLocation['city'] ?? "Not Available"}, '
+            'Province: ${selectedLocation['province'] ?? "Not Available"}, '
+            'Street: ${selectedLocation['streetAddress'] ?? "Not Available"}, '
+            'Latitude: ${selectedLocation['latitude']}, '
+            'Longitude: ${selectedLocation['longitude']}'; // Set location text
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -547,6 +569,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: 20),
                 TextField(
                   controller: exactAddressController,
+                  readOnly: true,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(
@@ -558,13 +581,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                         Icons.location_on,
                         color: Color(0xFFA03E06),
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const PinAddress()),
-                        );
-                      },
+                      onPressed: navigateToPinAddress,
                     ),
                   ),
                 ),

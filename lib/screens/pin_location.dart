@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geocoding/geocoding.dart';
 
 class PinAddress extends StatefulWidget {
   const PinAddress({super.key});
@@ -18,6 +19,9 @@ class PinAddressState extends State<PinAddress>
   double? longitude;
   bool isLoading = true;
   LatLng? pinnedLocation;
+  String? city;
+  String? province;
+  String? streetAddress;
   late AnimationController animationController;
   late Animation<double> animation;
 
@@ -54,7 +58,7 @@ class PinAddressState extends State<PinAddress>
     }
   }
 
-  void onTap(LatLng tappedPoint) {
+  void onTap(LatLng tappedPoint) async {
     setState(() {
       pinnedLocation = tappedPoint;
       latitude = tappedPoint.latitude;
@@ -63,6 +67,26 @@ class PinAddressState extends State<PinAddress>
           'Pinned Location: Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}';
       animationController.forward(from: 0.0); // Reset animation
     });
+    await fetchAddress(tappedPoint); // Fetch address details
+    animationController.forward(from: 0.0); // Reset animation
+  }
+
+  Future<void> fetchAddress(LatLng location) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        location.latitude,
+        location.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        setState(() {
+          city = placemarks[0].locality;
+          province = placemarks[0].administrativeArea;
+          streetAddress = placemarks[0].street;
+        });
+      }
+    } catch (e) {
+      ("Error retrieving address: $e");
+    }
   }
 
   @override
@@ -71,11 +95,32 @@ class PinAddressState extends State<PinAddress>
     super.dispose();
   }
 
+  void confirmLocation() async {
+    if (pinnedLocation != null) {
+      // Use reverse geocoding to get address details
+      Navigator.pop(context, {
+        'latitude': pinnedLocation!.latitude,
+        'longitude': pinnedLocation!.longitude,
+        'city': city,
+        'province': province,
+        'streetAddress': streetAddress,
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Pin Address"),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.check,
+            ),
+            onPressed: confirmLocation,
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
