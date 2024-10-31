@@ -3,6 +3,7 @@ import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/edit_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/screens/service_details.dart';
+import 'package:service_provider/screens/package_details.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -263,22 +264,16 @@ class ServicesScreenState extends State<ServicesScreen> {
                                   ? '${package['description'].substring(0, 50)}... See more'
                                   : package['description'] ?? '',
                             ),
-                            const SizedBox(height: 5),
-                            const Text("Inclusions:"),
-                            if (package['inclusionList'] != null &&
-                                package['inclusionList'] is List &&
-                                package['inclusionList'].isNotEmpty)
-                              ...package['inclusionList']
-                                  .map<Widget>(
-                                    (item) => Text(
-                                      "- $item",
-                                      style:
-                                          const TextStyle(color: Colors.grey),
-                                    ),
-                                  )
-                                  .toList()
-                            else
-                              const Text("No inclusion specified"),
+                            // const SizedBox(height: 5),
+                            // const Text("Inclusions:"),
+                            // if (package['inclusionList'] != null &&
+                            //     package['inclusionList'] is List<String> &&
+                            //     package['inclusionList'].isNotEmpty)
+                            //   ...package['inclusionList']
+                            //       .map<Widget>((pkg) => Text(pkg.toString()))
+                            //       .toList()
+                            // else
+                            //   const Text("No inclusion specified"),
                           ],
                         ),
                         trailing: Row(
@@ -291,19 +286,21 @@ class ServicesScreenState extends State<ServicesScreen> {
                         ),
                         onTap: () async {
                           // Navigate to EditServiceScreen with the service data
-                          final updatedService = await Navigator.push(
+                          final updatedPackage = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  AddPackageScreen(packageData: package),
+                                  PackageDetails(packageData: package),
                             ),
                           );
-                          // If service was edited, update the list
-                          if (updatedService != null) {
+                          // If package was edited, update the list
+                          if (updatedPackage != null) {
                             setState(() {
-                              int index = services.indexOf(package);
-                              services[index] =
-                                  updatedService; // Update with edited service
+                              int index = packages.indexWhere(
+                                  (pkg) => pkg['id'] == updatedPackage['id']);
+                              if (index != -1) {
+                                packages[index] = updatedPackage;
+                              } // Update with edited service });
                             });
                           }
                         },

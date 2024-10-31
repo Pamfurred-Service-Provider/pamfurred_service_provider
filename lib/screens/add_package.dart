@@ -123,7 +123,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       minWeightController.text = widget.packageData?['minWeight'] ?? '';
       maxWeightController.text = widget.packageData?['maxWeight'] ?? '';
       sizes = widget.packageData?['size'] ?? 'Small';
-      inclusionsController.text = widget.packageData?['inclusionList'] ?? '';
+      inclusionList =
+          List<String>.from(widget.packageData?['inclusionList'] ?? []);
       packageType = widget.packageData?['packageType'] ?? 'Pet Salon';
       availability = widget.packageData?['availability'] ?? 'Available';
       _image = widget.packageData?['image']; // Load the image if it exists

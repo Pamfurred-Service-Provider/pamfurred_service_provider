@@ -1,44 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:service_provider/screens/edit_service.dart';
+import 'package:service_provider/screens/add_package.dart';
 
-class ServiceDetails extends StatefulWidget {
-  final Map<String, dynamic> serviceData;
+class PackageDetails extends StatefulWidget {
+  final Map<String, dynamic> packageData;
 
-  const ServiceDetails({super.key, required this.serviceData});
+  const PackageDetails({super.key, required this.packageData});
 
   @override
-  ServiceDetailsState createState() => ServiceDetailsState();
+  PackageDetailsState createState() => PackageDetailsState();
 }
 
-class ServiceDetailsState extends State<ServiceDetails> {
-  late Map<String, dynamic> serviceData;
+class PackageDetailsState extends State<PackageDetails> {
+  late Map<String, dynamic> packageData;
 
   @override
   void initState() {
     super.initState();
-    serviceData = widget.serviceData; // Initialize with the provided data
+    packageData = widget.packageData; // Initialize with the provided data
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(serviceData['name']),
+        title: Text(packageData['name']),
         actions: [
           TextButton(
             onPressed: () async {
-              final updatedService = await Navigator.push(
+              final updatedPackage = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
-                      EditServiceScreen(serviceData: serviceData),
+                      AddPackageScreen(packageData: packageData),
                 ),
               );
-              if (updatedService != null) {
+              if (updatedPackage != null) {
                 setState(() {
-                  serviceData = updatedService; // Update with edited data
+                  packageData = updatedPackage; // Update with edited data
                 });
-                Navigator.pop(context, updatedService);
+                Navigator.pop(context, updatedPackage);
               }
             },
             child: const Text("Edit"),
@@ -50,10 +50,10 @@ class ServiceDetailsState extends State<ServiceDetails> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (serviceData['image'] != null)
+            if (packageData['image'] != null)
               Center(
                 child: Image.file(
-                  serviceData['image'],
+                  packageData['image'],
                   width: 200,
                   height: 200,
                   fit: BoxFit.cover,
@@ -69,7 +69,17 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['description'] ?? '',
+              packageData['description'] ?? '',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              "Package Inclusions:",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              (packageData['inclusionList'] as List<String>?)?.join(', ') ??
+                  'No inclusions',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -78,7 +88,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['availability'] ?? '',
+              packageData['availability'] ?? '',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -87,7 +97,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['size'] ?? '',
+              packageData['size'] ?? '',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -96,7 +106,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              '${serviceData['minWeight']} - ${serviceData['maxWeight']}',
+              '${packageData['minWeight']} - ${packageData['maxWeight']}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -105,7 +115,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['price'] ?? '',
+              packageData['price'] ?? '',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -114,7 +124,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['serviceType'] ?? '',
+              packageData['packageType'] ?? '',
               style: const TextStyle(fontSize: 16),
             ),
           ],
