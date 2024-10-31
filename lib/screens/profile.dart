@@ -166,7 +166,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 20),
                       const Text("Pets to Cater:"),
                       if (profileData['petsList'] != null &&
-                          profileData['petsList'] is List &&
+                          profileData['petsList'] is List<String> &&
                           profileData['petsList'].isNotEmpty)
                         ...profileData['petsList']
                             .map<Widget>((pet) => Text(pet.toString()))
@@ -184,9 +184,6 @@ class ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 20),
-                      Text(
-                          "Full Address: ${profileData['city'] ?? ''} ${profileData['barangay'] ?? ''}"),
-                      const SizedBox(height: 10),
                       Text(
                           "Full Address: ${profileData['exact address'] ?? ''}"),
                       const SizedBox(height: 10),

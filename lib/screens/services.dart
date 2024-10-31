@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/edit_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
+import 'package:service_provider/screens/service_details.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -17,31 +18,31 @@ class ServicesScreenState extends State<ServicesScreen> {
 
   // Method to navigate to the AddServiceScreen and get the new service
   void _navigateToAddService(BuildContext context) async {
-    final result = await Navigator.push(
+    final updatedService = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const EditServiceScreen(),
       ),
     );
 
-    if (result != null) {
+    if (updatedService != null) {
       setState(() {
-        services.add(result);
+        services.add(updatedService);
       });
     }
   }
 
   // Method to navigate to the AddPackageScreen and get the new package
   void _navigateToAddPackage(BuildContext context) async {
-    final result = await Navigator.push(
+    final updatedService = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const AddPackageScreen(),
       ),
     );
-    if (result != null) {
+    if (updatedService != null) {
       setState(() {
-        packages.add(result);
+        packages.add(updatedService);
       });
     }
   }
@@ -185,19 +186,21 @@ class ServicesScreenState extends State<ServicesScreen> {
                         ),
                         onTap: () async {
                           // Navigate to EditServiceScreen with the service data
-                          final result = await Navigator.push(
+                          final updatedService = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  EditServiceScreen(serviceData: service),
+                                  ServiceDetails(serviceData: service),
                             ),
                           );
                           // If service was edited, update the list
-                          if (result != null) {
+                          if (updatedService != null) {
                             setState(() {
-                              int index = services.indexOf(service);
-                              packages[index] =
-                                  result; // Update with edited service
+                              int index = services.indexWhere((service) =>
+                                  service['id'] == updatedService['id']);
+                              if (index != -1) {
+                                services[index] = updatedService;
+                              } // Update with edited service
                             });
                           }
                         },
@@ -288,19 +291,19 @@ class ServicesScreenState extends State<ServicesScreen> {
                         ),
                         onTap: () async {
                           // Navigate to EditServiceScreen with the service data
-                          final result = await Navigator.push(
+                          final updatedService = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  EditServiceScreen(serviceData: package),
+                                  AddPackageScreen(packageData: package),
                             ),
                           );
                           // If service was edited, update the list
-                          if (result != null) {
+                          if (updatedService != null) {
                             setState(() {
                               int index = services.indexOf(package);
                               services[index] =
-                                  result; // Update with edited service
+                                  updatedService; // Update with edited service
                             });
                           }
                         },

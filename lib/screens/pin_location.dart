@@ -41,7 +41,10 @@ class PinAddressState extends State<PinAddress>
     var status = await Permission.location.request();
     if (status.isGranted) {
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best);
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
+        ),
+      );
       setState(() {
         latitude = position.latitude;
         longitude = position.longitude;

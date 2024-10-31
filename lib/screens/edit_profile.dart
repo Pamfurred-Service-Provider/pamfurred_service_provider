@@ -73,7 +73,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Pet'),
-        content: const Text('Are you sure you want to delete this pet?'),
+        content: const Text('Are you sure you want to delete this?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(), // Close dialog
