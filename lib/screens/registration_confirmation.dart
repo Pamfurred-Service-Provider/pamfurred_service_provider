@@ -3,14 +3,15 @@ import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/screens/login.dart';
 import '../components/globals.dart';
 
-class SignUp extends StatefulWidget {
-  const SignUp({super.key});
+class RegistrationConfirmation extends StatefulWidget {
+  const RegistrationConfirmation({super.key});
 
   @override
-  State<SignUp> createState() => _SignUpState();
+  State<RegistrationConfirmation> createState() =>
+      _RegistrationConfirmationState();
 }
 
-class _SignUpState extends State<SignUp> {
+class _RegistrationConfirmationState extends State<RegistrationConfirmation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

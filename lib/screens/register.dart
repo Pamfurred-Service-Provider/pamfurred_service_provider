@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:service_provider/components/custom_padded_button.dart';
 import 'package:service_provider/components/globals.dart';
-import 'package:service_provider/screens/sign_up.dart';
+import 'package:service_provider/screens/registration_confirmation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,6 +13,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class RegisterScreenState extends State<RegisterScreen> {
+  final supabase = Supabase.instance.client;
   // TextEditingControllers
   late Map<String, TextEditingController> controllers = {
     'firstName': TextEditingController(),
@@ -19,6 +21,83 @@ class RegisterScreenState extends State<RegisterScreen> {
     'email': TextEditingController(),
     'phoneNumber': TextEditingController(),
   };
+
+  @override
+  void dispose() {
+    // Dispose controllers to free resources
+    controllers.forEach((_, controller) => controller.dispose());
+    super.dispose();
+  }
+
+  Future<void> registerUser() async {
+    // Retrieve user input from controllers
+    final firstName = controllers['firstName']?.text ?? '';
+    final lastName = controllers['lastName']?.text ?? '';
+    final email = controllers['email']?.text ?? '';
+    final phoneNumber = controllers['phoneNumber']?.text ?? '';
+    if (firstName.isEmpty ||
+        lastName.isEmpty ||
+        email.isEmpty ||
+        phoneNumber.isEmpty) {
+      _showErrorDialog("All fields are required.");
+      return;
+    }
+    try {
+      final response = await supabase.auth.signUp(
+        email: email,
+        password: 'password',
+      );
+
+      if (response.user != null) {
+        print("User created with ID: ${response.user!.id}");
+
+        final serviceProviderResponse =
+            await supabase.from('service_provider').insert({
+          'user_id': response.user!.id, // Link the new user ID
+          'first_name': firstName,
+          'last_name': lastName,
+          'phone_number': phoneNumber,
+          'user_type': 'service_provider',
+          'approval_status': 'pending',
+        });
+        if (serviceProviderResponse.error != null) {
+          // Navigate to the RegistrationConfirmation screen on successful registration
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const RegistrationConfirmation(),
+            ),
+          );
+        } else {
+          _showErrorDialog(serviceProviderResponse.error!.message);
+        }
+      } else {
+        _showErrorDialog("User sign-up failed.");
+      }
+    } catch (e) {
+      _showErrorDialog("An error occurred: $e");
+    }
+  } // Function to show error dialog
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,6 +273,10 @@ class RegisterScreenState extends State<RegisterScreen> {
                   child: IntlPhoneField(
                     cursorColor: Colors.black,
                     initialCountryCode: 'PH',
+                    onChanged: (phone) {
+                      controllers['phoneNumber']!.text =
+                          phone.completeNumber; // Store the complete number
+                    },
                     decoration: InputDecoration(
                         contentPadding: const EdgeInsets.all(10.0),
                         border: OutlineInputBorder(
@@ -210,13 +293,8 @@ class RegisterScreenState extends State<RegisterScreen> {
               Center(
                 child: customPaddedTextButton(
                   text: "Register",
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SignUp(),
-                      ),
-                    );
+                  onPressed: () async {
+                    await registerUser();
                   },
                 ),
               ),
@@ -226,4 +304,8 @@ class RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
+}
+
+extension on AuthResponse {
+  get error => null;
 }
