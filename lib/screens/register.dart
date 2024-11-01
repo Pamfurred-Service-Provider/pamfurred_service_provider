@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:email_validator/email_validator.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:service_provider/components/custom_padded_button.dart';
 import 'package:service_provider/components/globals.dart';
@@ -22,7 +23,7 @@ class RegisterScreenState extends State<RegisterScreen> {
     'establishmentName': TextEditingController(),
     'email': TextEditingController(),
     'phoneNumber': TextEditingController(),
-    'password': TextEditingController(), // Added password controller
+    'password': TextEditingController(),
   };
 
   @override
@@ -32,7 +33,13 @@ class RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  bool _obscureText = true;
+  bool _isLoading = false;
+
   Future<void> registerUser() async {
+    setState(() {
+      _isLoading = true; // Start loading
+    });
     // Retrieve user input from controllers
     final firstName = controllers['firstName']?.text ?? '';
     final lastName = controllers['lastName']?.text ?? '';
@@ -48,7 +55,9 @@ class RegisterScreenState extends State<RegisterScreen> {
         password.isEmpty ||
         phoneNumber.isEmpty) {
       _showErrorDialog("All fields are required.");
-
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
     try {
@@ -64,8 +73,8 @@ class RegisterScreenState extends State<RegisterScreen> {
 
       if (response.user != null) {
         final userId = response.user!.id;
-
-        final serviceProviderResponse = await supabase.from('user').insert({
+// Insert into 'user' table
+        final userInsertResponse = await supabase.from('user').insert({
           'user_id': userId,
           'first_name': firstName,
           'last_name': lastName,
@@ -74,29 +83,54 @@ class RegisterScreenState extends State<RegisterScreen> {
           'password': password,
         }).select();
 
-        // Now, insert into the `service_provider` table with the existing `user_id`
-        await Supabase.instance.client
-            .from('service_provider')
-            .insert({'name': establishmentName, 'user_id': userId}).select();
+        // final serviceProviderResponse = await supabase.from('user').insert({
+        //   'user_id': userId,
+        //   'first_name': firstName,
+        //   'last_name': lastName,
+        //   'phone_number': phoneNumber,
+        //   'user_type': 'service_provider',
+        //   'password': password,
+        // }).select();
 
-        if (serviceProviderResponse.error == null) {
-          // Navigate to the RegistrationConfirmation screen on successful registration
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const RegistrationConfirmation(),
-            ),
-          );
+        // // Now, insert into the `service_provider` table with the existing `user_id`
+        // if (serviceProviderResponse.error == null) {
+        //   await supabase
+        //       .from('service_provider')
+        //       .insert({'name': establishmentName, 'user_id': userId}).select();
+        // Navigate to the RegistrationConfirmation screen on successful registration
+        if (userInsertResponse.isNotEmpty) {
+          final serviceProviderInsertResponse = await supabase
+              .from('service_provider')
+              .insert({'name': establishmentName, 'user_id': userId}).select();
+          if (serviceProviderInsertResponse.isNotEmpty) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const RegistrationConfirmation()),
+              );
+            }
+          } else {
+            // _showErrorDialog(serviceProviderResponse.error!.message);
+            _showErrorDialog(
+                "Failed to add data to the service_provider table.");
+          }
         } else {
-          _showErrorDialog(serviceProviderResponse.error!.message);
+          _showErrorDialog("Failed to add data to the user table.");
         }
       } else {
         _showErrorDialog("User sign-up failed.");
       }
     } catch (e) {
       _showErrorDialog("An error occurred: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Stop loading spinner
+        });
+      }
     }
-  } // Function to show error dialog
+  }
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -290,6 +324,14 @@ class RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 height: primaryTextFieldHeight,
                 child: TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter email address';
+                    } else if (!EmailValidator.validate(value)) {
+                      return 'Invalid Email Address';
+                    }
+                    return null;
+                  },
                   cursorColor: Colors.black,
                   controller: controllers['email'],
                   decoration: InputDecoration(
@@ -383,12 +425,14 @@ class RegisterScreenState extends State<RegisterScreen> {
                   )),
               const SizedBox(height: secondarySizedBox),
               Center(
-                child: customPaddedTextButton(
-                  text: "Register",
-                  onPressed: () async {
-                    registerUser();
-                  },
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : customPaddedTextButton(
+                        text: "Register",
+                        onPressed: () async {
+                          await registerUser();
+                        },
+                      ),
               ),
             ],
           ),
@@ -398,6 +442,4 @@ class RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-extension on AuthResponse {
-  get error => null;
-}
+extension on AuthResponse {}

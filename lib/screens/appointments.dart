@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:service_provider/screens/appointment_details.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -11,50 +12,51 @@ class AppointmentsScreen extends StatefulWidget {
 
 class AppointmentsScreenState extends State<AppointmentsScreen>
     with SingleTickerProviderStateMixin {
+  final supabase = Supabase.instance.client;
   late TabController _tabController;
-  final List<Map<String, dynamic>> todayAppointments = [
-    {
-      'id': '1445547gg5fg1',
-      'date': 'January 2, 2024',
-      'status': 'Upcoming',
-      'name': 'Bob Niño Golosinda',
-      'time': '09:00 AM - 11:00 AM',
-      'phone': '09945876258',
-      'category': 'Dog',
-      'type': 'Pet Salon',
-      'total': '350.00',
-      'services': [
-        {'service': 'Nail Clipping', 'price': '100.00'},
-        {'service': 'Haircut', 'price': '250.00'},
-      ],
-    },
-    {
-      'id': '1445547gg5fg1',
-      'name': 'Lynie Rose Gaa',
-      'date': 'January 2, 2024',
-      'status': 'Done',
-      'time': '11:00 AM - 01:00 PM',
-      'phone': '09945876258',
-      'category': 'Dog',
-      'type': 'Pet Salon',
-      'total': '350.00',
-      'services': [
-        {'service': 'Nail Clipping', 'price': '100.00'},
-        {'service': 'Haircut', 'price': '250.00'},
-      ],
-    },
-    {
-      'name': 'Aillen Gonzaga',
-      'date': 'January 2, 2024',
-      'time': '01:00 PM - 03:00 PM',
-      'status': 'Upcoming',
-    },
-    {
-      'name': 'Arny A Ucab',
-      'date': 'January 2, 2024',
-      'time': '03:00 PM - 05:00 PM',
-      'status': 'Cancelled',
-    },
+  List<Map<String, dynamic>> todayAppointments = [
+    //   {
+    //     'id': '1445547gg5fg1',
+    //     'date': 'January 2, 2024',
+    //     'status': 'Upcoming',
+    //     'name': 'Bob Niño Golosinda',
+    //     'time': '09:00 AM - 11:00 AM',
+    //     'phone': '09945876258',
+    //     'category': 'Dog',
+    //     'type': 'Pet Salon',
+    //     'total': '350.00',
+    //     'services': [
+    //       {'service': 'Nail Clipping', 'price': '100.00'},
+    //       {'service': 'Haircut', 'price': '250.00'},
+    //     ],
+    //   },
+    //   {
+    //     'id': '1445547gg5fg1',
+    //     'name': 'Lynie Rose Gaa',
+    //     'date': 'January 2, 2024',
+    //     'status': 'Done',
+    //     'time': '11:00 AM - 01:00 PM',
+    //     'phone': '09945876258',
+    //     'category': 'Dog',
+    //     'type': 'Pet Salon',
+    //     'total': '350.00',
+    //     'services': [
+    //       {'service': 'Nail Clipping', 'price': '100.00'},
+    //       {'service': 'Haircut', 'price': '250.00'},
+    //     ],
+    //   },
+    //   {
+    //     'name': 'Aillen Gonzaga',
+    //     'date': 'January 2, 2024',
+    //     'time': '01:00 PM - 03:00 PM',
+    //     'status': 'Upcoming',
+    //   },
+    //   {
+    //     'name': 'Arny A Ucab',
+    //     'date': 'January 2, 2024',
+    //     'time': '03:00 PM - 05:00 PM',
+    //     'status': 'Cancelled',
+    //   },
   ];
   final Map<String, Color> statusColors = {
     'Upcoming': const Color.fromRGBO(255, 143, 0, 1),
@@ -66,6 +68,19 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     super.initState();
     _tabController = TabController(
         length: 5, vsync: this, initialIndex: widget.initialTabIndex);
+    fetchAppointments();
+  }
+
+  Future<void> fetchAppointments() async {
+    final response = await supabase.from('appointments').select(
+        '*'); // Customize based on tab selection (e.g., upcoming, today)
+    if (response.error == null) {
+      setState(() {
+        todayAppointments = List<Map<String, dynamic>>.from(response.data);
+      });
+    } else {
+      print("Error fetching appointments:${response.error?.message}");
+    }
   }
 
   @override
@@ -143,12 +158,16 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
           context,
           MaterialPageRoute(
             builder: (context) => AppointmentDetailScreen(
-                appointment: appointment,
-                updateStatus: (newStatus) {
-                  setState(() {
-                    appointment['status'] = newStatus;
-                  });
-                }),
+              appointment: appointment,
+              updateStatus: (newStatus) async {
+                setState(() {
+                  appointment['status'] = newStatus;
+                });
+                await supabase
+                    .from('appointment')
+                    .update({'status': newStatus}).eq('id', appointment['id']);
+              },
+            ),
           ),
         );
         if (updatedStatus != null) {

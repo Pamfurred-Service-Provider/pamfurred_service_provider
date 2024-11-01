@@ -20,7 +20,6 @@ class AuthRedirectState extends State<AuthRedirect> {
 
   Future<void> _checkSession() async {
     final session = Supabase.instance.client.auth.currentSession;
-    print('Session: $session'); // Log the session to the terminal
 
     await Future.delayed(const Duration(seconds: 2)); // Add delay for debugging
     if (session != null) {
@@ -47,7 +46,6 @@ class AuthRedirectState extends State<AuthRedirect> {
           });
         }
       } catch (error) {
-        print("Error checking service_provider table: $error");
         _showErrorDialog("An error occurred. Please try again.");
       }
     } else {

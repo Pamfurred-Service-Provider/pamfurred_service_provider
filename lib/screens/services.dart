@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/edit_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/screens/service_details.dart';
 import 'package:service_provider/screens/package_details.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:service_provider/Widgets/error_dialog.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -13,6 +16,7 @@ class ServicesScreen extends StatefulWidget {
 }
 
 class ServicesScreenState extends State<ServicesScreen> {
+  final supabase = Supabase.instance.client;
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
   String? selectedCategory = 'Pet Grooming'; // Default selected category
@@ -83,6 +87,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                   selectedCategory = 'Pet Grooming';
                 });
                 Navigator.pop(context);
+                _fetchServicesByCategory('Pet Grooming');
               },
             ),
             ListTile(
@@ -92,21 +97,38 @@ class ServicesScreenState extends State<ServicesScreen> {
                   selectedCategory = 'Pet Boarding';
                 });
                 Navigator.pop(context);
+                _fetchServicesByCategory('Pet Boarding');
               },
             ),
             ListTile(
-              title: const Text('Veterinary'),
+              title: const Text('Veterinary Care'),
               onTap: () {
                 setState(() {
                   selectedCategory = 'Veterinary';
                 });
                 Navigator.pop(context);
+                _fetchServicesByCategory('Veterinary');
               },
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _fetchServicesByCategory(String category) async {
+    final response = await supabase
+        .from('service')
+        .select()
+        .contains('service_category', [category]); // Filter by category
+
+    if (response.error == null) {
+      setState(() {
+        services = List<Map<String, dynamic>>.from(response.data);
+      });
+    } else {
+      showErrorDialog(context, "Failed to fetch services");
+    }
   }
 
   @override

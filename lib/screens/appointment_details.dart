@@ -56,10 +56,12 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
-                    setState(() {
-                      dropdownValue = newValue!;
+                    if (newValue != null && newValue != dropdownValue) {
+                      setState(() {
+                        dropdownValue = newValue;
+                      });
                       widget.updateStatus(newValue);
-                    });
+                    }
                   },
                 ),
                 const SizedBox(height: 10),
