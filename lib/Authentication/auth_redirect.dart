@@ -24,7 +24,7 @@ class AuthRedirectState extends State<AuthRedirect> {
 
     await Future.delayed(const Duration(seconds: 2)); // Add delay for debugging
     if (session != null) {
-      final userId = session.user?.id;
+      final userId = session.user.id;
       try {
         final response = await Supabase.instance.client
             .from('service_provider')

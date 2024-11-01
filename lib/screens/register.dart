@@ -14,12 +14,15 @@ class RegisterScreen extends StatefulWidget {
 
 class RegisterScreenState extends State<RegisterScreen> {
   final supabase = Supabase.instance.client;
+
   // TextEditingControllers
   late Map<String, TextEditingController> controllers = {
     'firstName': TextEditingController(),
     'lastName': TextEditingController(),
+    'establishmentName': TextEditingController(),
     'email': TextEditingController(),
     'phoneNumber': TextEditingController(),
+    'password': TextEditingController(), // Added password controller
   };
 
   @override
@@ -33,33 +36,49 @@ class RegisterScreenState extends State<RegisterScreen> {
     // Retrieve user input from controllers
     final firstName = controllers['firstName']?.text ?? '';
     final lastName = controllers['lastName']?.text ?? '';
+    final establishmentName = controllers['establishmentName']?.text ?? '';
     final email = controllers['email']?.text ?? '';
     final phoneNumber = controllers['phoneNumber']?.text ?? '';
+    final password = controllers['password']?.text ?? ''; // Retrieve password
+
     if (firstName.isEmpty ||
         lastName.isEmpty ||
+        establishmentName.isEmpty ||
         email.isEmpty ||
+        password.isEmpty ||
         phoneNumber.isEmpty) {
       _showErrorDialog("All fields are required.");
+
       return;
     }
     try {
       final response = await supabase.auth.signUp(
         email: email,
-        password: 'password',
+        password: password,
+        data: {
+          'firstName': firstName,
+          'lastName': lastName,
+          'phone_number': phoneNumber,
+        },
       );
 
       if (response.user != null) {
-        print("User created with ID: ${response.user!.id}");
+        final userId = response.user!.id;
 
-        final serviceProviderResponse =
-            await supabase.from('service_provider').insert({
-          'sp_id': response.user!.id, // Link the new user ID
+        final serviceProviderResponse = await supabase.from('user').insert({
+          'user_id': userId,
           'first_name': firstName,
           'last_name': lastName,
           'phone_number': phoneNumber,
-          // 'user_type': 'service_provider',
-          'approval_status': 'pending',
-        });
+          'user_type': 'service_provider',
+          'password': password,
+        }).select();
+
+        // Now, insert into the `service_provider` table with the existing `user_id`
+        await Supabase.instance.client
+            .from('service_provider')
+            .insert({'name': establishmentName, 'user_id': userId}).select();
+
         if (serviceProviderResponse.error == null) {
           // Navigate to the RegistrationConfirmation screen on successful registration
           Navigator.pushReplacement(
@@ -220,6 +239,41 @@ class RegisterScreenState extends State<RegisterScreen> {
               RichText(
                 text: const TextSpan(children: [
                   TextSpan(
+                    text: "Establishment name ",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: regularText,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "*",
+                    style: TextStyle(color: primaryColor),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: primarySizedBox),
+              SizedBox(
+                height: primaryTextFieldHeight,
+                child: TextFormField(
+                  cursorColor: Colors.black,
+                  controller: controllers['establishmentName'],
+                  decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.all(10.0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          secondaryBorderRadius,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: secondaryColor),
+                          borderRadius:
+                              BorderRadius.circular(secondaryBorderRadius))),
+                ),
+              ),
+              const SizedBox(height: secondarySizedBox),
+              RichText(
+                text: const TextSpan(children: [
+                  TextSpan(
                     text: "Business email ",
                     style: TextStyle(
                       color: Colors.black,
@@ -249,6 +303,44 @@ class RegisterScreenState extends State<RegisterScreen> {
                           borderSide: const BorderSide(color: secondaryColor),
                           borderRadius:
                               BorderRadius.circular(secondaryBorderRadius))),
+                ),
+              ),
+              const SizedBox(height: secondarySizedBox),
+              RichText(
+                text: const TextSpan(children: [
+                  TextSpan(
+                    text: "Password ",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: regularText,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "*",
+                    style: TextStyle(color: primaryColor),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: primarySizedBox),
+              SizedBox(
+                height: primaryTextFieldHeight,
+                child: TextFormField(
+                  cursorColor: Colors.black,
+                  controller: controllers['password'],
+                  obscureText: true, // Hide the text for password
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.all(10.0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        secondaryBorderRadius,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: secondaryColor),
+                      borderRadius:
+                          BorderRadius.circular(secondaryBorderRadius),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: secondarySizedBox),
@@ -294,7 +386,7 @@ class RegisterScreenState extends State<RegisterScreen> {
                 child: customPaddedTextButton(
                   text: "Register",
                   onPressed: () async {
-                    await registerUser();
+                    registerUser();
                   },
                 ),
               ),
