@@ -53,14 +53,14 @@ class RegisterScreenState extends State<RegisterScreen> {
 
         final serviceProviderResponse =
             await supabase.from('service_provider').insert({
-          'user_id': response.user!.id, // Link the new user ID
+          'sp_id': response.user!.id, // Link the new user ID
           'first_name': firstName,
           'last_name': lastName,
           'phone_number': phoneNumber,
-          'user_type': 'service_provider',
+          // 'user_type': 'service_provider',
           'approval_status': 'pending',
         });
-        if (serviceProviderResponse.error != null) {
+        if (serviceProviderResponse.error == null) {
           // Navigate to the RegistrationConfirmation screen on successful registration
           Navigator.pushReplacement(
             context,
