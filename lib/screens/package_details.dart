@@ -74,12 +74,21 @@ class PackageDetailsState extends State<PackageDetails> {
             ),
             const SizedBox(height: 10),
             const Text(
+              'Pet Specific Service:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              ((packageData['petsList'] as List<String>?)?.join(', ') ??
+                  'No Specified Pet Type'),
+              style: const TextStyle(fontSize: 16),
+            ),
+            const Text(
               "Package Inclusions:",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              (packageData['inclusionList'] as List<String>?)?.join(', ') ??
-                  'No inclusions',
+              ((packageData['inclusionList'] as List<String>?)?.join(', ') ??
+                  'No inclusions'),
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
