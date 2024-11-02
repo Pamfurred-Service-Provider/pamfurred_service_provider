@@ -33,7 +33,7 @@ class RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  bool _obscureText = true;
+  final bool _obscureText = true;
   bool _isLoading = false;
 
   Future<void> registerUser() async {
@@ -165,7 +165,7 @@ class RegisterScreenState extends State<RegisterScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 50.0, vertical: 30.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -15,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 
 class LoginScreenState extends State<LoginScreen> {
   final formKey = GlobalKey<FormState>();
-
+  bool isLoading = false;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool _obscureText = true;
@@ -48,6 +48,23 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     double deviceWidth = deviceWidthDivideOnePointFive(context);
+
+    Future<void> handleLogin() async {
+      setState(() {
+        isLoading = true;
+      });
+
+      // Simulate a delay for the login process
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (formKey.currentState!.validate()) {
+        Navigator.push(context, crossFadeRoute(const MainScreen()));
+      }
+
+      setState(() {
+        isLoading = false;
+      });
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -196,7 +213,7 @@ class LoginScreenState extends State<LoginScreen> {
                               // validator
                               onPressed: () {},
                               child: const Text(
-                                "Forgot passwordd?",
+                                "Forgot password?",
                                 style: TextStyle(
                                   fontSize: regularText,
                                   color: secondaryColor,
@@ -212,36 +229,66 @@ class LoginScreenState extends State<LoginScreen> {
                           SizedBox(
                             width: deviceWidth,
                             height: 50,
-                            child: TextButton(
-                              onPressed: () {
-                                // validator
-                                if (formKey.currentState!.validate()) {
-                                  // Save to database
-                                  Navigator.push(context,
-                                      crossFadeRoute(const MainScreen()));
-                                }
-                              },
-                              style: ButtonStyle(
-                                shape: WidgetStateProperty.all<
-                                    RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        secondaryBorderRadius),
-                                  ),
-                                ),
-                                backgroundColor: WidgetStateProperty.all<Color>(
-                                  primaryColor,
-                                ),
-                              ),
-                              child: const Text(
-                                "Login",
-                                style: TextStyle(
-                                  fontSize: regularText,
-                                  color: Colors.white,
-                                ),
+                            child: Center(
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                child: isLoading
+                                    ? Container(
+                                        key: const ValueKey('loading'),
+                                        width: double.infinity,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              primaryColor, // Matches button color for visibility
+                                          borderRadius: BorderRadius.circular(
+                                              secondaryBorderRadius),
+                                        ),
+                                        child: const Center(
+                                          child: SizedBox(
+                                            height: 24,
+                                            width: 24,
+                                            child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white),
+                                              strokeWidth: 2.0,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : SizedBox(
+                                        key: const ValueKey('loginButton'),
+                                        width: double.infinity,
+                                        height: 50,
+                                        child: Material(
+                                          color:
+                                              primaryColor, // Set consistent color here
+                                          borderRadius: BorderRadius.circular(
+                                              secondaryBorderRadius),
+                                          child: InkWell(
+                                            onTap: () async {
+                                              if (!isLoading) {
+                                                await handleLogin();
+                                              }
+                                            },
+                                            borderRadius: BorderRadius.circular(
+                                                secondaryBorderRadius),
+                                            child: const Center(
+                                              child: Text(
+                                                "Login",
+                                                style: TextStyle(
+                                                  fontSize: regularText,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
+
                           const SizedBox(height: 24),
                           SizedBox(
                             width: deviceWidth,
