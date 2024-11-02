@@ -2,8 +2,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:service_provider/Authentication/auth_redirect.dart';
 import 'package:service_provider/components/globals.dart';
+import 'package:service_provider/screens/main_screen.dart';
+import 'package:service_provider/screens/register.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:service_provider/screens/services.dart';
+import 'package:service_provider/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +32,7 @@ class MyApp extends StatelessWidget {
         colorScheme:
             Theme.of(context).colorScheme.copyWith(primary: primaryColor),
       ),
-      home: const ServicesScreen(),
+      home: const MainScreen(),
     );
   }
 }

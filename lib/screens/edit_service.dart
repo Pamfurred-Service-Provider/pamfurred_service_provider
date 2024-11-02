@@ -19,9 +19,11 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
   final TextEditingController priceController = TextEditingController();
   final TextEditingController minWeightController = TextEditingController();
   final TextEditingController maxWeightController = TextEditingController();
+  final TextEditingController petsToCaterController = TextEditingController();
 
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
+  List<String> petsList = []; // List to store pets
 
   // Method to pick an image from the gallery
   Future<void> changeImage() async {
@@ -32,6 +34,75 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
             File(pickedFile.path); // Update the state with the selected image
       });
     }
+  }
+
+// Method to add pet to the list
+  Future<void> _addPet() async {
+    String? newPet = await _showAddPetDialog();
+    if (newPet != null && newPet.isNotEmpty) {
+      setState(() {
+        petsList.add(newPet); // Add pet to the list
+      });
+    }
+  }
+
+  // Method to remove a pet from the list
+  void _removePet(int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Pet'),
+        content: const Text('Are you sure you want to delete this?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(), // Close dialog
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() => petsList.removeAt(index)); // Remove pet
+              Navigator.of(context).pop(); // Close dialog
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  } // Dialog to input pet name
+
+  Future<String?> _showAddPetDialog() async {
+    String petCategory = '';
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Pet'),
+          content: TextField(
+            autofocus: true,
+            decoration: const InputDecoration(hintText: 'Enter pet category'),
+            onChanged: (value) {
+              petCategory = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context)
+                    .pop(); // Close the dialog without returning anything
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context)
+                    .pop(petCategory); // Return entered category
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   //Static data for pet sizes
@@ -51,6 +122,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
       priceController.text = widget.serviceData?['price'] ?? '';
       minWeightController.text = widget.serviceData?['minWeight'] ?? '';
       maxWeightController.text = widget.serviceData?['maxWeight'] ?? '';
+      petsToCaterController.text = widget.serviceData?['pets to cater'] ?? '';
       sizes = widget.serviceData?['size'] ?? 'Small';
       serviceType = widget.serviceData?['serviceType'] ?? 'Pet Salon';
       availability = widget.serviceData?['availability'] ?? 'Available';
@@ -66,6 +138,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
       'size': sizes,
       'minWeight': minWeightController.text,
       'maxWeight': maxWeightController.text,
+      'pets to cater': petsToCaterController.text,
       'serviceType': serviceType,
       'availability': availability,
       'image': _image, // Used for the service icon in the service screen
@@ -152,6 +225,53 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
                 borderRadius: BorderRadius.all(Radius.circular(12.0)),
               ),
             ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            "Pet specific service",
+            style: TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 20),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: petsList.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Card(
+                  elevation: 4.0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: ListTile(
+                    title: Text(
+                      petsList[index],
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(
+                        Icons.delete,
+                        color: Color.fromRGBO(160, 62, 6, 1),
+                      ),
+                      onPressed: () {
+                        _removePet(index); // Remove pet from the list
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _addPet, // Add pet when pressed
+            icon: const Icon(Icons.add),
+            label: const Text("Add More"),
+            // label: const Text("Add Pet Category"),
           ),
           const SizedBox(height: 10),
           const Text(
