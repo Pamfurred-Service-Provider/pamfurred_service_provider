@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart'; // For Flutter UI components like Scaffold, Navigator, MaterialPageRoute, etc.
+import 'package:flutter/material.dart';
 import 'package:service_provider/screens/login.dart';
 import 'package:service_provider/screens/main_screen.dart';
-import 'package:service_provider/screens/register.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // For using Supabase in Flutter
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRedirect extends StatefulWidget {
   const AuthRedirect({super.key});
@@ -21,34 +20,18 @@ class AuthRedirectState extends State<AuthRedirect> {
   Future<void> _checkSession() async {
     final session = Supabase.instance.client.auth.currentSession;
 
-    await Future.delayed(const Duration(seconds: 2)); // Add delay for debugging
+    // Add a delay for debugging if necessary
+    await Future.delayed(const Duration(seconds: 2));
+
     if (session != null) {
-      final userId = session.user.id;
-      try {
-        final response = await Supabase.instance.client
-            .from('service_provider')
-            .select()
-            .eq('sp_id', userId)
-            .single();
-        if (response.error != null || response.data == null) {
-          // User is logged in, navigate to Home Screen
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const RegisterScreen()),
-            );
-          });
-        } else {
-          // User is not logged in, navigate to Login Screen
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MainScreen()),
-            );
-          });
-        }
-      } catch (error) {
-        _showErrorDialog("An error occurred. Please try again.");
-      }
+      // If there is an active session, navigate to MainScreen
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      });
     } else {
+      // If there is no session, navigate to LoginScreen
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -57,29 +40,13 @@ class AuthRedirectState extends State<AuthRedirect> {
     }
   }
 
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Error'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body:
-          Center(child: CircularProgressIndicator()), // While checking session
+      body: Center(
+        child:
+            CircularProgressIndicator(), // Show loading indicator while checking session
+      ),
     );
   }
 }

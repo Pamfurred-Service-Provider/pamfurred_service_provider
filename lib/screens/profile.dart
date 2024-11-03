@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/screens/edit_profile.dart';
 import 'package:service_provider/screens/login.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({
-    super.key,
-  });
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => ProfileScreenState();
@@ -16,7 +15,62 @@ class ProfileScreen extends StatefulWidget {
 class ProfileScreenState extends State<ProfileScreen> {
   File? image;
   final ImagePicker picker = ImagePicker();
-  Map<String, dynamic> profileData = {};
+  Map<String, dynamic>? profileData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final userSession = Supabase.instance.client.auth.currentSession;
+
+      if (userSession == null) {
+        throw Exception("User not logged in");
+      }
+
+      // Get user ID from session
+      final userId = userSession.user.id;
+
+      print('User ID: $userId');
+
+      // Fetch the user data
+      final response = await Supabase.instance.client
+          .from('service_provider')
+          .select('name, image, category,'
+              'time_open, time_close, pets_catered, latitude, longitude, '
+              'sentiment_label, approval_status')
+          .eq('user_id', userId)
+          .single(); // This will throw an error if multiple rows are found
+
+      print('response: $response');
+      // Handle the data correctly
+      if (response != null) {
+        setState(() {
+          profileData =
+              response as Map<String, dynamic>; // Access the data directly
+          isLoading = false;
+        });
+      } else {
+        throw Exception("Error fetching user data: ${response.error.message}");
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+      setState(() {
+        isLoading = false; // Stop loading even on error
+      });
+      // Show a snackbar on error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load user data')),
+        );
+      }
+    }
+  }
+
   // Method to pick an image from the gallery
   Future<void> changeImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -39,7 +93,7 @@ class ProfileScreenState extends State<ProfileScreen> {
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
         profileData = result;
-        debugPrint('Updated profile data: $profileData'); // Debug statement
+        print('Updated profile data: $profileData');
       });
     }
   }
@@ -54,10 +108,10 @@ class ProfileScreenState extends State<ProfileScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: Container(),
-                ), // Spacer to push content to the right
+                    child: Container()), // Spacer to push content to the right
                 Text(
-                  profileData['establishment name'] ?? '',
+                  profileData?['name'] ??
+                      '', // Assuming 'name' is in your profile data
                   style: const TextStyle(
                     fontSize: 20,
                     color: Color.fromRGBO(160, 62, 6, 1),
@@ -71,12 +125,15 @@ class ProfileScreenState extends State<ProfileScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.logout, size: 30),
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
+                        // Logout the user
+                        Supabase.instance.client.auth.signOut().then((_) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        });
                       },
                     ),
                   ),
@@ -92,12 +149,20 @@ class ProfileScreenState extends State<ProfileScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(150.0),
                       child: image == null
-                          ? Image.asset(
-                              'assets/Image_null.png',
-                              width: 200,
-                              height: 200,
-                              fit: BoxFit.fill,
-                            )
+                          ? (profileData?['image'] != null &&
+                                  profileData!['image'].isNotEmpty
+                              ? Image.network(
+                                  profileData!['image'],
+                                  width: 200,
+                                  height: 200,
+                                  fit: BoxFit.fill,
+                                )
+                              : Image.asset(
+                                  'assets/Image_null.png',
+                                  width: 200,
+                                  height: 200,
+                                  fit: BoxFit.fill,
+                                ))
                           : Image.file(
                               image!, // Display the picked image
                               width: 200,
@@ -122,10 +187,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                const Divider(
-                  indent: 16.0,
-                  endIndent: 16.0,
-                ),
+                const Divider(indent: 16.0, endIndent: 16.0),
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -153,9 +215,9 @@ class ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Opening Time: ${profileData['time open'] ?? ''}"),
+                      Text("Opening Time: ${profileData?['time_open']}"),
                       const SizedBox(height: 10),
-                      Text("Closing Time: ${profileData['time close'] ?? ''}"),
+                      Text("Closing Time: ${profileData?['time_close']}"),
                       const SizedBox(height: 20),
                       const Divider(),
                       const Text(
@@ -165,17 +227,24 @@ class ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 20),
                       const Text("Pets to Cater:"),
-                      if (profileData['petsList'] != null &&
-                          profileData['petsList'] is List<String> &&
-                          profileData['petsList'].isNotEmpty)
-                        ...profileData['petsList']
-                            .map<Widget>((pet) => Text(pet.toString()))
-                            .toList()
-                      else
-                        const Text("No pets specified"),
+                      if (profileData?['pets_catered'] != null)
+                        // Check if 'pets_catered' is of type List or can be converted to a List
+                        if (profileData!['pets_catered'] is List)
+                          ...profileData!['pets_catered']
+                              .map<Widget>((pet) => Text(pet.toString()))
+                              .toList()
+                        else if (profileData?['pets_catered'] is Map)
+                          // If pets_catered is a map, you might need to convert it to a list
+                          ...profileData?['pets_catered']
+                              .entries
+                              .map<Widget>((entry) =>
+                                  Text('${entry.key}: ${entry.value}'))
+                              .toList()
+                        else
+                          const Text("No pets specified"),
                       const SizedBox(height: 10),
                       Text(
-                          "Number of Pets Catered per day: ${profileData['number of pets'] ?? ''}"),
+                          "Number of Pets Catered per day: ${profileData?['number_of_pets'] ?? ''}"),
                       const SizedBox(height: 20),
                       const Divider(),
                       const Text(
@@ -185,7 +254,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                          "Full Address: ${profileData['exact address'] ?? ''}"),
+                          "Full Address: ${profileData?['exact_address'] ?? ''}"),
                       const SizedBox(height: 10),
                     ],
                   ),
