@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/screens/register.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../components/globals.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool _obscureText = true;
+  String loginErrorMessage = ''; // Store error message for validation
 
   late FocusNode emailFocusNode;
   late FocusNode passwordFocusNode;
@@ -45,26 +47,59 @@ class LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    double deviceWidth = deviceWidthDivideOnePointFive(context);
+  Future<void> handleLogin() async {
+    if (!formKey.currentState!.validate()) return;
 
-    Future<void> handleLogin() async {
-      setState(() {
-        isLoading = true;
-      });
+    setState(() {
+      isLoading = true;
+      loginErrorMessage = ''; // Clear any previous errors
+    });
 
-      // Simulate a delay for the login process
-      await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Supabase login process
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
 
-      if (formKey.currentState!.validate()) {
-        Navigator.push(context, crossFadeRoute(const MainScreen()));
+      if (response.user != null) {
+        // Check if email is verified
+        final isEmailVerified = response.user!.emailConfirmedAt != null;
+
+        if (isEmailVerified) {
+          // Successful login
+          Navigator.push(context, crossFadeRoute(const MainScreen()));
+        } else {
+          // Email not verified - set the error message
+          setState(() {
+            loginErrorMessage =
+                'Account is not verified by admin.'; // Updated message
+          });
+          formKey.currentState!
+              .validate(); // Trigger the form to show the error
+        }
+      } else {
+        // Display error if login fails
+        setState(() {
+          loginErrorMessage = 'Invalid email or password';
+        });
+        formKey.currentState!.validate();
       }
-
+    } catch (error) {
+      setState(() {
+        loginErrorMessage = 'Please wait for account verification.';
+      });
+      formKey.currentState!.validate();
+    } finally {
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double deviceWidth = deviceWidthDivideOnePointFive(context);
 
     return Scaffold(
       body: SafeArea(
@@ -88,15 +123,12 @@ class LoginScreenState extends State<LoginScreen> {
                             width: deviceWidth / 1.25,
                             fit: BoxFit.contain,
                           ),
-                          const SizedBox(
-                            height: 24,
-                          ),
+                          const SizedBox(height: 24),
                           // Email address field
                           SizedBox(
                             width: deviceWidth,
                             height: 50,
                             child: TextFormField(
-                              // validator
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter email address';
@@ -110,10 +142,7 @@ class LoginScreenState extends State<LoginScreen> {
                               controller: emailController,
                               decoration: InputDecoration(
                                 contentPadding: const EdgeInsets.all(10.0),
-                                prefixIcon: const Icon(
-                                  Icons.person,
-                                  size: 19,
-                                ),
+                                prefixIcon: const Icon(Icons.person, size: 19),
                                 labelText: emailFocusNode.hasFocus
                                     ? ''
                                     : 'Email address',
@@ -130,40 +159,30 @@ class LoginScreenState extends State<LoginScreen> {
                                   borderSide: BorderSide.none,
                                 ),
                               ),
-                              style: const TextStyle(
-                                fontSize: regularText,
-                              ),
+                              style: const TextStyle(fontSize: regularText),
                             ),
                           ),
-                          const SizedBox(
-                            height: 16,
-                          ),
+                          const SizedBox(height: 16),
                           // Password field
                           SizedBox(
                             width: deviceWidth,
                             height: 50,
                             child: TextFormField(
-                              textAlignVertical: TextAlignVertical.center,
                               cursorColor: const Color.fromRGBO(74, 74, 74, 1),
                               focusNode: passwordFocusNode,
                               controller: passwordController,
                               obscureText: _obscureText,
-                              // validator
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return "Please enter password";
                                 }
-
                                 return null;
                               },
                               decoration: InputDecoration(
                                 contentPadding: const EdgeInsets.all(10.0),
                                 prefixIcon: Transform.rotate(
                                   angle: 40,
-                                  child: const Icon(
-                                    Icons.key,
-                                    size: 19,
-                                  ),
+                                  child: const Icon(Icons.key, size: 19),
                                 ),
                                 labelText: passwordFocusNode.hasFocus
                                     ? ''
@@ -174,17 +193,18 @@ class LoginScreenState extends State<LoginScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     GestureDetector(
-                                      onTap: (() {
+                                      onTap: () {
                                         setState(() {
                                           _obscureText = !_obscureText;
                                         });
-                                      }),
+                                      },
                                       child: Icon(
-                                          _obscureText
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
-                                          size: 19),
-                                    )
+                                        _obscureText
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                        size: 19,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 floatingLabelBehavior:
@@ -198,34 +218,23 @@ class LoginScreenState extends State<LoginScreen> {
                                   borderSide: BorderSide.none,
                                 ),
                               ),
-                              style: const TextStyle(
-                                fontSize: regularText,
-                              ),
+                              style: const TextStyle(fontSize: regularText),
                             ),
                           ),
-                          const SizedBox(
-                            height: 24,
-                          ),
-                          Container(
-                            width: deviceWidth,
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              // validator
-                              onPressed: () {},
-                              child: const Text(
-                                "Forgot password?",
-                                style: TextStyle(
+                          const SizedBox(height: 16),
+                          // Display error message
+                          if (loginErrorMessage.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Text(
+                                loginErrorMessage,
+                                style: const TextStyle(
+                                  color: Colors.red,
                                   fontSize: regularText,
-                                  color: secondaryColor,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: secondaryColor,
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(
-                            height: 24,
-                          ),
+                          // Login Button
                           SizedBox(
                             width: deviceWidth,
                             height: 50,
@@ -238,8 +247,7 @@ class LoginScreenState extends State<LoginScreen> {
                                         width: double.infinity,
                                         height: 50,
                                         decoration: BoxDecoration(
-                                          color:
-                                              primaryColor, // Matches button color for visibility
+                                          color: primaryColor,
                                           borderRadius: BorderRadius.circular(
                                               secondaryBorderRadius),
                                         ),
@@ -261,8 +269,7 @@ class LoginScreenState extends State<LoginScreen> {
                                         width: double.infinity,
                                         height: 50,
                                         child: Material(
-                                          color:
-                                              primaryColor, // Set consistent color here
+                                          color: primaryColor,
                                           borderRadius: BorderRadius.circular(
                                               secondaryBorderRadius),
                                           child: InkWell(
@@ -288,8 +295,8 @@ class LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 24),
+                          // Register prompt
                           SizedBox(
                             width: deviceWidth,
                             child: RichText(
@@ -299,24 +306,20 @@ class LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   const TextSpan(
                                     text: "Don't have an account? ",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                    ),
+                                    style: TextStyle(color: Colors.black),
                                   ),
                                   TextSpan(
                                     text: "Register",
-                                    style: const TextStyle(
-                                      color: primaryColor,
-                                    ),
+                                    style: const TextStyle(color: primaryColor),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         Navigator.push(
-                                            context,
-                                            rightToLeftRoute(
-                                                const RegisterScreen()));
-                                        // rightToLeftRoute(const RegisterTest()));
+                                          context,
+                                          rightToLeftRoute(
+                                              const RegisterScreen()),
+                                        );
                                       },
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
@@ -340,7 +343,7 @@ class LoginScreenState extends State<LoginScreen> {
                           TextSpan(text: " • "),
                           TextSpan(text: "Privacy Policy"),
                           TextSpan(text: " • "),
-                          TextSpan(text: "Terms of use")
+                          TextSpan(text: "Terms of use"),
                         ],
                       ),
                     ),
