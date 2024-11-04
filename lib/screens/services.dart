@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/screens/add_package.dart';
-import 'package:service_provider/screens/edit_service.dart';
+import 'package:service_provider/screens/add_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/screens/service_details.dart';
 import 'package:service_provider/screens/package_details.dart';
@@ -16,16 +16,90 @@ class ServicesScreen extends StatefulWidget {
 
 class ServicesScreenState extends State<ServicesScreen> {
   final supabase = Supabase.instance.client;
+  String? serviceProviderId; // Nullable to allow dynamic assignment
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
   String? selectedCategory = 'Pet Grooming'; // Default selected category
 
-  // Method to navigate to the AddServiceScreen and get the new service
+  @override
+  void initState() {
+    super.initState();
+    _initializeSession();
+  }
+
+  Future<void> _initializeSession() async {
+    try {
+      final serviceSession = supabase.auth.currentSession;
+      if (serviceSession == null) {
+        throw Exception("User not logged in");
+      }
+      final userId = serviceSession.user.id;
+      print('User ID: $userId');
+
+// Fetch the service provider ID (sp_id) using user_id
+      final spResponse = await supabase
+          .from('service_provider') // Assuming this is the table name
+          .select('sp_id')
+          .eq('user_id', userId)
+          .single();
+
+      if (spResponse == null || spResponse['sp_id'] == null) {
+        throw Exception("No service provider ID found for this user");
+      }
+
+      // Assign the retrieved sp_id
+      serviceProviderId = spResponse['sp_id'];
+      print('SP ID: $serviceProviderId');
+
+      // Now fetch the services and packages
+      await _fetchServices();
+      await _fetchPackages();
+    } catch (e) {
+      showErrorDialog(context, "Error fetching services: $e");
+    }
+  }
+
+  Future<void> _fetchServices() async {
+    try {
+      if (serviceProviderId == null) return;
+
+      final response = await supabase
+          .from('serviceprovider_service')
+          .select('*, service(service_name, price, service_image)')
+          .eq('sp_id', serviceProviderId);
+      print('Response: $response'); // Log the entire response
+
+      // Check if the response contains data
+      if (response is List && response.isNotEmpty) {
+        setState(() {
+          services = List<Map<String, dynamic>>.from(response.map((item) {
+            return {
+              'name': item['service']['service_name'] ?? 'Unknown',
+              'price': item['service']['price'] ?? 0,
+              // 'size': item['service']['size'],
+              // 'min_weight': item['service']['min_weight'],
+              // 'max_weight': item['service']['max_weight'],
+              'image': item['service']['service_image'] ??
+                  'assets/images/default_image.png', // Default image path
+            };
+          }));
+        });
+        print('Processed services: $services'); // Log the processed services
+      } else {
+        showErrorDialog(context, "Unexpected response format: ${response}");
+      }
+    } catch (e) {
+      showErrorDialog(context, "Error fetching services: $e");
+    }
+  }
+
   void _navigateToAddService(BuildContext context) async {
     final updatedService = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const EditServiceScreen(),
+        builder: (context) => const AddServiceScreen(
+          serviceProviderId: '082070ee-2f73-414d-8ab6-b7fdf811eab5',
+        ),
       ),
     );
 
@@ -33,6 +107,35 @@ class ServicesScreenState extends State<ServicesScreen> {
       setState(() {
         services.add(updatedService);
       });
+    }
+  }
+
+  Future<void> _fetchPackages() async {
+    try {
+      if (serviceProviderId == null) return;
+
+      final response = await supabase
+          .from('serviceprovider_package')
+          .select('*, package(package_name, price, package_image)')
+          .eq('sp_id', serviceProviderId);
+      if (response is List && response.isNotEmpty) {
+        setState(() {
+          packages = List<Map<String, dynamic>>.from(response.map((item) {
+            return {
+              'id': item['id'], // Ensure you fetch the id
+              'name': item['package']['package_name'] ?? 'Unknown',
+              'price': item['package']['price'] ?? 0,
+              'image': item['package']['package_image'] ??
+                  'assets/images/default_image.png',
+            };
+          }));
+        });
+        print('Processed packages: $packages');
+      } else {
+        showErrorDialog(context, "No packages found for this provider.");
+      }
+    } catch (e) {
+      showErrorDialog(context, "Error fetching packages: $e");
     }
   }
 
@@ -121,9 +224,9 @@ class ServicesScreenState extends State<ServicesScreen> {
         .select()
         .contains('service_category', [category]); // Filter by category
 
-    if (response.error == null) {
+    if (response == null) {
       setState(() {
-        services = List<Map<String, dynamic>>.from(response.data);
+        services = List<Map<String, dynamic>>.from(response);
       });
     } else {
       showErrorDialog(context, "Failed to fetch services");
@@ -184,48 +287,43 @@ class ServicesScreenState extends State<ServicesScreen> {
                           right:
                               10), // To give some space between card and icon
                       child: ListTile(
-                        leading: service['image'] != null
-                            ? Image.file(
+                        leading: service['image'] != null &&
+                                service['image'].isNotEmpty
+                            ? Image.network(
                                 service['image'],
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
                               )
                             : const Icon(Icons.image, size: 50),
-                        title: Text(service['name']),
-                        subtitle: Text(
-                          service['description'].length > 50
-                              ? '${service['description'].substring(0, 50)}... See more'
-                              : service['description'],
-                        ),
+
+                        title: Text(service['name'] ?? 'Unknown Name'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              '₱${service['price']}',
-                            ),
+                            Text('₱${service['price'] ?? 'N/A'}'),
                           ],
                         ),
-                        onTap: () async {
-                          // Navigate to EditServiceScreen with the service data
-                          final updatedService = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ServiceDetails(serviceData: service),
-                            ),
-                          );
-                          // If service was edited, update the list
-                          if (updatedService != null) {
-                            setState(() {
-                              int index = services.indexWhere((service) =>
-                                  service['id'] == updatedService['id']);
-                              if (index != -1) {
-                                services[index] = updatedService;
-                              } // Update with edited service
-                            });
-                          }
-                        },
+                        // onTap: () async {
+                        //   // Navigate to EditServiceScreen with the service data
+                        //   final updatedService = await Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(
+                        //       builder: (context) =>
+                        //           ServiceDetails(serviceData: service),
+                        //     ),
+                        //   );
+                        //   // If service was edited, update the list
+                        //   if (updatedService != null) {
+                        //     setState(() {
+                        //       int index = services.indexWhere((service) =>
+                        //           service['id'] == updatedService['id']);
+                        //       if (index != -1) {
+                        //         services[index] = updatedService;
+                        //       } // Update with edited service
+                        //     });
+                        //   }
+                        // },
                       ),
                     ),
                   ),
@@ -267,8 +365,9 @@ class ServicesScreenState extends State<ServicesScreen> {
                     child: Card(
                       margin: const EdgeInsets.only(right: 10),
                       child: ListTile(
-                        leading: package['image'] != null
-                            ? Image.file(
+                        leading: package['image'] != null &&
+                                package['image'].isNotEmpty
+                            ? Image.network(
                                 package['image'],
                                 width: 50,
                                 height: 50,
@@ -281,9 +380,10 @@ class ServicesScreenState extends State<ServicesScreen> {
                           children: [
                             Text(
                               package['description'] != null &&
-                                      package['description'].length > 50
+                                      package['description']!.length > 50
                                   ? '${package['description'].substring(0, 50)}... See more'
-                                  : package['description'] ?? '',
+                                  : package['description'] ??
+                                      'No description available',
                             ),
                             // const SizedBox(height: 5),
                             // const Text("Inclusions:"),

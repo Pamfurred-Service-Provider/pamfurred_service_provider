@@ -65,15 +65,6 @@ class ServiceDetailsState extends State<ServiceDetails> {
               ),
             const SizedBox(height: 20),
             const Text(
-              "Description:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              serviceData['description'] ?? '',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            const Text(
               'Pet Specific Service:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
