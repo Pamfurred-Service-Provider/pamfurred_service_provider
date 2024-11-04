@@ -40,9 +40,11 @@ class ProfileScreenState extends State<ProfileScreen> {
       // Fetch the user data
       final response = await Supabase.instance.client
           .from('service_provider')
-          .select('name, image, category,'
-              'time_open, time_close, pets_catered, latitude, longitude, '
-              'sentiment_label, approval_status')
+          .select(
+            'name, image, category,'
+            'time_open, time_close, pets_catered, latitude, longitude,'
+            'sentiment_label, approval_status, number_of_pets',
+          )
           .eq('user_id', userId)
           .single(); // This will throw an error if multiple rows are found
 
@@ -110,14 +112,13 @@ class ProfileScreenState extends State<ProfileScreen> {
                 Expanded(
                     child: Container()), // Spacer to push content to the right
                 Text(
-                  profileData?['name'] ??
-                      '', // Assuming 'name' is in your profile data
+                  profileData?['name'] ?? '',
                   style: const TextStyle(
                     fontSize: 20,
                     color: Color.fromRGBO(160, 62, 6, 1),
                     fontWeight: FontWeight.bold,
                   ),
-                  textAlign: TextAlign.center, // Center the text
+                  textAlign: TextAlign.center,
                 ),
                 Expanded(
                   child: Align(
@@ -125,7 +126,6 @@ class ProfileScreenState extends State<ProfileScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.logout, size: 30),
                       onPressed: () {
-                        // Logout the user
                         Supabase.instance.client.auth.signOut().then((_) {
                           Navigator.pushReplacement(
                             context,
@@ -164,7 +164,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                                   fit: BoxFit.fill,
                                 ))
                           : Image.file(
-                              image!, // Display the picked image
+                              image!,
                               width: 200,
                               height: 200,
                               fit: BoxFit.fill,
@@ -174,8 +174,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                       bottom: 10,
                       right: 10,
                       child: ElevatedButton(
-                        onPressed:
-                            changeImage, // Call the changeImage method to pick an image
+                        onPressed: changeImage,
                         child: const Row(
                           children: [
                             Icon(Icons.camera_alt_rounded, size: 16),
@@ -215,9 +214,11 @@ class ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Opening Time: ${profileData?['time_open']}"),
+                      _buildDetailRow(
+                          "Opening Time:", profileData?['time_open']),
                       const SizedBox(height: 10),
-                      Text("Closing Time: ${profileData?['time_close']}"),
+                      _buildDetailRow(
+                          "Closing Time:", profileData?['time_close']),
                       const SizedBox(height: 20),
                       const Divider(),
                       const Text(
@@ -226,25 +227,29 @@ class ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 20),
-                      const Text("Pets to Cater:"),
                       if (profileData?['pets_catered'] != null)
-                        // Check if 'pets_catered' is of type List or can be converted to a List
                         if (profileData!['pets_catered'] is List)
-                          ...profileData!['pets_catered']
-                              .map<Widget>((pet) => Text(pet.toString()))
-                              .toList()
+                          Text(
+                            profileData!['pets_catered']
+                                .map((pet) => pet.toString())
+                                .join(', '), // Join pets with commas
+                            style: const TextStyle(
+                                fontSize: 16), // Optional styling
+                          )
                         else if (profileData?['pets_catered'] is Map)
-                          // If pets_catered is a map, you might need to convert it to a list
-                          ...profileData?['pets_catered']
-                              .entries
-                              .map<Widget>((entry) =>
-                                  Text('${entry.key}: ${entry.value}'))
-                              .toList()
+                          Text(
+                            profileData!['pets_catered']
+                                .entries
+                                .map((entry) => '${entry.key}: ${entry.value}')
+                                .join(', '), // Join entries with commas
+                            style: const TextStyle(
+                                fontSize: 16), // Optional styling
+                          )
                         else
                           const Text("No pets specified"),
                       const SizedBox(height: 10),
-                      Text(
-                          "Number of Pets Catered per day: ${profileData?['number_of_pets'] ?? ''}"),
+                      _buildDetailRow("Number of Pets Catered per day:",
+                          profileData?['number_of_pets']?.toString() ?? ''),
                       const SizedBox(height: 20),
                       const Divider(),
                       const Text(
@@ -253,8 +258,11 @@ class ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 20),
-                      Text(
-                          "Full Address: ${profileData?['exact_address'] ?? ''}"),
+                      _buildDetailRow(
+                        "Location:",
+                        "Latitude: ${profileData?['latitude'] ?? ''}, "
+                            "Longitude: ${profileData?['longitude'] ?? ''}",
+                      ),
                       const SizedBox(height: 10),
                     ],
                   ),
@@ -264,6 +272,27 @@ class ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String? value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          value ?? 'N/A', // Default to 'N/A' if value is null
+          style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black54), // Different style for values
+        ),
+      ],
     );
   }
 }
