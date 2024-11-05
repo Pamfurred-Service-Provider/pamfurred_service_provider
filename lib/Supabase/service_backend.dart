@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:service_provider/screens/edit_profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceBackend {
@@ -15,7 +14,8 @@ class ServiceBackend {
     required String serviceType, // or List/Map if complex JSON
     required bool availability, // Boolean for availability_status
     required File? image,
-    required String? serviceCategory, // This should be checked
+    required String? serviceCategory,
+    required String serviceProviderId, // This should be checked
   }) async {
     print("Adding service with category: $serviceCategory");
 
@@ -25,7 +25,6 @@ class ServiceBackend {
       throw Exception(
           "Invalid size value: $size. Allowed values are $allowedSizes");
     }
-
     try {
       final response = await _supabase.from('service').insert({
         'service_name': serviceName,
@@ -40,14 +39,20 @@ class ServiceBackend {
             ? await uploadImage(image)
             : null, // Upload image and get URL if needed
         'service_category': [serviceCategory],
-      });
+      }).select('service_id'); // Selecting the service ID for retrieval
 
-      if (response != null) {
-        throw Exception('Failed to add service: ${response!.message}');
+// Ensure we retrieve the inserted service ID
+      final insertedService = response.first;
+      final serviceId = insertedService['service_id'];
+
+      if (serviceId == null) {
+        throw Exception('Failed to retrieve inserted service ID');
       }
-
+      // Now link the service to the service provider in the bridge table
+      await addServiceProviderService(
+          serviceProviderId: serviceProviderId, serviceId: serviceId);
       // Return the inserted service ID
-      return response['service_id']; // Adjust based on your response structure
+      return serviceId; // Adjust based on your response structure
     } catch (e) {
       print('Error adding service: $e');
       rethrow;

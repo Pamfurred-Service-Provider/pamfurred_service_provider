@@ -174,8 +174,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         minWeight: minWeight,
         maxWeight: maxWeight,
         petsToCater: petsList,
-
-        // petsToCater:
+        serviceProviderId: widget.serviceProviderId, // petsToCater:
         //     petsToCaterController.text.split(',').map((e) => e.trim()).toList(),
         serviceType: serviceType ?? '',
         availability: availability == 'Available',
