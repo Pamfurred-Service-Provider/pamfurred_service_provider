@@ -38,7 +38,7 @@ class ServicesScreenState extends State<ServicesScreen> {
 
 // Fetch the service provider ID (sp_id) using user_id
       final spResponse = await supabase
-          .from('service_provider') // Assuming this is the table name
+          .from('service_provider')
           .select('sp_id')
           .eq('user_id', userId)
           .single();
@@ -86,27 +86,56 @@ class ServicesScreenState extends State<ServicesScreen> {
         });
         print('Processed services: $services'); // Log the processed services
       } else {
-        showErrorDialog(context, "Unexpected response format: ${response}");
+        setState(() {
+          services = [];
+        });
       }
     } catch (e) {
       showErrorDialog(context, "Error fetching services: $e");
     }
   }
 
-  void _navigateToAddService(BuildContext context) async {
-    final updatedService = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AddServiceScreen(
-          serviceProviderId: '082070ee-2f73-414d-8ab6-b7fdf811eab5',
-        ),
-      ),
-    );
-
-    if (updatedService != null) {
-      setState(() {
-        services.add(updatedService);
+  Future<void> _createService(Map<String, dynamic> newService) async {
+    try {
+      if (serviceProviderId == null) {
+        throw Exception("Service Provider ID is required");
+      }
+      final response = await supabase.from('serviceprovider_service').insert({
+        'sp_id': serviceProviderId,
+        'service_id': newService['service_id'],
+        'service_category': selectedCategory,
+        'price': newService['price'],
       });
+
+      if (response != null) {
+        throw Exception('Failed to create service: ${response.message}');
+      }
+      setState(() {
+        services.add(newService);
+      });
+    } catch (e) {
+      showErrorDialog(context, "Error creating service: $e");
+    }
+  }
+
+  void _navigateToAddService(BuildContext context) async {
+    if (serviceProviderId != null) {
+      // Check if it's non-null
+      final newService = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddServiceScreen(
+            serviceProviderId: serviceProviderId!, // Pass non-null value
+            serviceCategory: selectedCategory,
+          ),
+        ),
+      );
+
+      if (newService != null) {
+        await _createService(newService);
+      }
+    } else {
+      showErrorDialog(context, "Service Provider ID is missing.");
     }
   }
 
@@ -132,7 +161,9 @@ class ServicesScreenState extends State<ServicesScreen> {
         });
         print('Processed packages: $packages');
       } else {
-        showErrorDialog(context, "No packages found for this provider.");
+        setState(() {
+          packages = [];
+        });
       }
     } catch (e) {
       showErrorDialog(context, "Error fetching packages: $e");
@@ -206,10 +237,10 @@ class ServicesScreenState extends State<ServicesScreen> {
               title: const Text('Veterinary Care'),
               onTap: () {
                 setState(() {
-                  selectedCategory = 'Veterinary';
+                  selectedCategory = 'Veterinary Care';
                 });
                 Navigator.pop(context);
-                _fetchServicesByCategory('Veterinary');
+                _fetchServicesByCategory('Veterinary Care');
               },
             ),
           ],
@@ -219,17 +250,32 @@ class ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _fetchServicesByCategory(String category) async {
-    final response = await supabase
-        .from('service')
-        .select()
-        .contains('service_category', [category]); // Filter by category
+    try {
+      if (serviceProviderId == null) return;
 
-    if (response == null) {
-      setState(() {
-        services = List<Map<String, dynamic>>.from(response);
-      });
-    } else {
-      showErrorDialog(context, "Failed to fetch services");
+      final response = await supabase.from('service').select('*').contains(
+          'service_category',
+          [category.toLowerCase()]); // Ensure case-insensitive match
+
+      if (response is List && response.isNotEmpty) {
+        setState(() {
+          services = List<Map<String, dynamic>>.from(response.map((item) {
+            return {
+              'name': item['service']['service_name'] ?? 'Unknown',
+              'price': item['service']['price'] ?? 0,
+              'image': item['service']['service_image'] ??
+                  'assets/images/default_image.png', // Default image path
+            };
+          }));
+        });
+      } else {
+        setState(() {
+          services = []; // Clear services if none found
+        });
+        showErrorDialog(context, "No services found for this category.");
+      }
+    } catch (e) {
+      showErrorDialog(context, "Failed to fetch services: $e");
     }
   }
 
@@ -375,28 +421,28 @@ class ServicesScreenState extends State<ServicesScreen> {
                               )
                             : const Icon(Icons.image, size: 50),
                         title: Text(package['name']),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              package['description'] != null &&
-                                      package['description']!.length > 50
-                                  ? '${package['description'].substring(0, 50)}... See more'
-                                  : package['description'] ??
-                                      'No description available',
-                            ),
-                            // const SizedBox(height: 5),
-                            // const Text("Inclusions:"),
-                            // if (package['inclusionList'] != null &&
-                            //     package['inclusionList'] is List<String> &&
-                            //     package['inclusionList'].isNotEmpty)
-                            //   ...package['inclusionList']
-                            //       .map<Widget>((pkg) => Text(pkg.toString()))
-                            //       .toList()
-                            // else
-                            //   const Text("No inclusion specified"),
-                          ],
-                        ),
+                        // subtitle: Column(
+                        //   crossAxisAlignment: CrossAxisAlignment.start,
+                        //   children: [
+                        // Text(
+                        //   package['description'] != null &&
+                        //           package['description']!.length > 50
+                        //       ? '${package['description'].substring(0, 50)}... See more'
+                        //       : package['description'] ??
+                        //           'No description available',
+                        // ),
+                        // const SizedBox(height: 5),
+                        // const Text("Inclusions:"),
+                        // if (package['inclusionList'] != null &&
+                        //     package['inclusionList'] is List<String> &&
+                        //     package['inclusionList'].isNotEmpty)
+                        //   ...package['inclusionList']
+                        //       .map<Widget>((pkg) => Text(pkg.toString()))
+                        //       .toList()
+                        // else
+                        //   const Text("No inclusion specified"),
+                        //   ],
+                        // ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

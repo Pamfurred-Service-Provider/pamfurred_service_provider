@@ -4,25 +4,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ServiceBackend {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // Service Provider methods
-  Future<void> addServiceProvider({
-    required String sp_id,
-    required String name,
-    // Add other service provider fields
-  }) async {
-    // ...
-  }
-  Future<int> addService({
+  Future<String?> addService({
     required String serviceName,
-    required double price,
+    required int price,
     required String size,
-    required String minWeight,
-    required String maxWeight,
-    required List<String> petsToCater, // as List  for JSONB
+    required int minWeight,
+    required int maxWeight,
+    required List<String> petsToCater, // as List for JSONB
     required String serviceType, // or List/Map if complex JSON
     required bool availability, // Boolean for availability_status
     required File? image,
+    required String? serviceCategory, // This should be checked
   }) async {
+    print("Adding service with category: $serviceCategory");
+
+    // Validate the size value to match database constraints
+    const allowedSizes = ['S', 'M', 'L', 'XL', 'N/A'];
+    if (!allowedSizes.contains(size)) {
+      throw Exception(
+          "Invalid size value: $size. Allowed values are $allowedSizes");
+    }
+
     try {
       final response = await _supabase.from('service').insert({
         'service_name': serviceName,
@@ -30,53 +32,67 @@ class ServiceBackend {
         'size': size,
         'min_weight': minWeight,
         'max_weight': maxWeight,
-        'pets_to_cater': petsToCater,
-        'pet_type': serviceType,
+        'pet_type': petsToCater,
+        'service_type': serviceType,
         'availability_status': availability,
         'service_image': image != null
             ? await uploadImage(image)
             : null, // Upload image and get URL if needed
+        'service_category': [serviceCategory],
       });
-      if (response.error != null) {
-        throw Exception('Failed to add service: ${response.error!.message}');
+
+      if (response != null) {
+        throw Exception('Failed to add service: ${response!.message}');
       }
 
-      // Assuming the response contains the inserted service ID
-      return response.data[0]
-          ['service_id']; // Adjust this based on your response structure
+      // Return the inserted service ID
+      return response['service_id']; // Adjust based on your response structure
     } catch (e) {
+      print('Error adding service: $e');
       rethrow;
     }
   }
 
-  Future<String> uploadImage(File image) async {
-    final filePath = 'service_images/${image.uri.pathSegments.last}';
-    final response = await _supabase.storage
-        .from('service_provider_images')
-        .upload(filePath, image);
-
-    final imageUrl = _supabase.storage
-        .from('service_provider_images')
-        .getPublicUrl(filePath);
-    return imageUrl; // Return the public URL of the uploaded image
-  }
-
-  // Service Provider Service methods (bridge table)
   Future<void> addServiceProviderService({
     required String serviceProviderId,
     required String serviceId,
   }) async {
+    if (serviceProviderId.isEmpty || serviceId.isEmpty) {
+      throw Exception('Service provider ID or service ID is null or empty');
+    }
+
     try {
       final response = await _supabase.from('serviceprovider_service').insert({
         'sp_id': serviceProviderId,
         'service_id': serviceId,
       });
-      if (response.error != null) {
+
+      if (response != null) {
         throw Exception(
-            'Failed to add service provider service: ${response.error?.message}');
+            'Failed to add service provider service: ${response!.message}');
       }
     } catch (error) {
-      throw Exception('Error adding service provider service');
+      throw Exception('Error adding service provider service: $error');
+    }
+  }
+
+  Future<String> uploadImage(File image) async {
+    try {
+      final filePath = 'service_images/${image.uri.pathSegments.last}';
+      final response = await _supabase.storage
+          .from('service_provider_images')
+          .upload(filePath, image);
+
+      if (response != null) {
+        throw Exception('Failed to upload image: ${response}');
+      }
+
+      return _supabase.storage
+          .from('service_provider_images')
+          .getPublicUrl(filePath);
+    } catch (e) {
+      print('Error uploading image: $e');
+      rethrow; // Propagate error
     }
   }
 
@@ -88,20 +104,22 @@ class ServiceBackend {
           .from('serviceprovider_service')
           .select('service_id')
           .eq('sp_id', serviceProviderId);
-      if (response.error != null) {
+
+      if (response != null) {
         throw Exception(
-            'Failed to get service provider services: ${response.error?.message}');
+            'Failed to get service provider services: ${response.message}');
       }
+
       final serviceIds =
-          (response.data as List).map((e) => e['service_id']).toList();
+          (response as List).map((e) => e['service_id']).toList();
       final servicesResponse = await _supabase
           .from('service')
           .select('*')
           .in_('service_id', serviceIds);
 
-      return servicesResponse.data; // Return the list of services
+      return servicesResponse; // Return the list of services
     } catch (error) {
-      throw Exception('Error getting service provider services');
+      throw Exception('Error getting service provider services: $error');
     }
   }
 }

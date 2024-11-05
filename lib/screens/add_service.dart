@@ -6,12 +6,15 @@ import 'package:service_provider/Supabase/service_backend.dart';
 
 class AddServiceScreen extends StatefulWidget {
   final String serviceProviderId;
+  final String? serviceCategory;
 
-  const AddServiceScreen({
+  AddServiceScreen({
     super.key,
     required this.serviceProviderId,
-  });
-
+    this.serviceCategory,
+  }) {
+    print('Service Category in AddServiceScreen: $serviceCategory'); // Debug
+  }
   @override
   State<AddServiceScreen> createState() => _AddServiceScreenState();
 }
@@ -109,37 +112,93 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   }
 
   //Static data for pet sizes
-  List<String> sizeOptions = ['Small', 'Medium', 'Large', 'Extra Large', 'N/A'];
+  List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
 
   String? serviceType = 'Pet Salon';
   String? availability = 'Available';
-  String? sizes = 'Small';
+  String? sizes = 'S';
 
   void _addService() async {
     final backend = ServiceBackend();
     setState(() {
       _isLoading = true; // Start loading
     });
+    int price;
+    int minWeight;
+    int maxWeight;
     try {
+      price = int.parse(priceController.text);
+    } catch (e) {
+      print("Invalid price input.");
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+    try {
+      minWeight = int.parse(minWeightController.text);
+    } catch (e) {
+      print("Invalid minWeight input.");
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+    try {
+      if (nameController.text.isEmpty ||
+          priceController.text.isEmpty ||
+          sizes == null ||
+          minWeightController.text.isEmpty ||
+          serviceType == null ||
+          availability == null) {
+        throw Exception('Please fill all fields');
+      }
+      int price = int.parse(priceController.text);
+      int minWeight = int.parse(minWeightController.text);
+      int maxWeight = int.parse(maxWeightController.text);
+
+      print("Adding service with category: ${widget.serviceCategory}");
+      print("Name: ${nameController.text}");
+      print("Pet Specific Service: ${petsToCaterController.text}");
+      print("Price: $price");
+      print("Size: $sizes");
+      print("serviceType: $serviceType");
+      print("Min Weight: $minWeight");
+      print("Max Weight: $maxWeight");
+      print("Availability: $availability");
+      print("Service Category: ${widget.serviceCategory}"); // Debug print
       final serviceId = await backend.addService(
         serviceName: nameController.text,
-        price: double.parse(priceController.text),
+        price: price,
         size: sizes ?? '',
-        minWeight: minWeightController.text,
-        maxWeight: maxWeightController.text,
+        minWeight: minWeight,
+        maxWeight: maxWeight,
         petsToCater:
             petsToCaterController.text.split(',').map((e) => e.trim()).toList(),
         serviceType: serviceType ?? '',
         availability: availability == 'Available',
         image: _image,
+        serviceCategory: widget.serviceCategory, // Pass service category here
       );
-      await backend.addServiceProviderService(
-        serviceProviderId: widget.serviceProviderId,
-        serviceId: serviceId.toString(),
-      );
-      Navigator.pop(context, 'Service Added');
+      print("Service ID returned: $serviceId");
+
+      if (serviceId != null) {
+        await backend.addServiceProviderService(
+          serviceProviderId: widget.serviceProviderId,
+          serviceId: serviceId.toString(),
+        );
+        print("Service provider service added successfully");
+
+        Navigator.pop(context, 'Service Added');
+      } else {
+        throw Exception('Failed to add service: serviceId is null');
+      }
     } catch (e) {
-      print('Error adding service: $e');
+      print('Error adding service: ${e.toString()}');
+      // Show an error message to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add service. Please try again.')),
+      );
     } finally {
       setState(() {
         _isLoading = false; // Stop loading
@@ -331,6 +390,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 child: TextField(
                   controller: minWeightController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly
+                  ],
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
@@ -345,6 +407,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 child: TextField(
                   controller: maxWeightController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly
+                  ],
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
