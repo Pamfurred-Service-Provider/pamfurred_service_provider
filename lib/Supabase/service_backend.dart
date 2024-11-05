@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:service_provider/screens/edit_profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServiceBackend {
@@ -33,7 +34,7 @@ class ServiceBackend {
         'min_weight': minWeight,
         'max_weight': maxWeight,
         'pet_type': petsToCater,
-        'service_type': serviceType,
+        'service_type': [serviceType],
         'availability_status': availability,
         'service_image': image != null
             ? await uploadImage(image)

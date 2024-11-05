@@ -159,7 +159,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
       print("Adding service with category: ${widget.serviceCategory}");
       print("Name: ${nameController.text}");
-      print("Pet Specific Service: ${petsToCaterController.text}");
+      print("Pet Specific Service: $petsList");
       print("Price: $price");
       print("Size: $sizes");
       print("serviceType: $serviceType");
@@ -173,8 +173,10 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         size: sizes ?? '',
         minWeight: minWeight,
         maxWeight: maxWeight,
-        petsToCater:
-            petsToCaterController.text.split(',').map((e) => e.trim()).toList(),
+        petsToCater: petsList,
+
+        // petsToCater:
+        //     petsToCaterController.text.split(',').map((e) => e.trim()).toList(),
         serviceType: serviceType ?? '',
         availability: availability == 'Available',
         image: _image,
