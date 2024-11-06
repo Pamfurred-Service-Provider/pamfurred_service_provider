@@ -89,9 +89,9 @@ class ServiceBackend {
           .from('service_provider_images')
           .upload(filePath, image);
 
-      if (response != null) {
-        throw Exception('Failed to upload image: ${response}');
-      }
+      // if (response != null) {
+      //   throw Exception('Failed to upload image: ${response}');
+      // }
 
       return _supabase.storage
           .from('service_provider_images')
