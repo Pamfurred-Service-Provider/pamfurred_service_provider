@@ -19,7 +19,7 @@ class ServicesScreenState extends State<ServicesScreen> {
   String? serviceProviderId; // Nullable to allow dynamic assignment
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
-  String? selectedCategory = 'Pet Grooming'; // Default selected category
+  String? selectedCategory = 'pet grooming'; // Default selected category
 
   @override
   void initState() {
@@ -217,30 +217,30 @@ class ServicesScreenState extends State<ServicesScreen> {
               title: const Text('Pet Grooming'),
               onTap: () {
                 setState(() {
-                  selectedCategory = 'Pet Grooming';
+                  selectedCategory = 'pet grooming';
                 });
                 Navigator.pop(context);
-                _fetchServicesByCategory('Pet Grooming');
+                _fetchServicesByCategory('pet grooming');
               },
             ),
             ListTile(
               title: const Text('Pet Boarding'),
               onTap: () {
                 setState(() {
-                  selectedCategory = 'Pet Boarding';
+                  selectedCategory = 'pet boarding';
                 });
                 Navigator.pop(context);
-                _fetchServicesByCategory('Pet Boarding');
+                _fetchServicesByCategory('pet boarding');
               },
             ),
             ListTile(
-              title: const Text('Veterinary Care'),
+              title: const Text('Veterinary Service'),
               onTap: () {
                 setState(() {
-                  selectedCategory = 'Veterinary Care';
+                  selectedCategory = 'veterinary service';
                 });
                 Navigator.pop(context);
-                _fetchServicesByCategory('Veterinary Care');
+                _fetchServicesByCategory('veterinary service');
               },
             ),
           ],
@@ -289,7 +289,7 @@ class ServicesScreenState extends State<ServicesScreen> {
             child: Row(
               children: [
                 Text(
-                  selectedCategory ?? 'Pet Grooming', // Dynamic text
+                  selectedCategory ?? 'pet grooming', // Dynamic text
                   style: const TextStyle(
                     fontSize: 20,
                     color: Color.fromRGBO(160, 62, 6, 1),
