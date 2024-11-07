@@ -108,7 +108,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
   //Static data for pet sizes
   List<String> sizeOptions = ['Small', 'Medium', 'Large', 'Extra Large', 'N/A'];
 
-  String? serviceType = 'Pet Salon';
+  String? serviceType = 'In-clinic';
   String? availability = 'Available';
   String? sizes = 'Small';
 
@@ -124,7 +124,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
       maxWeightController.text = widget.serviceData?['maxWeight'] ?? '';
       petsToCaterController.text = widget.serviceData?['pets to cater'] ?? '';
       sizes = widget.serviceData?['size'] ?? 'Small';
-      serviceType = widget.serviceData?['serviceType'] ?? 'Pet Salon';
+      serviceType = widget.serviceData?['serviceType'] ?? 'In-clinic';
       availability = widget.serviceData?['availability'] ?? 'Available';
       _image = widget.serviceData?['image']; // Load the image if it exists
     }
@@ -407,7 +407,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
                   });
                 },
                 hint: const Text('Select Service Type'),
-                items: ['Pet Salon', 'Home service'].map((String value) {
+                items: ['', 'Home service'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),

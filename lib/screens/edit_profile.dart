@@ -18,7 +18,8 @@ final Map<DateTime, bool> _availability = {
   DateTime.utc(2024, 9, 11): true, // Available
   DateTime.utc(2024, 9, 12): true, // Available
 };
-List<String> petsList = []; // List to store pets
+final List<String> petType = ['dog', 'cat', 'bunny'];
+List<String> petsList = ['dog'];
 
 class EditProfileScreenState extends State<EditProfileScreen> {
   String dropdownValue = number.first; //dropdown for # of pets catered per day
@@ -58,12 +59,20 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   }
 
 // Method to add pet to the list
-  Future<void> _addPet() async {
-    String? newPet = await _showAddPetDialog();
-    if (newPet != null && newPet.isNotEmpty) {
+  void _addPet() async {
+    List<String> availablePets =
+        petType.where((pet) => !petsList.contains(pet)).toList();
+    // If there are available pets left to choose, add another dropdown
+    if (availablePets.isNotEmpty) {
       setState(() {
-        petsList.add(newPet); // Add pet to the list
+        petsList
+            .add(availablePets.first); // Add the first available pet by default
       });
+    } else {
+      // Show a message if all pets are already selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('All pets have been added.')),
+      );
     }
   }
 
@@ -180,6 +189,9 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     // If a location is returned, set it in the controller
     if (selectedLocation != null) {
       setState(() {
+        cityController.text = selectedLocation['city'] ?? 'N/A';
+        barangayController.text = selectedLocation['province'] ?? 'N/A';
+        streetController.text = selectedLocation['streetAddress'] ?? 'N/A';
         exactAddressController.text =
             'City: ${selectedLocation['city'] ?? "Not Available"}, '
             'Province: ${selectedLocation['province'] ?? "Not Available"}, '
@@ -290,42 +302,43 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   "Pets to Cater",
                   style: TextStyle(fontSize: 16),
                 ),
-
-                const SizedBox(height: 20),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: petsList.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Card(
-                        elevation: 4.0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            petsList[index],
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.normal,
+                ...petsList.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  String pet = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: pet,
+                              onChanged: (newValue) {
+                                setState(() {
+                                  petsList[index] = newValue!;
+                                });
+                              },
+                              items: petType
+                                  .where((petCategory) =>
+                                      !petsList.contains(petCategory) ||
+                                      petCategory == pet)
+                                  .map(
+                                      (petCategory) => DropdownMenuItem<String>(
+                                            value: petCategory,
+                                            child: Text(petCategory),
+                                          ))
+                                  .toList(),
                             ),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(
-                              Icons.delete,
-                              color: Color.fromRGBO(160, 62, 6, 1),
-                            ),
-                            onPressed: () {
-                              _removePet(index); // Remove pet from the list
-                            },
-                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _removePet(index),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
                 const SizedBox(height: 20),
                 // Add more pets button
                 ElevatedButton.icon(
@@ -337,7 +350,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
           ),
-
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -456,6 +468,27 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   style: TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
+                const Text("Pin Address"),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: exactAddressController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(12.0),
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: const Icon(
+                        Icons.location_on,
+                        color: Color(0xFFA03E06),
+                      ),
+                      onPressed: navigateToPinAddress,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
@@ -553,35 +586,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                       borderRadius: BorderRadius.all(
                         Radius.circular(12.0),
                       ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Exact Address"),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: exactAddressController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(12.0),
-                      ),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: const Icon(
-                        Icons.location_on,
-                        color: Color(0xFFA03E06),
-                      ),
-                      onPressed: navigateToPinAddress,
                     ),
                   ),
                 ),
