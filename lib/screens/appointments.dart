@@ -14,55 +14,14 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
   late TabController _tabController;
-  List<Map<String, dynamic>> todayAppointments = [
-    //   {
-    //     'id': '1445547gg5fg1',
-    //     'date': 'January 2, 2024',
-    //     'status': 'Upcoming',
-    //     'name': 'Bob Niño Golosinda',
-    //     'time': '09:00 AM - 11:00 AM',
-    //     'phone': '09945876258',
-    //     'category': 'Dog',
-    //     'type': 'Pet Salon',
-    //     'total': '350.00',
-    //     'services': [
-    //       {'service': 'Nail Clipping', 'price': '100.00'},
-    //       {'service': 'Haircut', 'price': '250.00'},
-    //     ],
-    //   },
-    //   {
-    //     'id': '1445547gg5fg1',
-    //     'name': 'Lynie Rose Gaa',
-    //     'date': 'January 2, 2024',
-    //     'status': 'Done',
-    //     'time': '11:00 AM - 01:00 PM',
-    //     'phone': '09945876258',
-    //     'category': 'Dog',
-    //     'type': 'Pet Salon',
-    //     'total': '350.00',
-    //     'services': [
-    //       {'service': 'Nail Clipping', 'price': '100.00'},
-    //       {'service': 'Haircut', 'price': '250.00'},
-    //     ],
-    //   },
-    //   {
-    //     'name': 'Aillen Gonzaga',
-    //     'date': 'January 2, 2024',
-    //     'time': '01:00 PM - 03:00 PM',
-    //     'status': 'Upcoming',
-    //   },
-    //   {
-    //     'name': 'Arny A Ucab',
-    //     'date': 'January 2, 2024',
-    //     'time': '03:00 PM - 05:00 PM',
-    //     'status': 'Cancelled',
-    //   },
-  ];
+  List<Map<String, dynamic>> appointments = [];
+
   final Map<String, Color> statusColors = {
     'Upcoming': const Color.fromRGBO(255, 143, 0, 1),
     'Done': Colors.green,
     'Cancelled': const Color.fromRGBO(160, 62, 6, 1),
   };
+
   @override
   void initState() {
     super.initState();
@@ -71,15 +30,16 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     fetchAppointments();
   }
 
+  // Fetch all appointments from the "appointments" table
   Future<void> fetchAppointments() async {
-    final response = await supabase.from('appointments').select(
-        '*'); // Customize based on tab selection (e.g., upcoming, today)
+    final response = await supabase.from('appointment').select('*').execute();
     if (response.error == null) {
+      print("Appointments fetched: ${response.data}");
       setState(() {
-        todayAppointments = List<Map<String, dynamic>>.from(response.data);
+        appointments = List<Map<String, dynamic>>.from(response.data);
       });
     } else {
-      print("Error fetching appointments:${response.error?.message}");
+      print("Error fetching appointments: ${response.error?.message}");
     }
   }
 
@@ -126,16 +86,18 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     );
   }
 
+  // Build the appointments list view for each tab (based on status)
   Widget _buildAppointmentsTab({required String status}) {
     List<Map<String, dynamic>> filteredAppointments;
 
     if (status == 'All') {
-      filteredAppointments = todayAppointments;
+      filteredAppointments = appointments;
     } else {
-      filteredAppointments = todayAppointments
-          .where((appointment) => appointment['status'] == status)
+      filteredAppointments = appointments
+          .where((appointment) => appointment['appointment_status'] == status)
           .toList();
     }
+
     if (filteredAppointments.isEmpty) {
       return Center(
         child: Text('No appointments for $status'),
@@ -151,6 +113,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     );
   }
 
+  // Build the appointment card for each item
   Widget buildAppointmentCard(Map<String, dynamic> appointment) {
     return GestureDetector(
       onTap: () async {
@@ -161,18 +124,19 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
               appointment: appointment,
               updateStatus: (newStatus) async {
                 setState(() {
-                  appointment['status'] = newStatus;
+                  appointment['appointment_status'] = newStatus;
                 });
                 await supabase
                     .from('appointment')
-                    .update({'status': newStatus}).eq('id', appointment['id']);
+                    .update({'appointment_status': newStatus})
+                    .eq('appointment_id', appointment['appointment_id']);
               },
             ),
           ),
         );
         if (updatedStatus != null) {
           setState(() {
-            appointment['status'] = updatedStatus;
+            appointment['appointment_status'] = updatedStatus;
           });
         }
       },
@@ -181,16 +145,16 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
         elevation: 10,
         child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
           ListTile(
-            title: Text(appointment['name']),
+            title: Text('Pet Owner: ${appointment['user_id'] ?? 'N/A'}'),  // Fallback if null
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  appointment['date'],
+                  'Date: ${appointment['appointment_date'] ?? 'N/A'}',  // Fallback if null
                   style: const TextStyle(color: Colors.black54),
                 ),
                 Text(
-                  appointment['time'],
+                  'Time: ${appointment['appointment_time'] ?? 'N/A'}',  // Fallback if null
                   style: const TextStyle(color: Colors.black54),
                 ),
               ],
@@ -202,16 +166,20 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 Text(
-                  appointment['status'],
+                  appointment['appointment_status'] ?? 'Unknown',  // Fallback if null
                   style: TextStyle(
-                      color: statusColors[appointment['status']] ??
-                          Colors.black87),
+                    color: statusColors[appointment['appointment_status']] ?? Colors.black87,
+                  ),
                 ),
               ],
             ),
           ),
-        ]),
+        ]), 
       ),
     );
   }
+}
+
+extension on PostgrestResponse {
+  get error => null;
 }

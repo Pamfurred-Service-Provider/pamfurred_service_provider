@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> appointment;
@@ -14,11 +15,26 @@ class AppointmentDetailScreen extends StatefulWidget {
 class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   late String dropdownValue;
   final List<String> statusOptions = ['Done', 'Cancelled', 'Upcoming'];
+  final SupabaseClient supabase = Supabase.instance.client;
 
   @override
   void initState() {
     super.initState();
-    dropdownValue = widget.appointment['status'];
+    dropdownValue = widget.appointment['appointment_status'];
+  }
+
+  Future<void> updateAppointmentStatus(String status) async {
+    final response = await supabase
+        .from('appointment')
+        .update({'appointment_status': status})
+        .eq('appointment_id', widget.appointment['appointment_id']);
+
+    if (response.error != null) {
+      // Handle error if the update fails
+      print('Error updating status: ${response.error!.message}');
+    } else {
+      print('Status updated successfully');
+    }
   }
 
   @override
@@ -26,6 +42,12 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointment Details"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, dropdownValue); // Pass back the updated status
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(18.0),
@@ -33,9 +55,8 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
           children: [
             Center(
               child: Text(
-                "Appointment ID: ${widget.appointment['id']}",
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                "Appointment ID: ${widget.appointment['appointment_id']}",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 10),
@@ -55,22 +76,24 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                       child: Text(value),
                     );
                   }).toList(),
-                  onChanged: (String? newValue) {
+                  onChanged: (String? newValue) async {
                     if (newValue != null && newValue != dropdownValue) {
                       setState(() {
                         dropdownValue = newValue;
                       });
-                      widget.updateStatus(newValue);
+                      widget.updateStatus(newValue); // Update in appointment.dart
+                      await updateAppointmentStatus(newValue); // Update in Supabase
                     }
                   },
                 ),
                 const SizedBox(height: 10),
+                // Remaining details...
                 const Text(
                   'Date:',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${widget.appointment['date']}',
+                  '${widget.appointment['appointment_date'] ?? 'N/A'}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -79,7 +102,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${widget.appointment['time']}',
+                  '${widget.appointment['appointment_time'] ?? 'N/A'}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -88,7 +111,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${widget.appointment['name']}',
+                  '${widget.appointment['user_name'] ?? 'N/A'}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -97,7 +120,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${widget.appointment['phone']}',
+                  '${widget.appointment['phone_number'] ?? 'N/A'}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -106,7 +129,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${widget.appointment['category']}',
+                  '${widget.appointment['pet_category'] ?? 'N/A'}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -115,7 +138,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${widget.appointment['type']}',
+                  '${widget.appointment['service_type'] ?? 'N/A'}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
