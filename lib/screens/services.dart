@@ -39,7 +39,7 @@ class ServicesScreenState extends State<ServicesScreen> {
       final spResponse = await supabase
           .from('service_provider')
           .select('sp_id')
-          .eq('user_id', userId)
+          .eq('sp_id', userId)
           .single();
 
       if (spResponse == null || spResponse['sp_id'] == null) {
@@ -75,9 +75,6 @@ class ServicesScreenState extends State<ServicesScreen> {
             return {
               'name': item['service']['service_name'] ?? 'Unknown',
               'price': item['service']['price'] ?? 0,
-              // 'size': item['service']['size'],
-              // 'min_weight': item['service']['min_weight'],
-              // 'max_weight': item['service']['max_weight'],
               'image': item['service']['service_image'] ??
                   'assets/images/default_image.png', // Default image path
             };

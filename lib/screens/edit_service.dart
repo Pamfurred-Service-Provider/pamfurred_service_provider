@@ -23,7 +23,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
 
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
-  List<String> petsList = []; // List to store pets
+  List<String> petsList = ['dog']; // List to store pets
 
   // Method to pick an image from the gallery
   Future<void> changeImage() async {
@@ -37,12 +37,20 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
   }
 
 // Method to add pet to the list
-  Future<void> _addPet() async {
-    String? newPet = await _showAddPetDialog();
-    if (newPet != null && newPet.isNotEmpty) {
+  void addPet() async {
+    List<String> availablePets =
+        petType.where((pet) => !petsList.contains(pet)).toList();
+    // If there are available pets left to choose, add another dropdown
+    if (availablePets.isNotEmpty) {
       setState(() {
-        petsList.add(newPet); // Add pet to the list
+        petsList
+            .add(availablePets.first); // Add the first available pet by default
       });
+    } else {
+      // Show a message if all pets are already selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All pets have been added.')),
+      );
     }
   }
 
@@ -70,44 +78,43 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
     );
   } // Dialog to input pet name
 
-  Future<String?> _showAddPetDialog() async {
-    String petCategory = '';
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Pet'),
-          content: TextField(
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Enter pet category'),
-            onChanged: (value) {
-              petCategory = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(); // Close the dialog without returning anything
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(petCategory); // Return entered category
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
+  // Future<String?> _showAddPetDialog() async {
+  //   String petCategory = '';
+  //   return showDialog<String>(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text('Add Pet'),
+  //         content: TextField(
+  //           autofocus: true,
+  //           decoration: const InputDecoration(hintText: 'Enter pet category'),
+  //           onChanged: (value) {
+  //             petCategory = value;
+  //           },
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context)
+  //                   .pop(); // Close the dialog without returning anything
+  //             },
+  //             child: const Text('Cancel'),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               Navigator.of(context)
+  //                   .pop(petCategory); // Return entered category
+  //             },
+  //             child: const Text('Add'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
   //Static data for pet sizes
   List<String> sizeOptions = ['Small', 'Medium', 'Large', 'Extra Large', 'N/A'];
-
+  final List<String> petType = ['dog', 'cat', 'bunny'];
   String? serviceType = 'In-clinic';
   String? availability = 'Available';
   String? sizes = 'Small';
@@ -231,48 +238,60 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
             "Pet specific service",
             style: TextStyle(fontSize: 16),
           ),
-          const SizedBox(height: 20),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: petsList.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Card(
-                  elevation: 4.0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      petsList[index],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.normal,
+          ...petsList.asMap().entries.map((entry) {
+            int index = entry.key;
+            String pet = entry.value;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: pet,
+                          isExpanded: true,
+                          onChanged: (newValue) {
+                            setState(() {
+                              petsList[index] = newValue!;
+                            });
+                          },
+                          items: petType
+                              .where((petCategory) =>
+                                  !petsList.contains(petCategory) ||
+                                  petCategory == pet)
+                              .map((petCategory) => DropdownMenuItem<String>(
+                                    value: petCategory,
+                                    child: Text(petCategory),
+                                  ))
+                              .toList(),
+                        ),
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        color: Color.fromRGBO(160, 62, 6, 1),
-                      ),
-                      onPressed: () {
-                        _removePet(index); // Remove pet from the list
-                      },
-                    ),
                   ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _removePet(index),
+                  ),
+                ],
+              ),
+            );
+          }), const SizedBox(height: 20),
+                // Add more pets button
+                ElevatedButton.icon(
+                  onPressed: _addPet, // Add pet when pressed
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add More"),
+                  // label: const Text("Add Pet Category"),
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _addPet, // Add pet when pressed
-            icon: const Icon(Icons.add),
-            label: const Text("Add More"),
-            // label: const Text("Add Pet Category"),
-          ),
+              ],
+            ),
           const SizedBox(height: 10),
           const Text(
             "Availability",

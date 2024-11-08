@@ -9,6 +9,7 @@ import 'package:service_provider/screens/appointments.dart';
 import 'package:service_provider/screens/feedbacks.dart';
 import 'package:service_provider/screens/services.dart';
 import 'package:service_provider/components/year_dropdown.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 final List<int> years = [2023, 2024];
 
@@ -20,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
+  String serviceProviderName = '';
   int selectedYear = years.first;
   int selectedIndex = 0;
   // Static Data
@@ -29,10 +31,10 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  final List<String> store = [
-    'Paws and Claws Pet Station',
-    'Groomers on the Go'
-  ];
+  // final List<String> store = [
+  //   'Paws and Claws Pet Station',
+  //   'Groomers on the Go'
+  // ];
   final List<Map<String, dynamic>> revenueData = [
     {'month': 'Jan', 'value': 2500.00},
     {'month': 'Feb', 'value': 5000.00},
@@ -154,6 +156,47 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final userSession = Supabase.instance.client.auth.currentSession;
+
+      if (userSession == null) {
+        throw Exception("User not logged in");
+      }
+
+      // Get user ID from session
+      final userId = userSession.user.id;
+
+      print('User ID: $userId');
+
+      // Fetch only the name of the service provider
+      final response = await Supabase.instance.client
+          .from('service_provider')
+          .select('name')
+          .eq('sp_id', userId)
+          .single(); // Ensures only a single row is returned
+
+      setState(() {
+        serviceProviderName = response['name'] ?? '';
+      });
+      // Directly access the name from the response data
+    } catch (e) {
+      print("Error fetching user data: $e");
+      // Handle the error, maybe show a Snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load user data')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final List<double> data =
         revenueData.map((e) => e['value'] as double).toList();
@@ -168,7 +211,7 @@ class HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Welcome',
+                'Welcome!',
                 style: TextStyle(
                   color: Color(0xFF651616),
                   fontSize: 24,
@@ -177,7 +220,7 @@ class HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                store[1],
+                serviceProviderName,
                 style: const TextStyle(
                   color: Color(0xFF651616),
                   fontSize: 18,
