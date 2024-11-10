@@ -26,15 +26,8 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Future<void> updateAppointmentStatus(String status) async {
     final response = await supabase
         .from('appointment')
-        .update({'appointment_status': status})
-        .eq('appointment_id', widget.appointment['appointment_id']);
-
-    if (response.error != null) {
-      // Handle error if the update fails
-      print('Error updating status: ${response.error!.message}');
-    } else {
-      print('Status updated successfully');
-    }
+        .update({'appointment_status': status}).eq(
+            'appointment_id', widget.appointment['appointment_id']);
   }
 
   @override
@@ -45,7 +38,8 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context, dropdownValue); // Pass back the updated status
+            Navigator.pop(
+                context, dropdownValue); // Pass back the updated status
           },
         ),
       ),
@@ -56,7 +50,8 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             Center(
               child: Text(
                 "Appointment ID: ${widget.appointment['appointment_id']}",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 10),
@@ -81,8 +76,10 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                       setState(() {
                         dropdownValue = newValue;
                       });
-                      widget.updateStatus(newValue); // Update in appointment.dart
-                      await updateAppointmentStatus(newValue); // Update in Supabase
+                      widget
+                          .updateStatus(newValue); // Update in appointment.dart
+                      await updateAppointmentStatus(
+                          newValue); // Update in Supabase
                     }
                   },
                 ),

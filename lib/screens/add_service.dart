@@ -8,13 +8,11 @@ class AddServiceScreen extends StatefulWidget {
   final String serviceProviderId;
   final String? serviceCategory;
 
-  AddServiceScreen({
+  const AddServiceScreen({
     super.key,
     required this.serviceProviderId,
     this.serviceCategory,
-  }) {
-    print('Service Category in AddServiceScreen: $serviceCategory'); // Debug
-  }
+  });
   @override
   State<AddServiceScreen> createState() => _AddServiceScreenState();
 }
@@ -87,7 +85,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   //Static data for pet sizes
   List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
   final List<String> petType = ['dog', 'cat', 'bunny'];
-  String? serviceType = 'Pet Salon';
+  String? serviceType = 'In-clinic';
   String? availability = 'Available';
   String? sizes = 'S';
 
@@ -102,7 +100,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     try {
       price = int.parse(priceController.text);
     } catch (e) {
-      print("Invalid price input.");
       setState(() {
         _isLoading = false;
       });
@@ -111,7 +108,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     try {
       minWeight = int.parse(minWeightController.text);
     } catch (e) {
-      print("Invalid minWeight input.");
       setState(() {
         _isLoading = false;
       });
@@ -126,20 +122,27 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
           availability == null) {
         throw Exception('Please fill all fields');
       }
+      String imageUrl = '';
+      if (_image != null) {
+        imageUrl = await backend
+            .uploadImage(_image!); // Get the image URL after uploading
+      }
       int price = int.parse(priceController.text);
       int minWeight = int.parse(minWeightController.text);
       int maxWeight = int.parse(maxWeightController.text);
 
-      print("Adding service with category: ${widget.serviceCategory}");
-      print("Name: ${nameController.text}");
-      print("Pet Specific Service: $petsList");
-      print("Price: $price");
-      print("Size: $sizes");
-      print("serviceType: $serviceType");
-      print("Min Weight: $minWeight");
-      print("Max Weight: $maxWeight");
-      print("Availability: $availability");
-      print("Service Category: ${widget.serviceCategory}"); // Debug print
+      // print("Adding service with category: ${widget.serviceCategory}");
+      // print("Name: ${nameController.text}");
+      // print("Pet Specific Service: $petsList");
+      // print("Price: $price");
+      // print("Size: $sizes");
+      // print("serviceType: $serviceType");
+      // print("Min Weight: $minWeight");
+      // print("Max Weight: $maxWeight");
+      // print("Availability: $availability");
+      // print("Service Category: ${widget.serviceCategory}"); // Debug print
+      // print("Image URL: $imageUrl");
+
       final serviceId = await backend.addService(
         serviceName: nameController.text,
         price: price,
@@ -152,10 +155,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
         serviceType: serviceType ?? '',
         availability: availability == 'Available',
-        image: _image,
+        imageUrl: imageUrl,
         serviceCategory: widget.serviceCategory, // Pass service category here
       );
-      print("Service ID returned: $serviceId");
 
       if (serviceId != null) {
         Navigator.pop(context, 'Service Added');
@@ -284,6 +286,14 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ),
             );
           }),
+          const SizedBox(height: 20),
+          // Add more pets button
+          ElevatedButton.icon(
+            onPressed: addPet, // Add pet when pressed
+            icon: const Icon(Icons.add),
+            label: const Text("Add More"),
+            // label: const Text("Add Pet Category"),
+          ),
           const SizedBox(height: 10),
           const Text(
             "Availability",
@@ -424,7 +434,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                   });
                 },
                 hint: const Text('Select Service Type'),
-                items: ['Pet Salon', 'Home service'].map((String value) {
+                items: ['In-clinic', 'Home service'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),

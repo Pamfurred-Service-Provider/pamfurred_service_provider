@@ -24,26 +24,26 @@ class ServiceDetailsState extends State<ServiceDetails> {
     return Scaffold(
       appBar: AppBar(
         title: Text(serviceData['name']),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              final updatedService = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      EditServiceScreen(serviceData: serviceData),
-                ),
-              );
-              if (updatedService != null) {
-                setState(() {
-                  serviceData = updatedService; // Update with edited data
-                });
-                Navigator.pop(context, updatedService);
-              }
-            },
-            child: const Text("Edit"),
-          ),
-        ],
+        //   actions: [
+        //     TextButton(
+        //       onPressed: () async {
+        //         final updatedService = await Navigator.push(
+        //           context,
+        //           MaterialPageRoute(
+        //             builder: (context) =>
+        //                 EditServiceScreen(serviceData: serviceData),
+        //           ),
+        //         );
+        //         if (updatedService != null) {
+        //           setState(() {
+        //             serviceData = updatedService; // Update with edited data
+        //           });
+        //           Navigator.pop(context, updatedService);
+        //         }
+        //       },
+        //       child: const Text("Edit"),
+        //     ),
+        //   ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

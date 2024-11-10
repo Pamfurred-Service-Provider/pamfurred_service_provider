@@ -13,12 +13,10 @@ class ServiceBackend {
     required List<String> petsToCater,
     required String serviceType,
     required bool availability,
-    required File? image,
+    required String? imageUrl,
     required String? serviceCategory,
     required String serviceProviderId,
   }) async {
-    print("Adding service with category: $serviceCategory");
-
     // Validate the size value to match database constraints
     const allowedSizes = ['S', 'M', 'L', 'XL', 'N/A'];
     if (!allowedSizes.contains(size)) {
@@ -38,7 +36,7 @@ class ServiceBackend {
           'pet_type': petsToCater,
           'service_type': [serviceType],
           'availability_status': availability,
-          'service_image': image != null ? await uploadImage(image) : null,
+          'service_image': imageUrl,
           'service_category': [serviceCategory],
         })
         .select('service_id')
@@ -57,14 +55,25 @@ class ServiceBackend {
 
   Future<String> uploadImage(File image) async {
     final filePath = 'service_images/${image.uri.pathSegments.last}';
-    await _supabase.storage
+    final response = await _supabase.storage
         .from('service_provider_images')
         .upload(filePath, image);
 
-    return _supabase.storage
+    if (response != null) {
+      print("Image upload error");
+      throw Exception('Image upload failed');
+    }
+// If the upload is successful, get the public URL
+    final publicUrl = _supabase.storage
         .from('service_provider_images')
         .getPublicUrl(filePath);
+    return publicUrl;
   }
+
+  //   return _supabase.storage
+  //       .from('service_provider_images')
+  //       .getPublicUrl(filePath);
+  // }
 
   Future<List<dynamic>> getServiceProviderServices({
     required String serviceProviderId,
