@@ -19,7 +19,7 @@ class ServicesScreenState extends State<ServicesScreen> {
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
   String? selectedCategory = 'All services'; // Default selected category
-  bool _isLoading = false;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -123,18 +123,20 @@ class ServicesScreenState extends State<ServicesScreen> {
     if (serviceProviderId == null) return;
 
     final response = await supabase
-        .from('serviceprovider_package')
+        .from('serviceprovider_package ')
         .select('*, package(package_name, price, package_image)')
         .eq('sp_id', serviceProviderId);
+
+    // Check if the response contains data
     if (response is List && response.isNotEmpty) {
       setState(() {
         packages = List<Map<String, dynamic>>.from(response.map((item) {
+          final package = item['package'];
           return {
-            'id': item['id'], // Ensure you fetch the id
             'name': item['package']['package_name'] ?? 'Unknown',
             'price': item['package']['price'] ?? 0,
-            'image': item['package']['package_image'] ??
-                'assets/images/default_image.png',
+            'image': item['package']['packagee_image'] ??
+                'assets/images/default_image.png', // Default image path
           };
         }));
       });
@@ -145,20 +147,84 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-  // Method to navigate to the AddPackageScreen and get the new package
+  Future<void> _createPackage(Map<String, dynamic> newPackage) async {
+    final response = await supabase.from('serviceprovider_package').insert({
+      'sp_id': serviceProviderId,
+      'package_id': newPackage['package_id'],
+      'package_category': selectedCategory,
+      'price': newPackage['price'],
+    });
+
+    if (response != null) {
+      throw Exception('Failed to create package: ${response.message}');
+    }
+
+    setState(() {
+      packages.add(newPackage);
+    });
+  }
+
   void _navigateToAddPackage(BuildContext context) async {
-    final updatedService = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AddPackageScreen(),
-      ),
-    );
-    if (updatedService != null) {
-      setState(() {
-        packages.add(updatedService);
-      });
+    if (serviceProviderId != null) {
+      // Check if it's non-null
+      final newPackage = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddPackageScreen(
+            packageProviderId: serviceProviderId!, // Pass non-null value
+            packageCategory: selectedCategory,
+          ),
+        ),
+      );
+
+      if (newPackage != null) {
+        await _createService(newPackage);
+      }
+    } else {
+      showErrorDialog(context, "Service Provider ID is missing.");
     }
   }
+
+  // Future<void> _fetchPackages() async {
+  //   if (serviceProviderId == null) return;
+
+  //   final response = await supabase
+  //       .from('serviceprovider_package')
+  //       .select('*, package(package_name, price, package_image)')
+  //       .eq('sp_id', serviceProviderId);
+  //   if (response is List && response.isNotEmpty) {
+  //     setState(() {
+  //       packages = List<Map<String, dynamic>>.from(response.map((item) {
+  //         return {
+  //           'id': item['id'], // Ensure you fetch the id
+  //           'name': item['package']['package_name'] ?? 'Unknown',
+  //           'price': item['package']['price'] ?? 0,
+  //           'image': item['package']['package_image'] ??
+  //               'assets/images/default_image.png',
+  //         };
+  //       }));
+  //     });
+  //   } else {
+  //     setState(() {
+  //       packages = [];
+  //     });
+  //   }
+  // }
+
+  // // Method to navigate to the AddPackageScreen and get the new package
+  // void _navigateToAddPackage(BuildContext context) async {
+  //   final updatedService = await Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => const AddPackageScreen(),
+  //     ),
+  //   );
+  //   if (updatedService != null) {
+  //     setState(() {
+  //       packages.add(updatedService);
+  //     });
+  //   }
+  // }
 
   // Method to show delete dialog
   void _showDeleteDialog(
@@ -258,7 +324,7 @@ class ServicesScreenState extends State<ServicesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
+      body: isLoading
           ? const Center(
               child:
                   CircularProgressIndicator()) // Show loading indicator when loading is true
@@ -440,26 +506,26 @@ class ServicesScreenState extends State<ServicesScreen> {
                                   ),
                                 ],
                               ),
-                              onTap: () async {
-                                // Navigate to EditServiceScreen with the service data
-                                final updatedPackage = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        PackageDetails(packageData: package),
-                                  ),
-                                );
-                                // If package was edited, update the list
-                                if (updatedPackage != null) {
-                                  setState(() {
-                                    int index = packages.indexWhere((pkg) =>
-                                        pkg['id'] == updatedPackage['id']);
-                                    if (index != -1) {
-                                      packages[index] = updatedPackage;
-                                    } // Update with edited service });
-                                  });
-                                }
-                              },
+                              // onTap: () async {
+                              //   // Navigate to EditServiceScreen with the service data
+                              //   final updatedPackage = await Navigator.push(
+                              //     context,
+                              //     MaterialPageRoute(
+                              //       builder: (context) =>
+                              //           PackageDetails(packageData: package),
+                              //     ),
+                              //   );
+                              //   // If package was edited, update the list
+                              //   if (updatedPackage != null) {
+                              //     setState(() {
+                              //       int index = packages.indexWhere((pkg) =>
+                              //           pkg['id'] == updatedPackage['id']);
+                              //       if (index != -1) {
+                              //         packages[index] = updatedPackage;
+                              //       } // Update with edited service });
+                              //     });
+                              //   }
+                              // },
                             ),
                           ),
                         ),

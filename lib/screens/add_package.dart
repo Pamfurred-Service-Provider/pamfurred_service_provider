@@ -2,11 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:service_provider/Supabase/package_backend.dart';
 
 class AddPackageScreen extends StatefulWidget {
-  const AddPackageScreen({super.key, this.packageData});
-  final Map<String, dynamic>?
-      packageData; //gamit ni sya para atong clickable nga card sa services
+  final String packageProviderId;
+  final String? packageCategory;
+
+  const AddPackageScreen(
+      {super.key, required this.packageProviderId, this.packageCategory});
 
   @override
   State<AddPackageScreen> createState() => _AddPackageScreenState();
@@ -14,7 +17,6 @@ class AddPackageScreen extends StatefulWidget {
 
 class _AddPackageScreenState extends State<AddPackageScreen> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController descController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   final TextEditingController inclusionsController = TextEditingController();
   final TextEditingController minWeightController = TextEditingController();
@@ -23,7 +25,23 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
-  List<String> petsList = []; // List to store pets
+  List<String> petsList = ['dog']; // List to store pets
+  List<String> inclusions = [];
+  bool isLoading = false;
+  //Static data for pet sizes
+  List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
+  final List<String> petType = ['dog', 'cat', 'bunny'];
+  List<String> inclusionList = [
+    'bath',
+    'haircut',
+    'nail clipping',
+    'ear cleaning',
+    'pet cologne',
+    'tooth brushing'
+  ]; // List to store package inclusions
+  String? packageType = 'In-clinic';
+  String? availability = 'Available';
+  String? sizes = 'S';
 
   // Method to pick an image from the gallery
   Future<void> changeImage() async {
@@ -37,12 +55,20 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
   }
 
 // Method to add pet to the list
-  Future<void> _addPet() async {
-    String? newPet = await _showAddPetDialog();
-    if (newPet != null && newPet.isNotEmpty) {
+  void addPet() async {
+    List<String> availablePets =
+        petType.where((pet) => !petsList.contains(pet)).toList();
+    // If there are available pets left to choose, add another dropdown
+    if (availablePets.isNotEmpty) {
       setState(() {
-        petsList.add(newPet); // Add pet to the list
+        petsList
+            .add(availablePets.first); // Add the first available pet by default
       });
+    } else {
+      // Show a message if all pets are already selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All pets have been added.')),
+      );
     }
   }
 
@@ -70,59 +96,21 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     );
   } // Dialog to input pet name
 
-  Future<String?> _showAddPetDialog() async {
-    String petCategory = '';
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Pet'),
-          content: TextField(
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Enter pet category'),
-            onChanged: (value) {
-              petCategory = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(); // Close the dialog without returning anything
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(petCategory); // Return entered category
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  //Static data for pet sizes
-  List<String> sizeOptions = ['Small', 'Medium', 'Large', 'Extra Large', 'N/A'];
-  List<String> inclusionList = []; // List to store package inclusions
-  String? packageType = 'Pet Salon';
-  String? availability = 'Available';
-  String? sizes = 'Small';
-
-// Method to add pet to the list
-  Future<void> _addInclusion() async {
-    String? inclusion = await _showAddinclusionDialog();
-    if (inclusion != null && inclusion.isNotEmpty) {
+  void addInclusion() async {
+    List<String> availableInclusions = inclusionList
+        .where((inclusion) => !inclusions.contains(inclusion))
+        .toList();
+    if (availableInclusions.isNotEmpty) {
       setState(() {
-        inclusionList.add(inclusion); // Add pet to the list
+        inclusions.add(availableInclusions.first);
       });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All inclusions have been added.')),
+      );
     }
   }
 
-  // Method to remove a pet from the list
   void _removeInclusion(int index) {
     showDialog(
       context: context,
@@ -146,81 +134,70 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     );
   }
 
-// Dialog to input pet name
-  Future<String?> _showAddinclusionDialog() async {
-    String packageCategory = '';
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Inclusion'),
-          content: TextField(
-            autofocus: true,
-            decoration:
-                const InputDecoration(hintText: 'Enter package inclusions'),
-            onChanged: (value) {
-              packageCategory = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(); // Close the dialog without returning anything
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(packageCategory); // Return entered category
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  void addPackage() async {
+    final backend = PackageBackend();
+    setState(() {
+      isLoading = true; // Start loading
+    });
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.packageData != null) {
-      // Initialize fields with data passed for editing
-      nameController.text = widget.packageData?['name'] ?? '';
-      descController.text = widget.packageData?['description'] ?? '';
-      priceController.text = widget.packageData?['price'] ?? '';
-      minWeightController.text = widget.packageData?['minWeight'] ?? '';
-      maxWeightController.text = widget.packageData?['maxWeight'] ?? '';
-      petsToCaterController.text = widget.packageData?['pets to cater'] ?? '';
-      sizes = widget.packageData?['size'] ?? 'Small';
-      inclusionList =
-          List<String>.from(widget.packageData?['inclusionList'] ?? []);
-      packageType = widget.packageData?['packageType'] ?? 'Pet Salon';
-      availability = widget.packageData?['availability'] ?? 'Available';
-      _image = widget.packageData?['image']; // Load the image if it exists
-      // Initialize inclusionList from packageData
-      inclusionList = widget.packageData?['inclusionList'] ??
-          []; // Ensure it's a list of Strings
+    // int price;
+    // int minWeight;
+    // int maxWeight;
+    // try {
+    //   price = int.parse(priceController.text);
+    // } catch (e) {
+    //   setState(() {
+    //     isLoading = false;
+    //   });
+    //   return;
+    // }
+    // try {
+    //   minWeight = int.parse(minWeightController.text);
+    // } catch (e) {
+    //   setState(() {
+    //     isLoading = false;
+    //   });
+    //   return;
+    // }
+
+    if (nameController.text.isEmpty ||
+        priceController.text.isEmpty ||
+        sizes == null ||
+        minWeightController.text.isEmpty ||
+        packageType == null ||
+        availability == null) {
+      throw Exception('Please fill all fields');
     }
-  }
+    String imageUrl = '';
+    if (_image != null) {
+      imageUrl = await backend
+          .uploadImage(_image!); // Get the image URL after uploading
+      print("Uploaded image URL: $imageUrl"); // Debug print
+      print("Inclusions: $inclusionList");
+    }
+    int price = int.parse(priceController.text);
+    int minWeight = int.parse(minWeightController.text);
+    int maxWeight = int.parse(maxWeightController.text);
 
-  void _savePackage() {
-    final newPackage = {
-      'name': nameController.text,
-      'description': descController.text,
-      'price': priceController.text,
-      'size': sizes,
-      'pets to cater': petsToCaterController.text,
-      'inclusionList': inclusionList,
-      'minWeight': minWeightController.text,
-      'maxWeight': maxWeightController.text,
-      'packageType': packageType,
-      'availability': availability,
-      'image': _image, // Used for the service icon in the service screen
-    };
-    Navigator.pop(context, newPackage);
+    final packageId = await backend.addPackage(
+      packageName: nameController.text,
+      price: price,
+      size: sizes ?? '',
+      minWeight: minWeight,
+      maxWeight: maxWeight,
+      petsToCater: petsList,
+      packageProviderId: widget.packageProviderId, // petsToCater:
+      packageType: packageType ?? '',
+      availability: availability == 'Available',
+      inclusionList: inclusions,
+      imageUrl: imageUrl,
+      packageCategory: widget.packageCategory, // Pass package category here
+    );
+    if (packageId != null) {
+      Navigator.pop(context, 'package Added');
+    } else {
+      throw Exception('Failed to add package: packageId is null');
+    }
   }
 
   @override
@@ -251,7 +228,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                     image: DecorationImage(
                       image: _image == null
                           ? const AssetImage('assets/image.png')
-                          : FileImage(_image!),
+                          : FileImage(_image!) as ImageProvider,
                       fit: BoxFit.cover, // Cover the container
                     ),
                   ),
@@ -289,62 +266,58 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           ),
           const SizedBox(height: 10),
           const Text(
-            "Description",
+            "Pet specific package",
             style: TextStyle(fontSize: 16),
           ),
-          TextField(
-            maxLines: 8, // Allows the TextField to expand to 8 lines
-            controller: descController,
-            decoration: const InputDecoration(
-              hintText: "Enter description here",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+          ...petsList.asMap().entries.map((entry) {
+            int index = entry.key;
+            String pet = entry.value;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: pet,
+                          isExpanded: true,
+                          onChanged: (newValue) {
+                            setState(() {
+                              petsList[index] = newValue!;
+                            });
+                          },
+                          items: petType
+                              .where((petCategory) =>
+                                  !petsList.contains(petCategory) ||
+                                  petCategory == pet)
+                              .map((petCategory) => DropdownMenuItem<String>(
+                                    value: petCategory,
+                                    child: Text(petCategory),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _removePet(index),
+                  ),
+                ],
               ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Pet specific service",
-            style: TextStyle(fontSize: 16),
-          ),
+            );
+          }),
           const SizedBox(height: 20),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: petsList.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Card(
-                  elevation: 4.0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      petsList[index],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        color: Color.fromRGBO(160, 62, 6, 1),
-                      ),
-                      onPressed: () {
-                        _removePet(index); // Remove pet from the list
-                      },
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
+          // Add more pets button
           ElevatedButton.icon(
-            onPressed: _addPet, // Add pet when pressed
+            onPressed: addPet, // Add pet when pressed
             icon: const Icon(Icons.add),
             label: const Text("Add More"),
             // label: const Text("Add Pet Category"),
@@ -353,51 +326,59 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
             "Package Inclusions",
             style: TextStyle(fontSize: 16),
           ),
-          const SizedBox(height: 20),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: inclusionList.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Card(
-                        elevation: 4.0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            inclusionList[index],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(
-                              Icons.delete,
-                              color: Color.fromRGBO(160, 62, 6, 1),
-                            ),
-                            onPressed: () {
-                              _removeInclusion(
-                                  index); // Remove inclusion from the list
-                            },
-                          ),
+          ...inclusionList.asMap().entries.map((entry) {
+            int index = entry.key;
+            String inclusion = entry.value;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: inclusion,
+                          isExpanded: true,
+                          onChanged: (newValue) {
+                            setState(() {
+                              inclusions[index] = newValue!;
+                            });
+                          },
+                          items: inclusionList
+                              .where((item) =>
+                                  !inclusions.contains(item) ||
+                                  item == inclusion)
+                              .map((String item) {
+                            return DropdownMenuItem<String>(
+                              value: item,
+                              child: Text(item),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ElevatedButton.icon(
-              onPressed: _addInclusion,
-              icon: const Icon(Icons.add),
-              label: const Text("Add Inclusion"),
-            ),
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _removeInclusion(index),
+                  ),
+                ],
+              ),
+            );
+          }),
+          const SizedBox(height: 20),
+          // Add more pets button
+          ElevatedButton.icon(
+            onPressed: addInclusion, // Add pet when pressed
+            icon: const Icon(Icons.add),
+            label: const Text("Add More"),
+            // label: const Text("Add Pet Category"),
           ),
           const SizedBox(height: 10),
           const Text(
@@ -514,7 +495,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           ),
           const SizedBox(height: 10),
           const Text(
-            "Service Type",
+            "package Type",
             style: TextStyle(fontSize: 16),
           ),
           InputDecorator(
@@ -533,7 +514,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                   });
                 },
                 hint: const Text('Select Package Type'),
-                items: ['Pet Salon', 'Home service'].map((String value) {
+                items: ['In-clinic', 'Home service'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -557,12 +538,14 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: _savePackage,
+                onPressed: addPackage,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 100, 176, 81),
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Save'),
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Save'),
               ),
             ],
           ),

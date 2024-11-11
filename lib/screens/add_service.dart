@@ -126,6 +126,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       if (_image != null) {
         imageUrl = await backend
             .uploadImage(_image!); // Get the image URL after uploading
+        print("Uploaded image URL: $imageUrl"); // Debug print
       }
       int price = int.parse(priceController.text);
       int minWeight = int.parse(minWeightController.text);
@@ -151,8 +152,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         maxWeight: maxWeight,
         petsToCater: petsList,
         serviceProviderId: widget.serviceProviderId, // petsToCater:
-        //     petsToCaterController.text.split(',').map((e) => e.trim()).toList(),
-
         serviceType: serviceType ?? '',
         availability: availability == 'Available',
         imageUrl: imageUrl,

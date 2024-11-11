@@ -1,21 +1,22 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ServiceBackend {
+class PackageBackend {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  Future<String?> addService({
-    required String serviceName,
+  Future<Map<String, dynamic>> addPackage({
+    required String packageName,
     required int price,
     required String size,
     required int minWeight,
     required int maxWeight,
     required List<String> petsToCater,
-    required String serviceType,
+    required List<String> inclusionList,
+    required String packageType,
     required bool availability,
     required String? imageUrl,
-    required String? serviceCategory,
-    required String serviceProviderId,
+    required String? packageCategory,
+    required String packageProviderId,
   }) async {
     // Validate the size value to match database constraints
     const allowedSizes = ['S', 'M', 'L', 'XL', 'N/A'];
@@ -24,37 +25,38 @@ class ServiceBackend {
           "Invalid size value: $size. Allowed values are $allowedSizes");
     }
 
-    // Insert the service and retrieve the service ID in a single operation
+    // Insert the package and retrieve the package ID in a single operation
     final response = await _supabase
-        .from('service')
+        .from('package')
         .insert({
-          'service_name': serviceName,
+          'package_name': packageName,
           'price': price,
           'size': size,
           'min_weight': minWeight,
           'max_weight': maxWeight,
           'pet_type': petsToCater,
-          'service_type': [serviceType],
+          'package_type': [packageType],
           'availability_status': availability,
-          'service_image': imageUrl,
-          'service_category': [serviceCategory],
+          'inclusions': inclusionList,
+          'package_image': imageUrl,
+          'package_category': [packageCategory],
         })
-        .select('service_id')
+        .select('package_id')
         .single();
 
-    final serviceId = response['service_id'];
+    final packageId = response['package_id'];
 
-    // Link the service to the service provider directly
-    await _supabase.from('serviceprovider_service').insert({
-      'sp_id': serviceProviderId,
-      'service_id': serviceId,
+    // Link the package to the package provider directly
+    await _supabase.from('serviceprovider_package').insert({
+      'sp_id': packageProviderId,
+      'package_id': packageId,
     });
 
-    return serviceId;
+    return packageId;
   }
 
   Future<String> uploadImage(File image) async {
-    final filePath = 'service_images/${image.uri.pathSegments.last}';
+    final filePath = 'package_images/${image.uri.pathSegments.last}';
     final response = await _supabase.storage
         .from('service_provider_images')
         .upload(filePath, image);
@@ -73,22 +75,22 @@ class ServiceBackend {
   }
 
   //   return _supabase.storage
-  //       .from('service_provider_images')
+  //       .from('package_provider_images')
   //       .getPublicUrl(filePath);
   // }
 
-  Future<List<dynamic>> getServiceProviderServices({
-    required String serviceProviderId,
+  Future<List<dynamic>> getpackageProviderpackages({
+    required String packageProviderId,
   }) async {
     final response = await _supabase
-        .from('serviceprovider_service')
-        .select('service_id')
-        .eq('sp_id', serviceProviderId);
+        .from('serviceprovider_package')
+        .select('package_id')
+        .eq('sp_id', packageProviderId);
 
-    final serviceIds = (response as List).map((e) => e['service_id']).toList();
+    final packageIds = (response as List).map((e) => e['package_id']).toList();
     return await _supabase
-        .from('service')
+        .from('package')
         .select()
-        .in_('service_id', serviceIds);
+        .in_('package_id', packageIds);
   }
 }
