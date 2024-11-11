@@ -67,16 +67,49 @@ class LoginScreenState extends State<LoginScreen> {
         final isEmailVerified = response.user!.emailConfirmedAt != null;
 
         if (isEmailVerified) {
-          // Successful login
-          Navigator.push(context, crossFadeRoute(const MainScreen()));
+          // Check the approval status in the 'service_provider' table
+          final approvalStatusResponse = await Supabase.instance.client
+              .from('service_provider')
+              .select('approval_status')
+              .eq('username', response.user!.email)
+              .single();
+
+          if (approvalStatusResponse.error == null) {
+            final approvalStatus =
+                approvalStatusResponse.data['approval_status'];
+
+            if (approvalStatus == 'approved') {
+              // Approval status is 'approved', navigate to MainScreen
+              Navigator.push(context, crossFadeRoute(const MainScreen()));
+            } else if (approvalStatus == 'declined') {
+              // Approval status is 'declined', sign out and show specific message
+              await Supabase.instance.client.auth.signOut();
+              setState(() {
+                loginErrorMessage = 'Admin declined your request.';
+              });
+              formKey.currentState!.validate(); // Trigger form to show error
+            } else {
+              // Approval status is something else (e.g., 'pending')
+              await Supabase.instance.client.auth.signOut();
+              setState(() {
+                loginErrorMessage = 'Your account is awaiting admin approval.';
+              });
+              formKey.currentState!.validate();
+            }
+          } else {
+            // Error retrieving approval status
+            setState(() {
+              loginErrorMessage =
+                  'Error checking approval status. Please try again.';
+            });
+            formKey.currentState!.validate();
+          }
         } else {
-          // Email not verified - set the error message
+          // Email not verified - set error message
           setState(() {
-            loginErrorMessage =
-                'Account is not verified by admin.'; // Updated message
+            loginErrorMessage = 'Account email is not verified.';
           });
-          formKey.currentState!
-              .validate(); // Trigger the form to show the error
+          formKey.currentState!.validate();
         }
       } else {
         // Display error if login fails
@@ -87,7 +120,7 @@ class LoginScreenState extends State<LoginScreen> {
       }
     } catch (error) {
       setState(() {
-        loginErrorMessage = 'Please wait for account verification.';
+        loginErrorMessage = 'An unexpected error occurred. Please try again.';
       });
       formKey.currentState!.validate();
     } finally {

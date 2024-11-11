@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:service_provider/components/custom_padded_button.dart';
 import 'package:service_provider/components/globals.dart';
-import 'package:service_provider/screens/registration_confirmation.dart';
+import 'package:service_provider/screens/otp_input.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -101,13 +101,15 @@ class RegisterScreenState extends State<RegisterScreen> {
         if (userInsertResponse.isNotEmpty) {
           final serviceProviderInsertResponse = await supabase
               .from('service_provider')
-              .insert({'name': establishmentName, 'user_id': userId}).select();
+              .insert({'name': establishmentName, 'sp_id': userId}).select();
           if (serviceProviderInsertResponse.isNotEmpty) {
             if (mounted) {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const RegistrationConfirmation()),
+                    builder: (context) => OtpVerificationScreen(
+                          email: email,
+                        )),
               );
             }
           } else {
