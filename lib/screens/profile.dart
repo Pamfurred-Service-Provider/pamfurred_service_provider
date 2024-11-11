@@ -45,7 +45,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             'time_open, time_close, pets_catered, latitude, longitude,'
             'sentiment_label, approval_status, number_of_pets',
           )
-          .eq('user_id', userId)
+          .eq('sp_id', userId)
           .single(); // This will throw an error if multiple rows are found
 
       print('response: $response');

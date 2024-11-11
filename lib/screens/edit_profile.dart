@@ -71,7 +71,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     } else {
       // Show a message if all pets are already selected
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('All pets have been added.')),
+        const SnackBar(content: Text('All pets have been added.')),
       );
     }
   }

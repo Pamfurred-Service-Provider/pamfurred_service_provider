@@ -32,9 +32,8 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
 
   // Fetch all appointments from the "appointments" table
   Future<void> fetchAppointments() async {
-    final response = await supabase.from('appointment').select('*').execute();
+    final response = await supabase.from('appointment').select('*');
     if (response.error == null) {
-      print("Appointments fetched: ${response.data}");
       setState(() {
         appointments = List<Map<String, dynamic>>.from(response.data);
       });
@@ -128,8 +127,8 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
                 });
                 await supabase
                     .from('appointment')
-                    .update({'appointment_status': newStatus})
-                    .eq('appointment_id', appointment['appointment_id']);
+                    .update({'appointment_status': newStatus}).eq(
+                        'appointment_id', appointment['appointment_id']);
               },
             ),
           ),
@@ -145,16 +144,17 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
         elevation: 10,
         child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
           ListTile(
-            title: Text('Pet Owner: ${appointment['user_id'] ?? 'N/A'}'),  // Fallback if null
+            title: Text(
+                'Pet Owner: ${appointment['user_id'] ?? 'N/A'}'), // Fallback if null
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'Date: ${appointment['appointment_date'] ?? 'N/A'}',  // Fallback if null
+                  'Date: ${appointment['appointment_date'] ?? 'N/A'}', // Fallback if null
                   style: const TextStyle(color: Colors.black54),
                 ),
                 Text(
-                  'Time: ${appointment['appointment_time'] ?? 'N/A'}',  // Fallback if null
+                  'Time: ${appointment['appointment_time'] ?? 'N/A'}', // Fallback if null
                   style: const TextStyle(color: Colors.black54),
                 ),
               ],
@@ -166,20 +166,18 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 Text(
-                  appointment['appointment_status'] ?? 'Unknown',  // Fallback if null
+                  appointment['appointment_status'] ??
+                      'Unknown', // Fallback if null
                   style: TextStyle(
-                    color: statusColors[appointment['appointment_status']] ?? Colors.black87,
+                    color: statusColors[appointment['appointment_status']] ??
+                        Colors.black87,
                   ),
                 ),
               ],
             ),
           ),
-        ]), 
+        ]),
       ),
     );
   }
-}
-
-extension on PostgrestResponse {
-  get error => null;
 }

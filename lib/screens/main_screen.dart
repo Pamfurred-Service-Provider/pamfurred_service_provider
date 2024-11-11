@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:service_provider/components/bottom_navbar.dart';
 import 'package:service_provider/screens/home_screen.dart';
 import 'package:service_provider/screens/profile.dart';
-import 'package:service_provider/screens/services.dart';
 import 'package:service_provider/screens/notification_screen.dart';
+import 'package:service_provider/screens/services.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

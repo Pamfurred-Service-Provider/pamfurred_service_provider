@@ -8,13 +8,11 @@ class AddServiceScreen extends StatefulWidget {
   final String serviceProviderId;
   final String? serviceCategory;
 
-  AddServiceScreen({
+  const AddServiceScreen({
     super.key,
     required this.serviceProviderId,
     this.serviceCategory,
-  }) {
-    print('Service Category in AddServiceScreen: $serviceCategory'); // Debug
-  }
+  });
   @override
   State<AddServiceScreen> createState() => _AddServiceScreenState();
 }
@@ -29,7 +27,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
-  List<String> petsList = []; // List to store pets
+  List<String> petsList = ['dog']; // List to store pets
   bool _isLoading = false;
   // Method to pick an image from the gallery
   Future<void> changeImage() async {
@@ -43,12 +41,20 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   }
 
 // Method to add pet to the list
-  Future<void> _addPet() async {
-    String? newPet = await _showAddPetDialog();
-    if (newPet != null && newPet.isNotEmpty) {
+  void addPet() async {
+    List<String> availablePets =
+        petType.where((pet) => !petsList.contains(pet)).toList();
+    // If there are available pets left to choose, add another dropdown
+    if (availablePets.isNotEmpty) {
       setState(() {
-        petsList.add(newPet); // Add pet to the list
+        petsList
+            .add(availablePets.first); // Add the first available pet by default
       });
+    } else {
+      // Show a message if all pets are already selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All pets have been added.')),
+      );
     }
   }
 
@@ -74,47 +80,12 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         ],
       ),
     );
-  } // Dialog to input pet name
-
-  Future<String?> _showAddPetDialog() async {
-    String petCategory = '';
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Pet'),
-          content: TextField(
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Enter pet type'),
-            onChanged: (value) {
-              petCategory = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(); // Close the dialog without returning anything
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(petCategory); // Return entered category
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   //Static data for pet sizes
   List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
-
-  String? serviceType = 'Pet Salon';
+  final List<String> petType = ['dog', 'cat', 'bunny'];
+  String? serviceType = 'In-clinic';
   String? availability = 'Available';
   String? sizes = 'S';
 
@@ -129,7 +100,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     try {
       price = int.parse(priceController.text);
     } catch (e) {
-      print("Invalid price input.");
       setState(() {
         _isLoading = false;
       });
@@ -138,7 +108,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     try {
       minWeight = int.parse(minWeightController.text);
     } catch (e) {
-      print("Invalid minWeight input.");
       setState(() {
         _isLoading = false;
       });
@@ -153,20 +122,27 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
           availability == null) {
         throw Exception('Please fill all fields');
       }
+      String imageUrl = '';
+      if (_image != null) {
+        imageUrl = await backend
+            .uploadImage(_image!); // Get the image URL after uploading
+      }
       int price = int.parse(priceController.text);
       int minWeight = int.parse(minWeightController.text);
       int maxWeight = int.parse(maxWeightController.text);
 
-      print("Adding service with category: ${widget.serviceCategory}");
-      print("Name: ${nameController.text}");
-      print("Pet Specific Service: $petsList");
-      print("Price: $price");
-      print("Size: $sizes");
-      print("serviceType: $serviceType");
-      print("Min Weight: $minWeight");
-      print("Max Weight: $maxWeight");
-      print("Availability: $availability");
-      print("Service Category: ${widget.serviceCategory}"); // Debug print
+      // print("Adding service with category: ${widget.serviceCategory}");
+      // print("Name: ${nameController.text}");
+      // print("Pet Specific Service: $petsList");
+      // print("Price: $price");
+      // print("Size: $sizes");
+      // print("serviceType: $serviceType");
+      // print("Min Weight: $minWeight");
+      // print("Max Weight: $maxWeight");
+      // print("Availability: $availability");
+      // print("Service Category: ${widget.serviceCategory}"); // Debug print
+      // print("Image URL: $imageUrl");
+
       final serviceId = await backend.addService(
         serviceName: nameController.text,
         price: price,
@@ -176,34 +152,22 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         petsToCater: petsList,
         serviceProviderId: widget.serviceProviderId, // petsToCater:
         //     petsToCaterController.text.split(',').map((e) => e.trim()).toList(),
+
         serviceType: serviceType ?? '',
         availability: availability == 'Available',
-        image: _image,
+        imageUrl: imageUrl,
         serviceCategory: widget.serviceCategory, // Pass service category here
       );
-      print("Service ID returned: $serviceId");
 
       if (serviceId != null) {
-        await backend.addServiceProviderService(
-          serviceProviderId: widget.serviceProviderId,
-          serviceId: serviceId.toString(),
-        );
-        print("Service provider service added successfully");
-
         Navigator.pop(context, 'Service Added');
       } else {
         throw Exception('Failed to add service: serviceId is null');
       }
     } catch (e) {
       print('Error adding service: ${e.toString()}');
-      // Show an error message to the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add service. Please try again.')),
-      );
     } finally {
-      setState(() {
-        _isLoading = false; // Stop loading
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -277,44 +241,55 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             "Pet Specific Service",
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 20),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: petsList.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Card(
-                  elevation: 4.0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      petsList[index],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.normal,
+          ...petsList.asMap().entries.map((entry) {
+            int index = entry.key;
+            String pet = entry.value;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: pet,
+                          isExpanded: true,
+                          onChanged: (newValue) {
+                            setState(() {
+                              petsList[index] = newValue!;
+                            });
+                          },
+                          items: petType
+                              .where((petCategory) =>
+                                  !petsList.contains(petCategory) ||
+                                  petCategory == pet)
+                              .map((petCategory) => DropdownMenuItem<String>(
+                                    value: petCategory,
+                                    child: Text(petCategory),
+                                  ))
+                              .toList(),
+                        ),
                       ),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        color: Color.fromRGBO(160, 62, 6, 1),
-                      ),
-                      onPressed: () {
-                        _removePet(index); // Remove pet from the list
-                      },
-                    ),
                   ),
-                ),
-              );
-            },
-          ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _removePet(index),
+                  ),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 20),
+          // Add more pets button
           ElevatedButton.icon(
-            onPressed: _addPet, // Add pet when pressed
+            onPressed: addPet, // Add pet when pressed
             icon: const Icon(Icons.add),
             label: const Text("Add More"),
             // label: const Text("Add Pet Category"),
@@ -459,7 +434,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                   });
                 },
                 hint: const Text('Select Service Type'),
-                items: ['Pet Salon', 'Home service'].map((String value) {
+                items: ['In-clinic', 'Home service'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),

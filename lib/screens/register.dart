@@ -101,7 +101,11 @@ class RegisterScreenState extends State<RegisterScreen> {
         if (userInsertResponse.isNotEmpty) {
           final serviceProviderInsertResponse = await supabase
               .from('service_provider')
-              .insert({'name': establishmentName, 'sp_id': userId}).select();
+              .insert({
+            'name': establishmentName,
+            'email': email,
+            'sp_id': userId
+          }).select();
           if (serviceProviderInsertResponse.isNotEmpty) {
             if (mounted) {
               Navigator.pushReplacement(
