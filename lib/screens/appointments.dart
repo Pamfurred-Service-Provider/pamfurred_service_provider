@@ -13,6 +13,7 @@ class AppointmentsScreen extends StatefulWidget {
 class AppointmentsScreenState extends State<AppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String? serviceProviderId; // Nullable service provider ID
 
   final Map<String, Color> statusColors = {
     'Upcoming': const Color.fromRGBO(255, 143, 0, 1),
@@ -24,6 +25,31 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _initializeSession();
+  }
+
+  Future<void> _initializeSession() async {
+    final supabase = Supabase.instance.client;
+    final serviceSession = supabase.auth.currentSession;
+
+    if (serviceSession == null) {
+      throw Exception("User not logged in");
+    }
+    final userId = serviceSession.user.id;
+    print('User ID: $userId');
+
+// Fetch the service provider ID (sp_id) using user_id
+    final spResponse = await supabase
+        .from('service_provider')
+        .select('sp_id')
+        .eq('sp_id', userId)
+        .single();
+
+    if (spResponse == null || spResponse['sp_id'] == null) return;
+
+    setState(() {
+      serviceProviderId = spResponse['sp_id'];
+    });
   }
 
   @override
@@ -32,12 +58,12 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     super.dispose();
   }
 
-  Future<Map<String, dynamic>> fetchAppointmentDetails(String spId) async {
+  Future<Map<String, dynamic>> fetchAppointmentDetails() async {
     final supabase = Supabase.instance.client;
 
     final response = await supabase.rpc(
       'get_appointment_details_by_sp_id',
-      params: {'sp_id_param': spId},
+      params: {'sp_id_param': serviceProviderId},
     );
 
     final dataList = List<Map<String, dynamic>>.from(response);
@@ -46,8 +72,6 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
 
   @override
   Widget build(BuildContext context) {
-    const spId =
-        '7de2727e-d730-477e-8e97-7653d00d2031'; // Replace this with actual sp_id
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointments"),
@@ -71,29 +95,31 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
           labelPadding: const EdgeInsets.symmetric(horizontal: 2),
         ),
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: fetchAppointmentDetails(spId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final appointmentList =
-                snapshot.data!['appointments'] as List<Map<String, dynamic>>;
+      body: serviceProviderId == null
+          ? const Center(child: CircularProgressIndicator())
+          : FutureBuilder<Map<String, dynamic>>(
+              future: fetchAppointmentDetails(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  final appointmentList = snapshot.data!['appointments']
+                      as List<Map<String, dynamic>>;
 
-            return TabBarView(
-              controller: _tabController,
-              physics: const BouncingScrollPhysics(),
-              children: List.generate(5, (index) {
-                return _buildAppointmentList(index, appointmentList);
-              }),
-            );
-          } else {
-            return const Center(child: Text('No appointments found.'));
-          }
-        },
-      ),
+                  return TabBarView(
+                    controller: _tabController,
+                    physics: const BouncingScrollPhysics(),
+                    children: List.generate(5, (index) {
+                      return _buildAppointmentList(index, appointmentList);
+                    }),
+                  );
+                } else {
+                  return const Center(child: Text('No appointments found.'));
+                }
+              },
+            ),
     );
   }
 
