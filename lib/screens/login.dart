@@ -56,32 +56,59 @@ class LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Supabase login process
+      // Attempt to sign in first
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      if (response.user != null) {
-        // Login successful, navigate to MainScreen
-        Navigator.push(context, crossFadeRoute(const MainScreen()));
+      final user = response.user;
+
+      if (user != null) {
+        // Check the service provider's approval status
+        final statusResponse = await Supabase.instance.client.rpc(
+            'get_service_provider_approval_status',
+            params: {'uid': user.id});
+
+        final providerStatus = statusResponse as String?;
+        if (providerStatus == 'approved') {
+          // If approved, navigate to MainScreen
+          if (mounted) {
+            Navigator.push(context, crossFadeRoute(const MainScreen()));
+          }
+        } else if (providerStatus == 'pending') {
+          // If pending, sign out and show a pending approval message
+          await Supabase.instance.client.auth.signOut();
+          setState(() {
+            loginErrorMessage =
+                'Your account is pending for approval. Please try again later.';
+          });
+        } else if (providerStatus == 'declined') {
+          // If declined, sign out and show a declined message
+          await Supabase.instance.client.auth.signOut();
+          setState(() {
+            loginErrorMessage =
+                'Your account has been declined. Please contact support for more information.';
+          });
+        } else {
+          // Handle unexpected status
+          await Supabase.instance.client.auth.signOut();
+          setState(() {
+            loginErrorMessage =
+                'Unable to determine account status. Please contact support.';
+          });
+        }
       } else {
-        // Display error if login fails
         setState(() {
           loginErrorMessage = 'Invalid email or password';
         });
-        formKey.currentState!.validate();
       }
     } catch (error) {
-      // Log the error for debugging purposes with detailed info
       print('Login error: $error');
-
-      // Update the UI with a detailed error message
       setState(() {
         loginErrorMessage =
             'An unexpected error occurred. Please try again. Details: $error';
       });
-      formKey.currentState!.validate();
     } finally {
       setState(() {
         isLoading = false;
@@ -218,11 +245,14 @@ class LoginScreenState extends State<LoginScreen> {
                           if (loginErrorMessage.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 16),
-                              child: Text(
-                                loginErrorMessage,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: regularText,
+                              child: SizedBox(
+                                width: deviceWidth,
+                                child: Text(
+                                  loginErrorMessage,
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: regularText,
+                                  ),
                                 ),
                               ),
                             ),
