@@ -71,11 +71,10 @@ class RegisterScreenState extends State<RegisterScreen> {
         },
       );
 
-      final userId = response.user!.id;
-
       if (response.user != null) {
-        // Insert into 'user' table
-        await supabase.from('user').insert({
+        final userId = response.user!.id;
+// Insert into 'user' table
+        final userInsertResponse = await supabase.from('user').insert({
           'user_id': userId,
           'first_name': firstName,
           'last_name': lastName,
@@ -99,20 +98,31 @@ class RegisterScreenState extends State<RegisterScreen> {
         //       .from('service_provider')
         //       .insert({'name': establishmentName, 'user_id': userId}).select();
         // Navigate to the RegistrationConfirmation screen on successful registration
-
-        await supabase.from('service_provider').insert({
-          'name': establishmentName,
-          'email': email,
-          'sp_id': userId
-        }).select();
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => OtpVerificationScreen(
-                      email: email,
-                    )),
-          );
+        if (userInsertResponse.isNotEmpty) {
+          final serviceProviderInsertResponse = await supabase
+              .from('service_provider')
+              .insert({
+            'name': establishmentName,
+            'email': email,
+            'sp_id': userId
+          }).select();
+          if (serviceProviderInsertResponse.isNotEmpty) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => OtpVerificationScreen(
+                          email: email,
+                        )),
+              );
+            }
+          } else {
+            // _showErrorDialog(serviceProviderResponse.error!.message);
+            _showErrorDialog(
+                "Failed to add data to the service_provider table.");
+          }
+        } else {
+          _showErrorDialog("Failed to add data to the user table.");
         }
       } else {
         _showErrorDialog("User sign-up failed.");
