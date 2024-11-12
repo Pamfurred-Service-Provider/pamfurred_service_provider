@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:service_provider/screens/edit_service.dart';
 
@@ -50,9 +52,9 @@ class ServiceDetailsState extends State<ServiceDetails> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (serviceData['image'] != null)
+            if (serviceData['image'] != null && serviceData['image'] is String)
               Center(
-                child: Image.file(
+                child: Image.network(
                   serviceData['image'],
                   width: 200,
                   height: 200,
@@ -63,13 +65,15 @@ class ServiceDetailsState extends State<ServiceDetails> {
               const Center(
                 child: Icon(Icons.image, size: 100),
               ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             const Text(
               'Pet Specific Service:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            Text((serviceData['petsList'] as List<String>?)?.join(',') ??
-                'No Specified Pet Type'),
+            Text(
+              (serviceData['pets'] ?? 'No Specified Pet Type'),
+              style: const TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 10),
             const Text(
               "Availability:",
@@ -94,7 +98,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              '${serviceData['minWeight']} - ${serviceData['maxWeight']}',
+              '${serviceData['minWeight']?.toString() ?? 'N/A'} - ${serviceData['maxWeight']?.toString() ?? 'N/A'}',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -103,7 +107,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['price'] ?? '',
+              serviceData['price']?.toString() ?? '',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -112,7 +116,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['serviceType'] ?? '',
+              serviceData['type'] ?? 'No Service Type Info',
               style: const TextStyle(fontSize: 16),
             ),
           ],

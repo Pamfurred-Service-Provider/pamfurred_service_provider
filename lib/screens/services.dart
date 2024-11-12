@@ -4,6 +4,7 @@ import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/add_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/screens/package_details.dart';
+import 'package:service_provider/screens/service_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ServicesScreen extends StatefulWidget {
@@ -57,8 +58,11 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     final response = await supabase
         .from('serviceprovider_service')
-        .select('service_id, service(service_name, price, service_image)')
+        .select(
+            'service_id, service(service_name, price, service_image, service_type, pet_type, size, min_weight, max_weight, availability_status)')
         .eq('sp_id', serviceProviderId);
+
+    print("Supabase response: $response"); // Debugging line to inspect the data
 
     // Check if the response contains data
     if (response is List && response.isNotEmpty) {
@@ -71,6 +75,14 @@ class ServicesScreenState extends State<ServicesScreen> {
             'price': item['service']['price'] ?? 0,
             'image': item['service']['service_image'] ??
                 'assets/images/default_image.png', // Default image path
+            'type': (service['service_type'] as List).join(', '),
+            'pets': (service['pet_type'] as List).join(', '),
+            'size': item['service']['size'] ?? 'Unknown',
+            'minWeight': item['service']['min_weight'] ?? 0,
+            'maxWeight': item['service']['max_weight'] ?? 0,
+            'availability': (service['availability_status'] is bool)
+                ? (service['availability_status'] ? 'Available' : 'Unavailable')
+                : service['availability_status'] ?? 'Unknown',
           };
         }));
       });
@@ -120,6 +132,16 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
+  void _navigateToServiceDetails(
+      BuildContext context, Map<String, dynamic> serviceData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ServiceDetails(
+            serviceData: serviceData), // Passing the service data
+      ),
+    );
+  }
 // Delete service from Supabase
 
   Future<void> _deleteService(Map<String, dynamic> service) async {
@@ -465,7 +487,10 @@ class ServicesScreenState extends State<ServicesScreen> {
                                           Text('₱${service['price'] ?? 'N/A'}'),
                                         ],
                                       ),
-                                      // onTap: () async {
+                                      onTap: () async {
+                                        _navigateToServiceDetails(
+                                            context, service);
+                                      },
                                       //   // Navigate to EditServiceScreen with the service data
                                       //   final updatedService = await Navigator.push(
                                       //     context,
