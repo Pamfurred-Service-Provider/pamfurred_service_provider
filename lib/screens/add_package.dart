@@ -37,7 +37,10 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     'nail clipping',
     'ear cleaning',
     'pet cologne',
-    'tooth brushing'
+    'tooth brushing',
+    'neuter',
+    'spay',
+    'dental prophylaxis'
   ]; // List to store package inclusions
   String? packageType = 'In-clinic';
   String? availability = 'Available';
@@ -307,7 +310,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
             "Package Inclusions",
             style: TextStyle(fontSize: 16),
           ),
-          ...inclusionList.asMap().entries.map((entry) {
+          ...inclusions.asMap().entries.map((entry) {
             int index = entry.key;
             String inclusion = entry.value;
             return Padding(

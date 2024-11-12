@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class PackageBackend {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  Future<Map<String, dynamic>> addPackage({
+  Future<String?> addPackage({
     required String packageName,
     required int price,
     required String size,
@@ -52,7 +52,7 @@ class PackageBackend {
       'package_id': packageId,
     });
 
-    return {'package_id': packageId}; // Return as a Map
+    return packageId; // Return as a Map
   }
 
   Future<String> uploadImage(File image) async {
