@@ -119,6 +119,27 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
+// Delete service from Supabase
+  Future<void> _deleteService(Map<String, dynamic> service) async {
+    print("Deleting service with ID: $service['id']");
+    print("Service Provider ID: $serviceProviderId");
+    final response = await supabase
+        .from('serviceprovider_service')
+        .delete()
+        .match({'sp_id': serviceProviderId, 'service_id': service['id']});
+
+    if (response.error == null) {
+      // Remove service from UI list if deletion is successful
+      setState(() {
+        services.removeWhere((s) => s['id'] == service['id']);
+      });
+    } else {
+      // Show error dialog if deletion fails
+      showErrorDialog(
+          context, 'Failed to delete service: ${response!.message}');
+    }
+  }
+
   Future<void> _fetchPackagesByCategory(String category) async {
     if (serviceProviderId == null) return;
     print("Fetching packages for category: $category");
@@ -217,6 +238,25 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
+// Delete package from Supabase
+  Future<void> _deletePackage(Map<String, dynamic> package) async {
+    final response = await supabase
+        .from('serviceprovider_package')
+        .delete()
+        .match({'sp_id': serviceProviderId, 'package_id': package['id']});
+
+    if (response.error == null) {
+      // Remove package from UI list if deletion is successful
+      setState(() {
+        packages.remove(package);
+      });
+    } else {
+      // Show error dialog if deletion fails
+      showErrorDialog(
+          context, 'Failed to delete package: ${response.error!.message}');
+    }
+  }
+
   // // Method to navigate to the AddPackageScreen and get the new package
   // void _navigateToAddPackage(BuildContext context) async {
   //   final updatedService = await Navigator.push(
@@ -239,14 +279,13 @@ class ServicesScreenState extends State<ServicesScreen> {
       context: context,
       builder: (context) => DeleteDialog(
         service: item,
-        onDelete: () {
-          setState(() {
-            if (isService) {
-              services.remove(item);
-            } else {
-              packages.remove(item);
-            }
-          });
+        onDelete: () async {
+          if (isService) {
+            await _deleteService(item); // Call service deletion
+          } else {
+            await _deletePackage(item); // Call package deletion
+          }
+          Navigator.pop(context); // Close dialog after deletion
         },
       ),
     );

@@ -26,7 +26,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
   List<String> petsList = ['dog']; // List to store pets
-  List<String> inclusions = [];
+  List<String> inclusions = ['bath'];
   bool isLoading = false;
   //Static data for pet sizes
   List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];

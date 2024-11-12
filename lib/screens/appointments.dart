@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:service_provider/screens/appointment_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:service_provider/screens/appointment_details.dart';
+import 'package:intl/intl.dart';
 
 class AppointmentsScreen extends StatefulWidget {
-  final int initialTabIndex;
-  const AppointmentsScreen({super.key, this.initialTabIndex = 0});
+  const AppointmentsScreen({super.key});
 
   @override
-  State<AppointmentsScreen> createState() => AppointmentsScreenState();
+  AppointmentsScreenState createState() => AppointmentsScreenState();
 }
 
 class AppointmentsScreenState extends State<AppointmentsScreen>
     with SingleTickerProviderStateMixin {
-  final supabase = Supabase.instance.client;
   late TabController _tabController;
-  List<Map<String, dynamic>> appointments = [];
 
   final Map<String, Color> statusColors = {
     'Upcoming': const Color.fromRGBO(255, 143, 0, 1),
@@ -25,21 +23,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-        length: 5, vsync: this, initialIndex: widget.initialTabIndex);
-    fetchAppointments();
-  }
-
-  // Fetch all appointments from the "appointments" table
-  Future<void> fetchAppointments() async {
-    final response = await supabase.from('appointment').select('*');
-    if (response.error == null) {
-      setState(() {
-        appointments = List<Map<String, dynamic>>.from(response.data);
-      });
-    } else {
-      print("Error fetching appointments: ${response.error?.message}");
-    }
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -48,8 +32,22 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     super.dispose();
   }
 
+  Future<Map<String, dynamic>> fetchAppointmentDetails(String spId) async {
+    final supabase = Supabase.instance.client;
+
+    final response = await supabase.rpc(
+      'get_appointment_details_by_sp_id',
+      params: {'sp_id_param': spId},
+    );
+
+    final dataList = List<Map<String, dynamic>>.from(response);
+    return {'appointments': dataList};
+  }
+
   @override
   Widget build(BuildContext context) {
+    const spId =
+        '7de2727e-d730-477e-8e97-7653d00d2031'; // Replace this with actual sp_id
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointments"),
@@ -61,123 +59,131 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
         ),
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: false,
-          labelPadding: const EdgeInsets.symmetric(horizontal: 5.0),
-          tabs: const [
-            Tab(text: 'Today'),
-            Tab(text: 'Upcoming'),
-            Tab(text: 'All'),
-            Tab(text: 'Done'),
-            Tab(text: 'Cancelled'),
+          tabs: [
+            _buildTab('Today'),
+            _buildTab('Upcoming'),
+            _buildTab('All'),
+            _buildTab('Done'),
+            _buildTab('Cancelled'),
           ],
+          // labelColor: Colors.orange, // Replace with `tangerine` if defined
+          indicatorColor: const Color.fromRGBO(160, 62, 6, 1),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 2),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildAppointmentsTab(status: 'Today'),
-          _buildAppointmentsTab(status: 'Upcoming'),
-          _buildAppointmentsTab(status: 'All'),
-          _buildAppointmentsTab(status: 'Done'),
-          _buildAppointmentsTab(status: 'Cancelled'),
-        ],
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: fetchAppointmentDetails(spId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData) {
+            final appointmentList =
+                snapshot.data!['appointments'] as List<Map<String, dynamic>>;
+
+            return TabBarView(
+              controller: _tabController,
+              physics: const BouncingScrollPhysics(),
+              children: List.generate(5, (index) {
+                return _buildAppointmentList(index, appointmentList);
+              }),
+            );
+          } else {
+            return const Center(child: Text('No appointments found.'));
+          }
+        },
       ),
     );
   }
 
-  // Build the appointments list view for each tab (based on status)
-  Widget _buildAppointmentsTab({required String status}) {
-    List<Map<String, dynamic>> filteredAppointments;
+  Widget _buildTab(String text) {
+    return Tab(
+      child: Text(text),
+    );
+  }
 
-    if (status == 'All') {
-      filteredAppointments = appointments;
-    } else {
-      filteredAppointments = appointments
-          .where((appointment) => appointment['appointment_status'] == status)
-          .toList();
-    }
+  Widget _buildAppointmentList(
+      int tabIndex, List<Map<String, dynamic>> appointmentList) {
+    final filteredAppointments = appointmentList.where((appointment) {
+      final dateFormat = DateFormat('MM/dd/yyyy');
+      DateTime appointmentDate;
+
+      try {
+        appointmentDate = dateFormat.parse(appointment['appointment_date']);
+      } catch (e) {
+        appointmentDate = DateTime.now();
+      }
+
+      switch (tabIndex) {
+        case 0: // Today
+          final today = DateTime.now();
+          return appointmentDate.year == today.year &&
+              appointmentDate.month == today.month &&
+              appointmentDate.day == today.day;
+        case 1: // Upcoming
+          return appointment['appointment_status'] == 'Upcoming';
+        case 2: // All
+          return true;
+        case 3: // Done
+          return appointment['appointment_status'] == 'Done';
+        case 4: // Cancelled
+          return appointment['appointment_status'] == 'Cancelled';
+        default:
+          return false;
+      }
+    }).toList();
 
     if (filteredAppointments.isEmpty) {
-      return Center(
-        child: Text('No appointments for $status'),
-      );
+      return const Center(child: Text('No Appointments Available'));
     }
-    return ListView.separated(
-      padding: const EdgeInsets.all(8),
+
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
       itemCount: filteredAppointments.length,
       itemBuilder: (context, index) {
-        return buildAppointmentCard(filteredAppointments[index]);
-      },
-      separatorBuilder: (context, index) => const Divider(),
-    );
-  }
+        final appointment = filteredAppointments[index];
 
-  // Build the appointment card for each item
-  Widget buildAppointmentCard(Map<String, dynamic> appointment) {
-    return GestureDetector(
-      onTap: () async {
-        final updatedStatus = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AppointmentDetailScreen(
-              appointment: appointment,
-              updateStatus: (newStatus) async {
-                setState(() {
-                  appointment['appointment_status'] = newStatus;
-                });
-                await supabase
-                    .from('appointment')
-                    .update({'appointment_status': newStatus}).eq(
-                        'appointment_id', appointment['appointment_id']);
-              },
-            ),
-          ),
-        );
-        if (updatedStatus != null) {
-          setState(() {
-            appointment['appointment_status'] = updatedStatus;
-          });
-        }
-      },
-      child: Card(
-        color: Colors.white,
-        elevation: 10,
-        child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-          ListTile(
-            title: Text(
-                'Pet Owner: ${appointment['user_id'] ?? 'N/A'}'), // Fallback if null
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'Date: ${appointment['appointment_date'] ?? 'N/A'}', // Fallback if null
-                  style: const TextStyle(color: Colors.black54),
-                ),
-                Text(
-                  'Time: ${appointment['appointment_time'] ?? 'N/A'}', // Fallback if null
-                  style: const TextStyle(color: Colors.black54),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: <Widget>[
-                Text(
-                  appointment['appointment_status'] ??
-                      'Unknown', // Fallback if null
-                  style: TextStyle(
-                    color: statusColors[appointment['appointment_status']] ??
-                        Colors.black87,
+        return Card(
+          color: Colors.white,
+          elevation: 1.5,
+          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+            ListTile(
+              title: Text(appointment['pet_owner_first_name'] ?? 'N/A'),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: 8.0),
+                  Text(
+                    appointment['appointment_date'] ?? 'N/A',
+                    style: const TextStyle(color: Colors.grey),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8.0),
+                  Text(
+                    appointment['appointment_time'] ?? 'N/A',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ]),
-      ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  Text(
+                    appointment['appointment_status'] ?? 'Unknown',
+                    style: TextStyle(
+                      color: statusColors[appointment['appointment_status']] ??
+                          Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ]),
+        );
+      },
     );
   }
 }

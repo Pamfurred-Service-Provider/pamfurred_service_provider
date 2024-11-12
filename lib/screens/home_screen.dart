@@ -135,8 +135,8 @@ class HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            AppointmentsScreen(initialTabIndex: initialTabIndex),
+        builder: (context) => AppointmentsScreen(),
+        // (initialTabIndex: initialTabIndex),
       ),
     );
   }
