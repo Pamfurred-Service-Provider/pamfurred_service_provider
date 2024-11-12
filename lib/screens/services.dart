@@ -119,13 +119,19 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-  Future<void> _fetchPackages() async {
+  Future<void> _fetchPackagesByCategory(String category) async {
     if (serviceProviderId == null) return;
+    print("Fetching packages for category: $category");
 
     final response = await supabase
-        .from('serviceprovider_package ')
-        .select('*, package(package_name, price, package_image)')
-        .eq('sp_id', serviceProviderId);
+        .from('serviceprovider_package')
+        .select('*, package!inner(package_name, price, package_image)')
+        .eq('sp_id', serviceProviderId)
+        // .eq('package_category', category);
+        .filter('package.package_category', 'cs', '["$category"]');
+    // .eq('package.package_category', category);
+    // .contains('package.package_category', [category]);
+    print("Raw response: $response");
 
     // Check if the response contains data
     if (response is List && response.isNotEmpty) {
@@ -135,7 +141,7 @@ class ServicesScreenState extends State<ServicesScreen> {
           return {
             'name': item['package']['package_name'] ?? 'Unknown',
             'price': item['package']['price'] ?? 0,
-            'image': item['package']['packagee_image'] ??
+            'image': item['package']['package_image'] ??
                 'assets/images/default_image.png', // Default image path
           };
         }));
@@ -151,14 +157,14 @@ class ServicesScreenState extends State<ServicesScreen> {
     final response = await supabase.from('serviceprovider_package').insert({
       'sp_id': serviceProviderId,
       'package_id': newPackage['package_id'],
-      'package_category': selectedCategory,
+      'package_category': [selectedCategory],
       'price': newPackage['price'],
     });
 
     if (response != null) {
       throw Exception('Failed to create package: ${response.message}');
     }
-
+    await _fetchPackagesByCategory(selectedCategory!);
     setState(() {
       packages.add(newPackage);
     });
@@ -178,38 +184,38 @@ class ServicesScreenState extends State<ServicesScreen> {
       );
 
       if (newPackage != null) {
-        await _createService(newPackage);
+        await _createPackage(newPackage);
       }
     } else {
       showErrorDialog(context, "Service Provider ID is missing.");
     }
   }
 
-  // Future<void> _fetchPackages() async {
-  //   if (serviceProviderId == null) return;
+  Future<void> _fetchPackages() async {
+    if (serviceProviderId == null) return;
 
-  //   final response = await supabase
-  //       .from('serviceprovider_package')
-  //       .select('*, package(package_name, price, package_image)')
-  //       .eq('sp_id', serviceProviderId);
-  //   if (response is List && response.isNotEmpty) {
-  //     setState(() {
-  //       packages = List<Map<String, dynamic>>.from(response.map((item) {
-  //         return {
-  //           'id': item['id'], // Ensure you fetch the id
-  //           'name': item['package']['package_name'] ?? 'Unknown',
-  //           'price': item['package']['price'] ?? 0,
-  //           'image': item['package']['package_image'] ??
-  //               'assets/images/default_image.png',
-  //         };
-  //       }));
-  //     });
-  //   } else {
-  //     setState(() {
-  //       packages = [];
-  //     });
-  //   }
-  // }
+    final response = await supabase
+        .from('serviceprovider_package')
+        .select('*, package(package_name, price, package_image)')
+        .eq('sp_id', serviceProviderId);
+    if (response is List && response.isNotEmpty) {
+      setState(() {
+        packages = List<Map<String, dynamic>>.from(response.map((item) {
+          return {
+            'id': item['id'], // Ensure you fetch the id
+            'name': item['package']['package_name'] ?? 'Unknown',
+            'price': item['package']['price'] ?? 0,
+            'image': item['package']['package_image'] ??
+                'assets/images/default_image.png',
+          };
+        }));
+      });
+    } else {
+      setState(() {
+        packages = [];
+      });
+    }
+  }
 
   // // Method to navigate to the AddPackageScreen and get the new package
   // void _navigateToAddPackage(BuildContext context) async {
@@ -262,6 +268,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                 });
                 Navigator.pop(context);
                 _fetchServicesByCategory('pet grooming');
+                _fetchPackagesByCategory('pet grooming'); // Fetch packages too
               },
             ),
             ListTile(
@@ -272,6 +279,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                 });
                 Navigator.pop(context);
                 _fetchServicesByCategory('pet boarding');
+                _fetchPackagesByCategory('pet boarding'); // Fetch packages too
               },
             ),
             ListTile(
@@ -282,6 +290,8 @@ class ServicesScreenState extends State<ServicesScreen> {
                 });
                 Navigator.pop(context);
                 _fetchServicesByCategory('veterinary service');
+                _fetchPackagesByCategory(
+                    'veterinary service'); // Fetch packages t
               },
             ),
           ],
@@ -291,9 +301,6 @@ class ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _fetchServicesByCategory(String category) async {
-    setState(() {
-      bool isloading = true;
-    });
     if (serviceProviderId == null) return;
 
     final response = await supabase

@@ -52,7 +52,7 @@ class PackageBackend {
       'package_id': packageId,
     });
 
-    return packageId;
+    return {'package_id': packageId}; // Return as a Map
   }
 
   Future<String> uploadImage(File image) async {

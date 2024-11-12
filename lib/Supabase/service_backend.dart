@@ -68,7 +68,7 @@ class ServiceBackend {
     final publicUrl = _supabase.storage
         .from('service_provider_images')
         .getPublicUrl(filePath);
-    print("Generated public URL: $publicUrl"); // Add this line
+    print("Generated public URL: $publicUrl");
     return publicUrl;
   }
 

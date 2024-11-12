@@ -124,7 +124,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              setState(() => inclusionList.removeAt(index)); // Remove pet
+              setState(() => inclusions.removeAt(index)); // Remove pet
               Navigator.of(context).pop(); // Close dialog
             },
             child: const Text('Delete'),
@@ -139,26 +139,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     setState(() {
       isLoading = true; // Start loading
     });
-
-    // int price;
-    // int minWeight;
-    // int maxWeight;
-    // try {
-    //   price = int.parse(priceController.text);
-    // } catch (e) {
-    //   setState(() {
-    //     isLoading = false;
-    //   });
-    //   return;
-    // }
-    // try {
-    //   minWeight = int.parse(minWeightController.text);
-    // } catch (e) {
-    //   setState(() {
-    //     isLoading = false;
-    //   });
-    //   return;
-    // }
 
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
@@ -259,6 +239,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           TextField(
             controller: nameController,
             decoration: const InputDecoration(
+              hintText: "Enter package name",
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(12.0)),
               ),
