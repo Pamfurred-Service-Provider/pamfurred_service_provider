@@ -63,54 +63,8 @@ class LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.user != null) {
-        // Check if email is verified
-        final isEmailVerified = response.user!.emailConfirmedAt != null;
-
-        if (isEmailVerified) {
-          // Check the approval status in the 'service_provider' table
-          final approvalStatusResponse = await Supabase.instance.client
-              .from('service_provider')
-              .select('approval_status')
-              .eq('username', response.user!.email)
-              .single();
-
-          if (approvalStatusResponse.error == null) {
-            final approvalStatus =
-                approvalStatusResponse.data['approval_status'];
-
-            if (approvalStatus == 'approved') {
-              // Approval status is 'approved', navigate to MainScreen
-              Navigator.push(context, crossFadeRoute(const MainScreen()));
-            } else if (approvalStatus == 'declined') {
-              // Approval status is 'declined', sign out and show specific message
-              await Supabase.instance.client.auth.signOut();
-              setState(() {
-                loginErrorMessage = 'Admin declined your request.';
-              });
-              formKey.currentState!.validate(); // Trigger form to show error
-            } else {
-              // Approval status is something else (e.g., 'pending')
-              await Supabase.instance.client.auth.signOut();
-              setState(() {
-                loginErrorMessage = 'Your account is awaiting admin approval.';
-              });
-              formKey.currentState!.validate();
-            }
-          } else {
-            // Error retrieving approval status
-            setState(() {
-              loginErrorMessage =
-                  'Error checking approval status. Please try again.';
-            });
-            formKey.currentState!.validate();
-          }
-        } else {
-          // Email not verified - set error message
-          setState(() {
-            loginErrorMessage = 'Account email is not verified.';
-          });
-          formKey.currentState!.validate();
-        }
+        // Login successful, navigate to MainScreen
+        Navigator.push(context, crossFadeRoute(const MainScreen()));
       } else {
         // Display error if login fails
         setState(() {
@@ -119,8 +73,13 @@ class LoginScreenState extends State<LoginScreen> {
         formKey.currentState!.validate();
       }
     } catch (error) {
+      // Log the error for debugging purposes with detailed info
+      print('Login error: $error');
+
+      // Update the UI with a detailed error message
       setState(() {
-        loginErrorMessage = 'An unexpected error occurred. Please try again.';
+        loginErrorMessage =
+            'An unexpected error occurred. Please try again. Details: $error';
       });
       formKey.currentState!.validate();
     } finally {
