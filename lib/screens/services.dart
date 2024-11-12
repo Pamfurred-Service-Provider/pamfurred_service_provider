@@ -57,7 +57,7 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     final response = await supabase
         .from('serviceprovider_service')
-        .select('*, service(service_name, price, service_image)')
+        .select('service_id, service(service_name, price, service_image)')
         .eq('sp_id', serviceProviderId);
 
     // Check if the response contains data
@@ -66,6 +66,7 @@ class ServicesScreenState extends State<ServicesScreen> {
         services = List<Map<String, dynamic>>.from(response.map((item) {
           final service = item['service'];
           return {
+            'id': item['service_id'],
             'name': item['service']['service_name'] ?? 'Unknown',
             'price': item['service']['price'] ?? 0,
             'image': item['service']['service_image'] ??
@@ -120,23 +121,30 @@ class ServicesScreenState extends State<ServicesScreen> {
   }
 
 // Delete service from Supabase
+
   Future<void> _deleteService(Map<String, dynamic> service) async {
+    final serviceId = service['id'];
+
     print("Deleting service with ID: $service['id']");
     print("Service Provider ID: $serviceProviderId");
-    final response = await supabase
-        .from('serviceprovider_service')
-        .delete()
-        .match({'sp_id': serviceProviderId, 'service_id': service['id']});
 
-    if (response.error == null) {
+    try {
+      // First, delete from the bridge table
+      await supabase
+          .from('serviceprovider_service')
+          .delete()
+          .match({'sp_id': serviceProviderId, 'service_id': serviceId});
+
+      // Then, delete from the service table
+      await supabase.from('service').delete().match({'service_id': serviceId});
+
       // Remove service from UI list if deletion is successful
       setState(() {
         services.removeWhere((s) => s['id'] == service['id']);
       });
-    } else {
+    } catch (error) {
       // Show error dialog if deletion fails
-      showErrorDialog(
-          context, 'Failed to delete service: ${response!.message}');
+      showErrorDialog(context, 'Failed to delete service: ${error.toString()}');
     }
   }
 
@@ -158,7 +166,6 @@ class ServicesScreenState extends State<ServicesScreen> {
     if (response is List && response.isNotEmpty) {
       setState(() {
         packages = List<Map<String, dynamic>>.from(response.map((item) {
-          final package = item['package'];
           return {
             'name': item['package']['package_name'] ?? 'Unknown',
             'price': item['package']['price'] ?? 0,
@@ -217,13 +224,14 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     final response = await supabase
         .from('serviceprovider_package')
-        .select('*, package(package_name, price, package_image)')
+        .select('package_id, package(package_name, price, package_image)')
         .eq('sp_id', serviceProviderId);
     if (response is List && response.isNotEmpty) {
       setState(() {
         packages = List<Map<String, dynamic>>.from(response.map((item) {
+          final package = item['package'];
           return {
-            'id': item['id'], // Ensure you fetch the id
+            'id': item['package_id'], // Ensure you fetch the id
             'name': item['package']['package_name'] ?? 'Unknown',
             'price': item['package']['price'] ?? 0,
             'image': item['package']['package_image'] ??
@@ -240,20 +248,27 @@ class ServicesScreenState extends State<ServicesScreen> {
 
 // Delete package from Supabase
   Future<void> _deletePackage(Map<String, dynamic> package) async {
-    final response = await supabase
-        .from('serviceprovider_package')
-        .delete()
-        .match({'sp_id': serviceProviderId, 'package_id': package['id']});
+    final packageId = package['id'];
 
-    if (response.error == null) {
+    print("Deleting package with ID: $package['id']");
+    print("Service Provider ID: $serviceProviderId");
+    try {
+      // First, delete from the bridge table
+      await supabase
+          .from('serviceprovider_package')
+          .delete()
+          .match({'sp_id': serviceProviderId, 'package_id': packageId});
+
+      // Then, delete from the package table
+      await supabase.from('package').delete().match({'package_id': packageId});
+
       // Remove package from UI list if deletion is successful
       setState(() {
-        packages.remove(package);
+        packages.removeWhere((p) => p['id'] == package['id']);
       });
-    } else {
+    } catch (error) {
       // Show error dialog if deletion fails
-      showErrorDialog(
-          context, 'Failed to delete package: ${response.error!.message}');
+      showErrorDialog(context, 'Failed to delete package: ${error.toString()}');
     }
   }
 
@@ -285,13 +300,16 @@ class ServicesScreenState extends State<ServicesScreen> {
           } else {
             await _deletePackage(item); // Call package deletion
           }
-          Navigator.pop(context); // Close dialog after deletion
+          if (mounted) {
+            Navigator.pop(context); // Close dialog after deletion
+          }
         },
       ),
     );
   }
 
   // Method to show a modal to select category
+
   void _showCategoryModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
