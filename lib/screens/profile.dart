@@ -89,11 +89,11 @@ class ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         isLoading = false; // Stop loading even on error
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load user data')),
-        );
-      }
+      // if (mounted) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('Failed to load user data')),
+      //   );
+      // }
     }
   }
 

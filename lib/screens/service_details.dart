@@ -50,19 +50,22 @@ class ServiceDetailsState extends State<ServiceDetails> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (serviceData['image'] != null && serviceData['image'] is String)
-              Center(
-                child: Image.network(
-                  serviceData['image'],
-                  width: 200,
-                  height: 200,
-                  fit: BoxFit.cover,
-                ),
-              )
-            else
-              const Center(
-                child: Icon(Icons.image, size: 100),
-              ),
+            Center(
+              child: serviceData['image'] != null &&
+                      serviceData['image'] is String &&
+                      serviceData['image'] != '' &&
+                      Uri.tryParse(serviceData['image']) != null &&
+                      Uri.tryParse(serviceData['image']) != null &&
+                      Uri.tryParse(serviceData['image'])?.hasAbsolutePath ==
+                          true
+                  ? Image.network(
+                      serviceData['image'],
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    )
+                  : const Icon(Icons.image, size: 200),
+            ),
             const SizedBox(height: 30),
             const Text(
               'Pet Specific Service:',
