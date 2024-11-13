@@ -189,6 +189,7 @@ class ServicesScreenState extends State<ServicesScreen> {
       setState(() {
         packages = List<Map<String, dynamic>>.from(response.map((item) {
           return {
+            'id': item['package_id'],
             'name': item['package']['package_name'] ?? 'Unknown',
             'price': item['package']['price'] ?? 0,
             'image': item['package']['package_image'] ??
@@ -241,12 +242,23 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
+  void _navigateToPackageDetails(
+      BuildContext context, Map<String, dynamic> packageData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PackageDetails(packageData: packageData),
+      ),
+    );
+  }
+
   Future<void> _fetchPackages() async {
     if (serviceProviderId == null) return;
 
     final response = await supabase
         .from('serviceprovider_package')
-        .select('package_id, package(package_name, price, package_image)')
+        .select(
+            'package_id, package(package_name, price, package_image, size, availability_status, inclusions, pet_type, min_weight, max_weight, package_type)')
         .eq('sp_id', serviceProviderId);
     if (response is List && response.isNotEmpty) {
       setState(() {
@@ -258,6 +270,15 @@ class ServicesScreenState extends State<ServicesScreen> {
             'price': item['package']['price'] ?? 0,
             'image': item['package']['package_image'] ??
                 'assets/images/default_image.png',
+            'sizes': item['package']['size'] ?? 0,
+            'availability': (package['availability_status'] is bool)
+                ? (package['availability_status'] ? 'Available' : 'Unavailable')
+                : package['availability_status'] ?? 'Unknown',
+            'inclusions': (package['inclusions'] as List).join(', '),
+            'pets': (package['pet_type'] as List).join(', '),
+            'minWeight': item['package']['min_weight'] ?? 0,
+            'maxWeight': item['package']['max_weight'] ?? 0,
+            'type': (package['package_type'] as List).join(', '),
           };
         }));
       });
@@ -544,90 +565,56 @@ class ServicesScreenState extends State<ServicesScreen> {
                 ),
                 const SizedBox(height: 20),
                 // Display added packages in card form
-                ...packages.map((package) {
-                  return Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    child: Row(
-                      children: [
-                        // The card displaying package information
-                        Expanded(
-                          child: Card(
-                            margin: const EdgeInsets.only(right: 10),
-                            child: ListTile(
-                              leading: package['image'] != null &&
-                                      package['image'].isNotEmpty
-                                  ? Image.network(
-                                      package['image'],
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : const Icon(Icons.image, size: 50),
-                              title: Text(package['name']),
-                              // subtitle: Column(
-                              //   crossAxisAlignment: CrossAxisAlignment.start,
-                              //   children: [
-                              // Text(
-                              //   package['description'] != null &&
-                              //           package['description']!.length > 50
-                              //       ? '${package['description'].substring(0, 50)}... See more'
-                              //       : package['description'] ??
-                              //           'No description available',
-                              // ),
-                              // const SizedBox(height: 5),
-                              // const Text("Inclusions:"),
-                              // if (package['inclusionList'] != null &&
-                              //     package['inclusionList'] is List<String> &&
-                              //     package['inclusionList'].isNotEmpty)
-                              //   ...package['inclusionList']
-                              //       .map<Widget>((pkg) => Text(pkg.toString()))
-                              //       .toList()
-                              // else
-                              //   const Text("No inclusion specified"),
-                              //   ],
-                              // ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '₱${package['price']}',
+                packages.isEmpty
+                    ? const Center(
+                        child: Text('No packages added for this category.'))
+                    : Column(
+                        children: packages.map((package) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            child: Row(
+                              children: [
+                                // The card displaying package information
+                                Expanded(
+                                  child: Card(
+                                    margin: const EdgeInsets.only(right: 10),
+                                    child: ListTile(
+                                      leading: package['image'] != null &&
+                                              package['image'].isNotEmpty
+                                          ? Image.network(
+                                              package['image'],
+                                              width: 50,
+                                              height: 50,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : const Icon(Icons.image, size: 50),
+                                      title: Text(
+                                          package['name'] ?? 'Unknown Name'),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('₱${package['price'] ?? 'N/A'}'),
+                                        ],
+                                      ),
+                                      onTap: () async {
+                                        _navigateToPackageDetails(
+                                            context, package);
+                                      },
+                                    ),
                                   ),
-                                ],
-                              ),
-                              // onTap: () async {
-                              //   // Navigate to EditServiceScreen with the service data
-                              //   final updatedPackage = await Navigator.push(
-                              //     context,
-                              //     MaterialPageRoute(
-                              //       builder: (context) =>
-                              //           PackageDetails(packageData: package),
-                              //     ),
-                              //   );
-                              //   // If package was edited, update the list
-                              //   if (updatedPackage != null) {
-                              //     setState(() {
-                              //       int index = packages.indexWhere((pkg) =>
-                              //           pkg['id'] == updatedPackage['id']);
-                              //       if (index != -1) {
-                              //         packages[index] = updatedPackage;
-                              //       } // Update with edited service });
-                              //     });
-                              //   }
-                              // },
+                                ),
+                                // The trash icon outside the card
+                                IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => _showDeleteDialog(
+                                        context, package, false)),
+                              ],
                             ),
-                          ),
-                        ),
-                        // The trash icon outside the card
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () =>
-                              _showDeleteDialog(context, package, false),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                          );
+                        }).toList(),
+                      ),
                 const SizedBox(height: 20),
                 // Centered Add More button
                 if (selectedCategory != 'All services')
