@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';  // Ensure Supabase Flutter package is imported
 
 class FeedbacksScreen extends StatefulWidget {
   const FeedbacksScreen({super.key});
@@ -8,43 +9,63 @@ class FeedbacksScreen extends StatefulWidget {
 }
 
 class FeedbacksScreenState extends State<FeedbacksScreen> {
-  final List<Map<String, dynamic>> reviews = [
-    {
-      "name": "John ",
-      "review": "Great service!",
-      "rating": 4,
-      "date": "2024-10-20"
-    },
-    {
-      "name": "Jane ",
-      "review": "Could be better.",
-      "rating": 3,
-      "date": "2024-10-19"
-    },
-    {
-      "name": "Alex ",
-      "review": "Loved the care my pet received.",
-      "rating": 4,
-      "date": "2024-10-18"
-    },
-    {
-      "name": "Alex ",
-      "review": "Loved the care my pet received.",
-      "rating": 1,
-      "date": "2024-10-18"
-    },
-  ];
-// Method to calculate average rating //found tapad sa stars, ubos sa text
+  late final SupabaseClient supabaseClient; // Declare Supabase Client
+  List<Map<String, dynamic>> reviews = [];
+  bool isLoading = true; // Flag to manage loading state
+
+  @override
+  void initState() {
+    super.initState();
+    supabaseClient = Supabase.instance.client; // Initialize the client
+    _loadReviews();
+  }
+
+  // Function to fetch reviews by service provider ID (current user ID)
+  Future<void> _loadReviews() async {
+    try {
+      final userSession = supabaseClient.auth.currentSession;
+      final userId = userSession?.user?.id; // Get current user ID
+
+      if (userId == null) {
+        // Handle the case when user is not logged in
+        return;
+      }
+
+      final response = await supabaseClient
+          .rpc('get_feedback_by_sp_id', params: {'sp_id_param': userId})  // Call the custom function
+          .execute();
+
+      if (response.error == null) {
+        setState(() {
+          reviews = List<Map<String, dynamic>>.from(response.data);
+          isLoading = false; // Set isLoading to false once the data is fetched
+        });
+      } else {
+        // Handle error (e.g., no internet or query failure)
+        print('Error fetching reviews: ${response.error?.message}');
+        setState(() {
+          isLoading = false; // Stop loading if there is an error
+        });
+      }
+    } catch (e) {
+      print('Error: $e');
+      setState(() {
+        isLoading = false; // Stop loading in case of an exception
+      });
+    }
+  }
+
+  // Method to calculate average rating
   double calculateAverageRating() {
     if (reviews.isEmpty) return 0.0;
-    double totalRating =
-        reviews.fold(0.0, (sum, review) => sum + review['rating']);
+    double totalRating = reviews.fold(0.0, (sum, review) => sum + review['rating']);
     return totalRating / reviews.length;
   }
 
   @override
   Widget build(BuildContext context) {
     double averageRating = calculateAverageRating();
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -54,71 +75,82 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
           },
         ),
       ),
-      body: ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+      body: isLoading
+          ? const Center(  // Show a loading spinner while data is being fetched
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color.fromRGBO(209, 76, 1, 1)), // Use primary color
+              ),
+            )
+          : ListView(
               children: [
-                const Text(
-                  "Feedback",
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Color.fromRGBO(160, 62, 6, 1),
-                    fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "Feedback",
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Color.fromRGBO(160, 62, 6, 1),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ...List.generate(5, (index) {
+                            return Icon(
+                              index < averageRating ? Icons.star : Icons.star_border,
+                              color: index < averageRating
+                                  ? const Color.fromRGBO(209, 76, 1, 1)
+                                  : Colors.grey,
+                            );
+                          }),
+                          const SizedBox(width: 5),
+                          Text(
+                            "(${averageRating.toStringAsFixed(1)})", // Display rating with one decimal point
+                            style: const TextStyle(fontSize: 17),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Total:',
+                            style:
+                                TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${reviews.length}', // Display number of reviews
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Display the reviews dynamically
+                      ...reviews.map((review) {
+                        return ReviewCard(
+                          name: '${review['pet_owner_first_name']} ${review['pet_owner_last_name']}', // Display pet owner's full name
+                          reviewText: review['review'] ?? 'No review provided',
+                          rating: review['rating']?.toDouble() ?? 0.0,
+                          reviewDate: review['review_date']?.toString() ?? 'No Date',
+                        );
+                      }),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ...List.generate(5, (index) {
-                      return Icon(
-                        index < averageRating ? Icons.star : Icons.star_border,
-                        color: index < averageRating
-                            ? const Color.fromRGBO(209, 76, 1, 1)
-                            : Colors.grey,
-                      );
-                    }),
-                    const SizedBox(width: 5),
-                    Text(
-                      "(${averageRating.toStringAsFixed(1)})", // Display rating with one decimal point
-                      style: const TextStyle(fontSize: 17),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Total:',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      '${reviews.length}', // Display number of reviews
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ...reviews.map((review) {
-                  return ReviewCard(
-                    name: review['name'],
-                    reviewText: review['review'],
-                    rating: review['rating'].toDouble(),
-                    reviewDate: review['date'],
-                  );
-                }),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
+}
+
+extension on PostgrestResponse {
+  get error => null;
 }
 
 class ReviewCard extends StatelessWidget {
@@ -184,18 +216,4 @@ class ReviewCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class Review {
-  final String name;
-  final String reviewText;
-  final double rating;
-  final String reviewDate;
-
-  Review({
-    required this.name,
-    required this.reviewText,
-    required this.rating,
-    required this.reviewDate,
-  });
 }
