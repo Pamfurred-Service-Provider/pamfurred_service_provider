@@ -1,198 +1,255 @@
-// import 'package:flutter/material.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:service_provider/components/date_and_time_formatter.dart';
 
-// class AppointmentDetailScreen extends StatefulWidget {
-//   final Map<String, dynamic> appointment;
-//   final Function(String) updateStatus;
+class AppointmentDetailScreen extends StatefulWidget {
+  final Map<String, dynamic> appointment;
+  final Function(String) updateStatus;
 
-//   const AppointmentDetailScreen(
-//       {super.key, required this.appointment, required this.updateStatus});
+  const AppointmentDetailScreen({
+    super.key,
+    required this.appointment,
+    required this.updateStatus,
+  });
 
-//   @override
-//   AppointmentDetailScreenState createState() => AppointmentDetailScreenState();
-// }
+  @override
+  AppointmentDetailScreenState createState() => AppointmentDetailScreenState();
+}
 
-// class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
-//   late String dropdownValue;
-//   final List<String> statusOptions = ['Done', 'Cancelled', 'Upcoming'];
-//   final SupabaseClient supabase = Supabase.instance.client;
+class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
+  late String dropdownValue;
+  final List<String> statusOptions = ['Done', 'Cancelled', 'Upcoming'];
+  final SupabaseClient supabase = Supabase.instance.client;
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     dropdownValue = widget.appointment['appointment_status'];
-//   }
+  @override
+  void initState() {
+    super.initState();
+    dropdownValue = widget.appointment['appointment_status'];
+  }
 
-//   Future<void> updateAppointmentStatus(String status) async {
-//     final response = await supabase
-//         .from('appointment')
-//         .update({'appointment_status': status}).eq(
-//             'appointment_id', widget.appointment['appointment_id']);
-//   }
+  // Function to update the appointment status in Supabase
+  Future<void> updateAppointmentStatus(String status) async {
+    final response = await supabase
+        .from('appointment')
+        .update({'appointment_status': status}).eq(
+            'appointment_id', widget.appointment['appointment_id']);
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("Appointment Details"),
-//         leading: IconButton(
-//           icon: const Icon(Icons.arrow_back),
-//           onPressed: () {
-//             Navigator.pop(
-//                 context, dropdownValue); // Pass back the updated status
-//           },
-//         ),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(18.0),
-//         child: ListView(
-//           children: [
-//             Center(
-//               child: Text(
-//                 "Appointment ID: ${widget.appointment['appointment_id']}",
-//                 style:
-//                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//               ),
-//             ),
-//             const SizedBox(height: 10),
-//             Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 const Text(
-//                   'Status:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 DropdownButton<String>(
-//                   value: dropdownValue,
-//                   items: statusOptions
-//                       .map<DropdownMenuItem<String>>((String value) {
-//                     return DropdownMenuItem<String>(
-//                       value: value,
-//                       child: Text(value),
-//                     );
-//                   }).toList(),
-//                   onChanged: (String? newValue) async {
-//                     if (newValue != null && newValue != dropdownValue) {
-//                       setState(() {
-//                         dropdownValue = newValue;
-//                       });
-//                       widget
-//                           .updateStatus(newValue); // Update in appointment.dart
-//                       await updateAppointmentStatus(
-//                           newValue); // Update in Supabase
-//                     }
-//                   },
-//                 ),
-//                 const SizedBox(height: 10),
-//                 // Remaining details...
-//                 const Text(
-//                   'Date:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 Text(
-//                   '${widget.appointment['appointment_date'] ?? 'N/A'}',
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//                 const SizedBox(height: 10),
-//                 const Text(
-//                   'Time:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 Text(
-//                   '${widget.appointment['appointment_time'] ?? 'N/A'}',
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//                 const SizedBox(height: 10),
-//                 const Text(
-//                   'Name:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 Text(
-//                   '${widget.appointment['user_name'] ?? 'N/A'}',
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//                 const SizedBox(height: 10),
-//                 const Text(
-//                   'Phone Number:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 Text(
-//                   '${widget.appointment['phone_number'] ?? 'N/A'}',
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//                 const SizedBox(height: 10),
-//                 const Text(
-//                   'Pet Category:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 Text(
-//                   '${widget.appointment['pet_category'] ?? 'N/A'}',
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//                 const SizedBox(height: 10),
-//                 const Text(
-//                   'Service Type:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 Text(
-//                   '${widget.appointment['service_type'] ?? 'N/A'}',
-//                   style: const TextStyle(fontSize: 16),
-//                 ),
-//                 const SizedBox(height: 10),
-//                 const Text(
-//                   'Service Availed:',
-//                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//                 ),
-//                 const SizedBox(height: 5),
-//                 if (widget.appointment['services'] != null &&
-//                     widget.appointment['services'] is List)
-//                   ...List<Widget>.generate(
-//                       widget.appointment['services'].length, (index) {
-//                     var service = widget.appointment['services'][index];
-//                     return Padding(
-//                       padding: const EdgeInsets.symmetric(vertical: 4.0),
-//                       child: Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Text(
-//                             '${service['service']}',
-//                             style: const TextStyle(fontSize: 16),
-//                           ),
-//                           Text(
-//                             '₱ ${service['price']}',
-//                             style: const TextStyle(fontSize: 16),
-//                           ),
-//                         ],
-//                       ),
-//                     );
-//                   }),
-//                 const SizedBox(height: 10),
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     const Text(
-//                       'Total:',
-//                       style: TextStyle(
-//                         fontSize: 18,
-//                         fontWeight: FontWeight.bold,
-//                         color: Color.fromRGBO(160, 62, 6, 1),
-//                       ),
-//                     ),
-//                     Text(
-//                       '₱ ${widget.appointment['total']}',
-//                       style: const TextStyle(
-//                         fontSize: 16,
-//                         fontWeight: FontWeight.bold,
-//                         color: Color.fromRGBO(160, 62, 6, 1),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+    if (response != null) {
+      print('Error updating appointment status: ${response.message}');
+    } else {
+      widget
+          .updateStatus(status); // Notify the parent widget (appointments.dart)
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Appointment Details"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, dropdownValue); // Pass back updated status
+          },
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: ListView(
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'Status:',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromRGBO(160, 62, 6, 1)),
+                ),
+                const Spacer(),
+                DropdownButton<String>(
+                  value: dropdownValue,
+                  items: statusOptions
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) async {
+                    if (newValue != null && newValue != dropdownValue) {
+                      setState(() {
+                        dropdownValue = newValue;
+                      });
+                      await updateAppointmentStatus(
+                          newValue); // Update in Supabase
+                    }
+                  },
+                ),
+              ],
+            ),
+            const Divider(),
+            const SizedBox(height: 10),
+
+            // Appointment Details Sections
+            const Center(
+              child: Text(
+                'Appointment ID:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+
+            // Appointment ID value section
+            Center(
+              child: buildDetailSection(
+                '',
+                '${widget.appointment['appointment_id'] ?? 'N/A'}',
+              ),
+            ),
+            // Pet and Owner Details
+            const SizedBox(height: 15),
+            const Text(
+              "Pet Owner Details:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+
+            buildDetailSection('Name:',
+                '${widget.appointment['pet_owner_first_name']} ${widget.appointment['pet_owner_last_name'] ?? ''}'),
+            buildDetailSection('Address:',
+                '${widget.appointment['appointment_address'] ?? ''}'),
+            buildDetailSection('Contact Number:',
+                '${widget.appointment['pet_owner_phone_number'] ?? ''}'),
+            const Divider(),
+            const SizedBox(height: 10),
+            const Text(
+              "Pet Details:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            buildDetailSection(
+                'Pet Name:', '${widget.appointment['pet_name'] ?? 'N/A'}'),
+            buildDetailSection(
+                'Pet Type:', '${widget.appointment['pet_type'] ?? 'N/A'}'),
+            const Divider(),
+            const SizedBox(height: 10),
+            const Text(
+              "Appointment Schedule:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            buildDetailSection(
+                'Date:', '${widget.appointment['appointment_date'] ?? 'N/A'}'),
+            buildDetailSection(
+                'Time:', '${widget.appointment['appointment_time'] ?? 'N/A'}'),
+            const SizedBox(height: 10),
+            buildDetailSection('Service Type',
+                '${widget.appointment['appointment_type'] ?? 'N/A'}'),
+            const Divider(),
+            const SizedBox(height: 10),
+            const Row(
+              children: [
+                Text(
+                  "Services and Packages Availed: ",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Spacer(),
+                Text(
+                  'Price:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+
+            // Services Availed
+
+            if (widget.appointment['service_name'] != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${widget.appointment['service_name']}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    Text(
+                      '₱ ${widget.appointment['service_price'] ?? '0.0'}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 10),
+
+            // Packages Availed
+
+            if (widget.appointment['package_name'] != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${widget.appointment['package_name']}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    // Text(
+                    //   'Inclusions: ${widget.appointment['package_inclusions'] ?? 'N/A'}',
+                    //   style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    // ),
+                    Text(
+                      '₱ ${widget.appointment['package_price'] ?? '0.0'}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 10),
+
+            // Total Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total:',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromRGBO(160, 62, 6, 1),
+                  ),
+                ),
+                Text(
+                  '₱ ${widget.appointment['total_amount'] ?? ''}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromRGBO(160, 62, 6, 1),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildDetailSection(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16),
+        ),
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+}

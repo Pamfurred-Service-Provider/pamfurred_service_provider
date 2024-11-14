@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/screens/appointment_details.dart';
-import 'package:intl/intl.dart';
+import 'package:service_provider/components/date_and_time_formatter.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -38,7 +38,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     final userId = serviceSession.user.id;
     print('User ID: $userId');
 
-// Fetch the service provider ID (sp_id) using user_id
+    // Fetch the service provider ID (sp_id) using user_id
     final spResponse = await supabase
         .from('service_provider')
         .select('sp_id')
@@ -58,7 +58,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     super.dispose();
   }
 
-  Future<Map<String, dynamic>> fetchAppointmentDetails() async {
+  Future<List<Map<String, dynamic>>> fetchAppointmentDetails() async {
     final supabase = Supabase.instance.client;
 
     final response = await supabase.rpc(
@@ -67,7 +67,23 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     );
 
     final dataList = List<Map<String, dynamic>>.from(response);
-    return {'appointments': dataList};
+    return dataList;
+  }
+
+  // Function to handle appointment status update
+  void _updateAppointmentStatus(String status) async {
+    final supabase = Supabase.instance.client;
+    String appointmentId =
+        "some_appointment_id"; // Get this dynamically as needed
+
+    final response = await supabase.from('appointment').update(
+        {'appointment_status': status}).eq('appointment_id', appointmentId);
+
+    if (response == null) {
+      print('Appointment status updated to: $status');
+    } else {
+      print('Error updating appointment status: ${response.message}');
+    }
   }
 
   @override
@@ -90,14 +106,13 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
             _buildTab('Done'),
             _buildTab('Cancelled'),
           ],
-          // labelColor: Colors.orange, // Replace with `tangerine` if defined
           indicatorColor: const Color.fromRGBO(160, 62, 6, 1),
           labelPadding: const EdgeInsets.symmetric(horizontal: 2),
         ),
       ),
       body: serviceProviderId == null
           ? const Center(child: CircularProgressIndicator())
-          : FutureBuilder<Map<String, dynamic>>(
+          : FutureBuilder<List<Map<String, dynamic>>>(
               future: fetchAppointmentDetails(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -105,8 +120,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (snapshot.hasData) {
-                  final appointmentList = snapshot.data!['appointments']
-                      as List<Map<String, dynamic>>;
+                  final appointmentList = snapshot.data!;
 
                   return TabBarView(
                     controller: _tabController,
@@ -132,11 +146,10 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   Widget _buildAppointmentList(
       int tabIndex, List<Map<String, dynamic>> appointmentList) {
     final filteredAppointments = appointmentList.where((appointment) {
-      final dateFormat = DateFormat('MM/dd/yyyy');
       DateTime appointmentDate;
 
       try {
-        appointmentDate = dateFormat.parse(appointment['appointment_date']);
+        appointmentDate = DateTime.parse(appointment['appointment_date']);
       } catch (e) {
         appointmentDate = DateTime.now();
       }
@@ -170,46 +183,76 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
       itemBuilder: (context, index) {
         final appointment = filteredAppointments[index];
 
-        return Card(
-          color: Colors.white,
-          elevation: 1.5,
-          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-            ListTile(
-              title: Text(appointment['pet_owner_first_name'] ?? 'N/A'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const SizedBox(height: 8.0),
-                  Text(
-                    appointment['appointment_date'] ?? 'N/A',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    appointment['appointment_time'] ?? 'N/A',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  Text(
-                    appointment['appointment_status'] ?? 'Unknown',
-                    style: TextStyle(
-                      color: statusColors[appointment['appointment_status']] ??
-                          Colors.black87,
+        return Padding(
+          padding: const EdgeInsets.only(
+              left: 8.0, right: 8.0), // Padding around each card
+          child: Card(
+            color: Colors.white,
+            elevation: 1.5,
+            child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+              ListTile(
+                title: Text(
+                    '${appointment['pet_owner_first_name']} ${appointment['pet_owner_last_name']}'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const SizedBox(height: 8.0),
+                    Text(
+                      formatDate(appointment['appointment_date']),
+                      style: const TextStyle(color: Colors.grey),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 5.0),
+                    Text(
+                      formatTime(appointment['appointment_time']),
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+                onTap: () async {
+                  final updatedStatus = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AppointmentDetailScreen(
+                        appointment:
+                            appointment, // Pass the entire appointment map
+                        updateStatus: _updateAppointmentStatus,
+                      ),
+                    ),
+                  );
+
+                  if (updatedStatus != null) {
+                    // If status is updated, refresh the data
+                    setState(() {
+                      appointment['appointment_status'] = updatedStatus;
+                    });
+                  }
+                },
               ),
-            ),
-          ]),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
+                      appointment['appointment_status'] ?? 'Unknown',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color:
+                            statusColors[appointment['appointment_status']] ??
+                                Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+          ),
         );
       },
     );
   }
+}
+
+extension on PostgrestResponse {
+  get error => null;
 }
