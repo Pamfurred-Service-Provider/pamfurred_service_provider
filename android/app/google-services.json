@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "180918308528",
+    "project_id": "pamfurred-25368",
+    "storage_bucket": "pamfurred-25368.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180918308528:android:25e47a07d392bc90267575",
+        "android_client_info": {
+          "package_name": "com.example.pamfurred"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7YRldoNJuOzKM4wg1q4CWbyR7-3e2ZXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180918308528:android:2f4f7a62b11ec452267575",
+        "android_client_info": {
+          "package_name": "com.example.service_provider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7YRldoNJuOzKM4wg1q4CWbyR7-3e2ZXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
