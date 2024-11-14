@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/screens/appointment_details.dart';
-import 'package:intl/intl.dart';
+import 'package:service_provider/components/date_and_time_formatter.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -73,18 +73,16 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   // Function to handle appointment status update
   void _updateAppointmentStatus(String status) async {
     final supabase = Supabase.instance.client;
-    String appointmentId = "some_appointment_id";  // Get this dynamically as needed
+    String appointmentId =
+        "some_appointment_id"; // Get this dynamically as needed
 
-    final response = await supabase
-        .from('appointment')
-        .update({'appointment_status': status})
-        .eq('appointment_id', appointmentId)
-        .execute();
+    final response = await supabase.from('appointment').update(
+        {'appointment_status': status}).eq('appointment_id', appointmentId);
 
-    if (response.error == null) {
+    if (response == null) {
       print('Appointment status updated to: $status');
     } else {
-      print('Error updating appointment status: ${response.error!.message}');
+      print('Error updating appointment status: ${response.message}');
     }
   }
 
@@ -148,11 +146,10 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   Widget _buildAppointmentList(
       int tabIndex, List<Map<String, dynamic>> appointmentList) {
     final filteredAppointments = appointmentList.where((appointment) {
-      final dateFormat = DateFormat('MM/dd/yyyy');
       DateTime appointmentDate;
 
       try {
-        appointmentDate = dateFormat.parse(appointment['appointment_date']);
+        appointmentDate = DateTime.parse(appointment['appointment_date']);
       } catch (e) {
         appointmentDate = DateTime.now();
       }
@@ -186,62 +183,70 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
       itemBuilder: (context, index) {
         final appointment = filteredAppointments[index];
 
-        return Card(
-          color: Colors.white,
-          elevation: 1.5,
-          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[ 
-            ListTile(
-              title: Text('${appointment['pet_owner_first_name']} ${appointment['pet_owner_last_name']}'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const SizedBox(height: 8.0),
-                  Text(
-                    appointment['appointment_date'] ?? 'N/A',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    appointment['appointment_time'] ?? 'N/A',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-              onTap: () async {
-                final updatedStatus = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AppointmentDetailScreen(
-                      appointment: appointment,  // Pass the entire appointment map
-                      updateStatus: _updateAppointmentStatus,
+        return Padding(
+          padding: const EdgeInsets.only(
+              left: 8.0, right: 8.0), // Padding around each card
+          child: Card(
+            color: Colors.white,
+            elevation: 1.5,
+            child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+              ListTile(
+                title: Text(
+                    '${appointment['pet_owner_first_name']} ${appointment['pet_owner_last_name']}'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const SizedBox(height: 8.0),
+                    Text(
+                      formatDate(appointment['appointment_date']),
+                      style: const TextStyle(color: Colors.grey),
                     ),
-                  ),
-                );
+                    const SizedBox(height: 5.0),
+                    Text(
+                      formatTime(appointment['appointment_time']),
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+                onTap: () async {
+                  final updatedStatus = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AppointmentDetailScreen(
+                        appointment:
+                            appointment, // Pass the entire appointment map
+                        updateStatus: _updateAppointmentStatus,
+                      ),
+                    ),
+                  );
 
-                if (updatedStatus != null) {
-                  // If status is updated, refresh the data
-                  setState(() {
-                    appointment['appointment_status'] = updatedStatus;
-                  });
-                }
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  Text(
-                    appointment['appointment_status'] ?? 'Unknown',
-                    style: TextStyle(
-                      color: statusColors[appointment['appointment_status']] ??
-                          Colors.black87,
-                    ),
-                  ),
-                ],
+                  if (updatedStatus != null) {
+                    // If status is updated, refresh the data
+                    setState(() {
+                      appointment['appointment_status'] = updatedStatus;
+                    });
+                  }
+                },
               ),
-            ),
-          ]),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
+                      appointment['appointment_status'] ?? 'Unknown',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color:
+                            statusColors[appointment['appointment_status']] ??
+                                Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+          ),
         );
       },
     );

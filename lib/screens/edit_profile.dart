@@ -18,7 +18,6 @@ final Map<DateTime, bool> _availability = {
   DateTime.utc(2024, 9, 11): true, // Available
   DateTime.utc(2024, 9, 12): true, // Available
 };
-final List<String> petType = ['dog', 'cat', 'bunny'];
 List<String> petsList = ['dog'];
 
 class EditProfileScreenState extends State<EditProfileScreen> {
@@ -28,7 +27,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       TextEditingController();
   final TextEditingController timeOpenController = TextEditingController();
   final TextEditingController timeCloseController = TextEditingController();
-  final TextEditingController petsToCaterController = TextEditingController();
   final TextEditingController numberOfPetsCaterController =
       TextEditingController();
   final TextEditingController datePickerController = TextEditingController();
@@ -58,84 +56,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     return _availability[DateTime.utc(day.year, day.month, day.day)] ?? true;
   }
 
-// Method to add pet to the list
-  void _addPet() async {
-    List<String> availablePets =
-        petType.where((pet) => !petsList.contains(pet)).toList();
-    // If there are available pets left to choose, add another dropdown
-    if (availablePets.isNotEmpty) {
-      setState(() {
-        petsList
-            .add(availablePets.first); // Add the first available pet by default
-      });
-    } else {
-      // Show a message if all pets are already selected
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All pets have been added.')),
-      );
-    }
-  }
-
-  // Method to remove a pet from the list
-  void _removePet(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Pet'),
-        content: const Text('Are you sure you want to delete this?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(), // Close dialog
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() => petsList.removeAt(index)); // Remove pet
-              Navigator.of(context).pop(); // Close dialog
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-// Dialog to input pet name
-  Future<String?> _showAddPetDialog() async {
-    String petCategory = '';
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Pet'),
-          content: TextField(
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Enter pet category'),
-            onChanged: (value) {
-              petCategory = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(); // Close the dialog without returning anything
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(petCategory); // Return entered category
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -144,7 +64,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           widget.profileData?['establishment name'] ?? '';
       timeOpenController.text = widget.profileData?['time open'] ?? '';
       timeCloseController.text = widget.profileData?['time close'] ?? '';
-      petsToCaterController.text = widget.profileData?['pets to cater'] ?? '';
       numberOfPetsCaterController.text =
           widget.profileData?['number of pets'] ?? '';
       datePickerController.text = widget.profileData?['date picker'] ?? '';
@@ -154,7 +73,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       streetController.text = widget.profileData?['street'] ?? '';
       doorNoController.text = widget.profileData?['door no'] ?? '';
       dropdownValue = widget.profileData?['number of pets'] ?? number.first;
-      petsList = widget.profileData?['petsList'] ?? [];
     }
   }
 
@@ -163,7 +81,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       'establishment name': establishmentNameController.text,
       'time open': timeOpenController.text,
       'time close': timeCloseController.text,
-      'pets to cater': petsToCaterController.text,
       'petsList': petsList,
       'number of pets': dropdownValue,
       'date picker': datePickerController.text,
@@ -288,64 +205,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Pets to Cater",
-                  style: TextStyle(fontSize: 16),
-                ),
-                ...petsList.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  String pet = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: pet,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  petsList[index] = newValue!;
-                                });
-                              },
-                              items: petType
-                                  .where((petCategory) =>
-                                      !petsList.contains(petCategory) ||
-                                      petCategory == pet)
-                                  .map(
-                                      (petCategory) => DropdownMenuItem<String>(
-                                            value: petCategory,
-                                            child: Text(petCategory),
-                                          ))
-                                  .toList(),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _removePet(index),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 20),
-                // Add more pets button
-                ElevatedButton.icon(
-                  onPressed: _addPet, // Add pet when pressed
-                  icon: const Icon(Icons.add),
-                  label: const Text("Add More"),
-                  // label: const Text("Add Pet Category"),
                 ),
               ],
             ),
