@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:service_provider/screens/appointment_time_slot.dart';
 import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, this.profileData});
@@ -21,8 +22,12 @@ final Map<DateTime, bool> _availability = {
 List<String> petsList = ['dog'];
 
 class EditProfileScreenState extends State<EditProfileScreen> {
+   // Initialize Supabase and user session variables
+  final supabase = Supabase.instance.client;
+  late final String userId;
   String dropdownValue = number.first; //dropdown for # of pets catered per day
-//Controllers
+  
+  // Controllers
   final TextEditingController establishmentNameController = TextEditingController();
   final TextEditingController timeOpenController = TextEditingController();
   final TextEditingController timeCloseController = TextEditingController();
@@ -58,6 +63,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Retrieve the user ID from the Supabase session
+    final serviceSession = supabase.auth.currentSession;
+    userId = serviceSession?.user?.id ?? '';
+    print('User ID: $userId');
+    
     if (widget.profileData != null) {
       establishmentNameController.text = widget.profileData?['establishment name'] ?? '';
       timeOpenController.text = widget.profileData?['time open'] ?? '';
@@ -71,24 +82,74 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       streetController.text = widget.profileData?['street'] ?? '';
       doorNoController.text = widget.profileData?['door no'] ?? '';
       dropdownValue = widget.profileData?['number of pets'] ?? number.first;
-    }
+    } 
   }
 
-  void saveProfile() {
+
+
+
+  Future<void> saveProfile() async {
+    // 1. Fetch the address_id of the user
+    final userResponse = await supabase
+        .from('user')
+        .select('address_id')
+        .eq('user_id', userId)
+        .single()
+        .execute();
+
+    if (userResponse.error != null || userResponse.data == null) {
+      print('Error fetching user address ID: ${userResponse.error?.message}');
+      return;
+    }
+
+    final addressId = userResponse.data['address_id'];
+
+    // 2. Prepare the updated profile data (service provider)
     final updatedProfile = {
-      'establishment name': establishmentNameController.text,
-      'time open': timeOpenController.text,
-      'time close': timeCloseController.text,
-      'petsList': petsList,
-      'number of pets': dropdownValue,
-      'date picker': datePickerController.text,
-      'exact address': exactAddressController.text,
-      'city': cityController.text,
-      'barangay': barangayController.text, // Used for the service icon in the service screen
-      'street': streetController.text,
-      'door no': doorNoController.text,
+      'name': establishmentNameController.text,
+      'time_open': timeOpenController.text,
+      'time_close': timeCloseController.text,
+      'number_of_pets': dropdownValue,
     };
-    Navigator.pop(context, updatedProfile);
+
+    try {
+      // 3. Update service provider information
+      final response = await supabase
+          .from('service_provider')
+          .update(updatedProfile)
+          .eq('sp_id', userId) // Match the sp_id with userId
+          .execute();
+
+      if (response.error == null) {
+        print('Service provider profile updated successfully');
+      } else {
+        print('Error updating service provider profile: ${response.error?.message}');
+      }
+
+      // 4. Update the address table with the new address details
+      final updatedAddress = {
+        'city': cityController.text,
+        'barangay': barangayController.text,
+        'street': streetController.text,
+        'floor_unit_room': doorNoController.text, // Assuming this is where door_no is stored
+      };
+
+      final addressResponse = await supabase
+          .from('address')
+          .update(updatedAddress)
+          .eq('address_id', addressId)
+          .execute();
+
+      if (addressResponse.error == null) {
+        // Address updated successfully
+        print('Address updated successfully');
+        Navigator.pop(context, updatedProfile); // Return updated profile
+      } else {
+        print('Error updating address: ${addressResponse.error?.message}');
+      }
+    } catch (error) {
+      print('Error saving profile: $error');
+    }
   }
 
   Future<void> navigateToPinAddress() async {
@@ -483,4 +544,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       ],
     );
   }
+}
+
+extension on PostgrestResponse {
+  get error => null;
 }
