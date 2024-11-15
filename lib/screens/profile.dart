@@ -89,11 +89,6 @@ class ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         isLoading = false; // Stop loading even on error
       });
-      // if (mounted) {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text('Failed to load user data')),
-      //   );
-      // }
     }
   }
 
@@ -169,6 +164,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         profileData = result;
         print('Updated profile data: $profileData');
       });
+      _fetchUserData(); // Re-fetch user data after edit to get updated address
     }
   }
 
@@ -176,7 +172,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: isLoading
-          ? Center(child: CircularProgressIndicator()) // Show loading spinner
+          ? const Center(child: CircularProgressIndicator()) // Show loading spinner
           : ListView(
               children: [
                 Padding(
@@ -268,7 +264,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Details:",
+                            const Text("Details: ",
                                 style: TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold)),
                             TextButton(
@@ -299,11 +295,10 @@ class ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 20),
                             _buildDetailRow(
                                 "Number of Pets Catered per day:",
-                                profileData?['number_of_pets']?.toString() ??
-                                    ''),
+                                profileData?['number_of_pets']?.toString() ?? ''),
                             const SizedBox(height: 20),
                             const Divider(),
-                            const Text("Business Address:",
+                            const Text("Business Address: ",
                                 style: TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 20),

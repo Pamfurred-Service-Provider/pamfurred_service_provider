@@ -23,12 +23,11 @@ List<String> petsList = ['dog'];
 class EditProfileScreenState extends State<EditProfileScreen> {
   String dropdownValue = number.first; //dropdown for # of pets catered per day
 //Controllers
-  final TextEditingController establishmentNameController =
-      TextEditingController();
+  final TextEditingController establishmentNameController = TextEditingController();
   final TextEditingController timeOpenController = TextEditingController();
   final TextEditingController timeCloseController = TextEditingController();
-  final TextEditingController numberOfPetsCaterController =
-      TextEditingController();
+  final TextEditingController petsToCaterController = TextEditingController();
+  final TextEditingController numberOfPetsCaterController = TextEditingController();
   final TextEditingController datePickerController = TextEditingController();
   final TextEditingController exactAddressController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
@@ -60,12 +59,11 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     if (widget.profileData != null) {
-      establishmentNameController.text =
-          widget.profileData?['establishment name'] ?? '';
+      establishmentNameController.text = widget.profileData?['establishment name'] ?? '';
       timeOpenController.text = widget.profileData?['time open'] ?? '';
       timeCloseController.text = widget.profileData?['time close'] ?? '';
-      numberOfPetsCaterController.text =
-          widget.profileData?['number of pets'] ?? '';
+      petsToCaterController.text = widget.profileData?['pets to cater'] ?? '';
+      numberOfPetsCaterController.text = widget.profileData?['number of pets'] ?? '';
       datePickerController.text = widget.profileData?['date picker'] ?? '';
       exactAddressController.text = widget.profileData?['exact address'] ?? '';
       cityController.text = widget.profileData?['city'] ?? '';
@@ -86,8 +84,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       'date picker': datePickerController.text,
       'exact address': exactAddressController.text,
       'city': cityController.text,
-      'barangay': barangayController
-          .text, // Used for the service icon in the service screen
+      'barangay': barangayController.text, // Used for the service icon in the service screen
       'street': streetController.text,
       'door no': doorNoController.text,
     };
