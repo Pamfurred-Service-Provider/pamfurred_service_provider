@@ -67,7 +67,47 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     );
 
     final dataList = List<Map<String, dynamic>>.from(response);
-    return dataList;
+    // Group the data by appointment ID
+    final groupedData = groupAppointmentData(dataList);
+
+    // Print the grouped data
+    print('Grouped data: $groupedData');
+    print('Raw appointment data: $dataList'); // Add this line
+
+    return groupedData;
+  }
+
+  List<Map<String, dynamic>> groupAppointmentData(
+      List<Map<String, dynamic>> dataList) {
+    final groupedData = <String, Map<String, dynamic>>{};
+
+    for (var item in dataList) {
+      final appointmentId = item['appointment_id'];
+      if (!groupedData.containsKey(appointmentId)) {
+        groupedData[appointmentId] = {
+          ...item,
+          'services': [],
+          'packages': [],
+        };
+      }
+
+      if (item['service_name'] != null) {
+        groupedData[appointmentId]!['services'].add({
+          'name': item['service_name'],
+          'price': item['service_price'],
+        });
+      }
+
+      if (item['package_name'] != null) {
+        groupedData[appointmentId]!['packages'].add({
+          'name': item['package_name'],
+          'price': item['package_price'],
+          'inclusions': item['package_inclusions'],
+        });
+      }
+    }
+
+    return groupedData.values.toList();
   }
 
   // Function to handle appointment status update

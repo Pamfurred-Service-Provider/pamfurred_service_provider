@@ -44,6 +44,8 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final services = widget.appointment['services'] as List<dynamic>;
+    final packages = widget.appointment['packages'] as List<dynamic>;
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointment Details"),
@@ -163,47 +165,56 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             ),
 
             // Services Availed
-
-            if (widget.appointment['service_name'] != null)
+            if (services.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${widget.appointment['service_name']}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    Text(
-                      '₱ ${widget.appointment['service_price'] ?? '0.0'}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: services.map<Widget>((service) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            service['name'] ?? 'Service Name',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            '₱ ${service['price'] ?? '0.0'}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
-            const SizedBox(height: 10),
 
             // Packages Availed
-
-            if (widget.appointment['package_name'] != null)
+            if (packages.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${widget.appointment['package_name']}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    // Text(
-                    //   'Inclusions: ${widget.appointment['package_inclusions'] ?? 'N/A'}',
-                    //   style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    // ),
-                    Text(
-                      '₱ ${widget.appointment['package_price'] ?? '0.0'}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: packages.map<Widget>((pkg) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            pkg['name'] ?? 'Package Name',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            '₱ ${pkg['price'] ?? '0.0'}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             const SizedBox(height: 10),
