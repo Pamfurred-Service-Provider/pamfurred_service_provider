@@ -142,9 +142,13 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             ),
             const SizedBox(height: 10),
             buildDetailSection(
-                'Date:', '${widget.appointment['appointment_date'] ?? 'N/A'}'),
+              'Date:',
+              formatDate(widget.appointment['appointment_date'] ?? 'N/A'),
+            ),
             buildDetailSection(
-                'Time:', '${widget.appointment['appointment_time'] ?? 'N/A'}'),
+              'Time:',
+              formatTime(widget.appointment['appointment_time'] ?? 'N/A'),
+            ),
             const SizedBox(height: 10),
             buildDetailSection('Service Type',
                 '${widget.appointment['appointment_type'] ?? 'N/A'}'),
