@@ -6,6 +6,7 @@ import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/screens/register.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../components/globals.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -65,6 +66,9 @@ class LoginScreenState extends State<LoginScreen> {
       final user = response.user;
 
       if (user != null) {
+        // Save device token after successful login
+        await saveDeviceToken(user.id);
+
         // Check the service provider's approval status
         final statusResponse = await Supabase.instance.client.rpc(
             'get_service_provider_approval_status',
@@ -113,6 +117,26 @@ class LoginScreenState extends State<LoginScreen> {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> saveDeviceToken(String providerId) async {
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      String? token = await messaging.getToken();
+      print("FCM Token: $token");
+
+      if (token != null) {
+        // Save the token to Supabase for the provider
+        await Supabase.instance.client
+            .from('service_provider')
+            .update({'device_token': token}).eq('sp_id', providerId);
+        print("Device token saved successfully");
+      } else {
+        print("Failed to retrieve device token");
+      }
+    } catch (e) {
+      print("Error saving device token: $e");
     }
   }
 
