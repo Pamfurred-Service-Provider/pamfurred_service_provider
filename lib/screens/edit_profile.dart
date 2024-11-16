@@ -321,7 +321,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        AppointmentTimeSlotScreen(selectedDate: selectedDay),
+                        AppointmentTimeSlotScreen(selectedDate: selectedDay, spId: userId,),
                   ),
                 );
               },

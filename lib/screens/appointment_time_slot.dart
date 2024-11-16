@@ -1,39 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase package
 
 class AppointmentTimeSlotScreen extends StatefulWidget {
   final DateTime selectedDate;
+  final String spId; // Service Provider ID to identify the user in Supabase
 
-  const AppointmentTimeSlotScreen({super.key, required this.selectedDate});
+  const AppointmentTimeSlotScreen({super.key, required this.selectedDate, required this.spId});
 
   @override
-  State<AppointmentTimeSlotScreen> createState() =>
-      AppointmentTimeSlotScreenState();
+  State<AppointmentTimeSlotScreen> createState() => AppointmentTimeSlotScreenState();
 }
 
 class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
+  final SupabaseClient supabase = Supabase.instance.client;
+
   // Predefined time slots
-  List<String> availableTimeSlots = [
-    "09:00 AM",
-    "11:00 AM",
-    "01:00 PM",
-    "03:00 PM"
-  ];
-
-  // Initially selected time slots
+  List<String> availableTimeSlots = ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM"];
+  
+  // Initially selected time slots and availability status
   List<String> timeSlots = ["09:00 AM", "11:00 AM", "01:00 PM", "03:00 PM"];
-
   String dropdownValue = 'Available';
-  List<String> availabilityOptions = [
-    'Available',
-    'Unavailable',
-    'Fully Booked'
-  ];
+
+  List<String> availabilityOptions = ['Available', 'Unavailable', 'Fully Booked'];
+
+  final DateFormat dateFormat = DateFormat('MMMM d, y'); // Format for month name
 
   // Method to add a new time slot
   void _addTimeSlot() {
     setState(() {
-      // Add the first available time slot as the default when a new slot is added
       timeSlots.add(availableTimeSlots.first);
     });
   }
@@ -45,8 +40,78 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     });
   }
 
-  final DateFormat dateFormat =
-      DateFormat('MMMM d, y'); // Format for month name
+  // Method to save data to Supabase
+  Future<void> _saveToSupabase() async {
+    final selectedDateString = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+
+    try {
+      // Check if there's an existing availability record for this sp_id and availability_date
+      final availabilityResponse = await supabase
+          .from('service_provider_availability')
+          .select('availability_id')
+          .eq('sp_id', widget.spId)
+          .eq('availability_date', selectedDateString)
+          .maybeSingle() // Use maybeSingle() to avoid error when no rows are found
+          .execute();
+
+      if (availabilityResponse.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error checking availability: ${availabilityResponse.error!.message}')),
+        );
+        return;
+      }
+
+      if (availabilityResponse.data == null) {
+        // If no matching record found, insert new data
+        final insertResponse = await supabase.from('service_provider_availability').insert({
+          'sp_id': widget.spId,
+          'availability_date': selectedDateString, // Ensure it's only the date, no timestamp
+          'timeslots': timeSlots,
+          'status': dropdownValue,
+        }).execute();
+
+        if (insertResponse.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error inserting data: ${insertResponse.error!.message}')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Availability saved successfully')),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        // If matching record found, update the existing row with the new time slots
+        final availabilityId = availabilityResponse.data['availability_id'];
+
+        final updateResponse = await supabase
+            .from('service_provider_availability')
+            .update({
+              'timeslots': timeSlots, // Update timeslots with new ones
+              'status': dropdownValue, // Update availability status
+            })
+            .eq('availability_id', availabilityId) // Use the availability_id for the update
+            .eq('sp_id', widget.spId) // Ensure sp_id matches as well
+            .eq('availability_date', selectedDateString) // Ensure the date matches as well
+            .execute();
+
+        if (updateResponse.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating data: ${updateResponse.error!.message}')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Availability updated successfully')),
+          );
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,10 +145,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                 border: OutlineInputBorder(),
               ),
               items: availabilityOptions.map((String option) {
-                return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
+                return DropdownMenuItem<String>(value: option, child: Text(option));
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
@@ -113,10 +175,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                               ),
                             ),
                             items: availableTimeSlots.map((String time) {
-                              return DropdownMenuItem<String>(
-                                value: time,
-                                child: Text(time),
-                              );
+                              return DropdownMenuItem<String>(value: time, child: Text(time));
                             }).toList(),
                             onChanged: (String? newValue) {
                               setState(() {
@@ -139,12 +198,10 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
               ),
             ),
 
-            // SizedBox to separate the time slots from the buttons
             const SizedBox(height: 20),
 
-            // "Add more" and "Save" buttons
             ElevatedButton.icon(
-              onPressed: _addTimeSlot, // Add new time slot
+              onPressed: _addTimeSlot,
               icon: const Icon(Icons.add),
               label: const Text("Add More"),
               style: ElevatedButton.styleFrom(
@@ -153,10 +210,11 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20), // Space between buttons
+            const SizedBox(height: 20),
+
             Center(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _saveToSupabase, // Save button calls save method
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -172,4 +230,8 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
       ),
     );
   }
+}
+
+extension on PostgrestResponse {
+  get error => null;
 }
