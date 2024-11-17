@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';  // Ensure Supabase Flutter package is imported
+import 'package:supabase_flutter/supabase_flutter.dart'; // Ensure Supabase Flutter package is imported
 
 class FeedbacksScreen extends StatefulWidget {
   const FeedbacksScreen({super.key});
@@ -24,27 +24,22 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
   Future<void> _loadReviews() async {
     try {
       final userSession = supabaseClient.auth.currentSession;
-      final userId = userSession?.user?.id; // Get current user ID
+      final userId = userSession?.user.id; // Get current user ID
 
-      if (userId == null) {
-        // Handle the case when user is not logged in
-        return;
-      }
+      final response = await supabaseClient.rpc('get_feedback_by_sp_id',
+          params: {'sp_id_param': userId}); // Call the custom function
 
-      final response = await supabaseClient
-          .rpc('get_feedback_by_sp_id', params: {'sp_id_param': userId})  // Call the custom function
-          .execute();
-
-      if (response.error == null) {
+      // Check if we have a response
+      if (response.isEmpty) {
         setState(() {
-          reviews = List<Map<String, dynamic>>.from(response.data);
-          isLoading = false; // Set isLoading to false once the data is fetched
+          isLoading = false;
         });
+        print('No reviews found');
       } else {
-        // Handle error (e.g., no internet or query failure)
-        print('Error fetching reviews: ${response.error?.message}');
         setState(() {
-          isLoading = false; // Stop loading if there is an error
+          reviews = List<Map<String, dynamic>>.from(
+              response); // Directly use the response
+          isLoading = false;
         });
       }
     } catch (e) {
@@ -58,7 +53,8 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
   // Method to calculate average rating
   double calculateAverageRating() {
     if (reviews.isEmpty) return 0.0;
-    double totalRating = reviews.fold(0.0, (sum, review) => sum + review['rating']);
+    double totalRating =
+        reviews.fold(0.0, (sum, review) => sum + review['rating']);
     return totalRating / reviews.length;
   }
 
@@ -76,9 +72,11 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
         ),
       ),
       body: isLoading
-          ? const Center(  // Show a loading spinner while data is being fetched
+          ? const Center(
+              // Show a loading spinner while data is being fetched
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color.fromRGBO(209, 76, 1, 1)), // Use primary color
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    Color.fromRGBO(209, 76, 1, 1)), // Use primary color
               ),
             )
           : ListView(
@@ -100,12 +98,29 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           ...List.generate(5, (index) {
-                            return Icon(
-                              index < averageRating ? Icons.star : Icons.star_border,
-                              color: index < averageRating
-                                  ? const Color.fromRGBO(209, 76, 1, 1)
-                                  : Colors.grey,
-                            );
+                            if (averageRating >= index + 1) {
+                              return const Icon(
+                                Icons.star,
+                                color:
+                                    Color.fromRGBO(209, 76, 1, 1), // Gold color
+                              );
+                            }
+                            // If rating is at least 0.5 and less than the next whole number, it's a half star
+                            else if (averageRating >= index + 0.5) {
+                              return const Icon(
+                                Icons.star_half,
+                                color:
+                                    Color.fromRGBO(209, 76, 1, 1), // Gold color
+                              );
+                            }
+                            // Otherwise, it's an empty star
+                            else {
+                              return const Icon(
+                                Icons.star_border,
+                                color:
+                                    Colors.grey, // Grey color for empty stars
+                              );
+                            }
                           }),
                           const SizedBox(width: 5),
                           Text(
@@ -120,8 +135,8 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                         children: [
                           const Text(
                             'Total:',
-                            style:
-                                TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(width: 5),
                           Text(
@@ -134,10 +149,11 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                       // Display the reviews dynamically
                       ...reviews.map((review) {
                         return ReviewCard(
-                          name: '${review['pet_owner_first_name']} ${review['pet_owner_last_name']}', // Display pet owner's full name
-                          reviewText: review['review'] ?? 'No review provided',
+                          name:
+                              '${review['pet_owner_first_name']} ${review['pet_owner_last_name']}', // Display pet owner's full name
+                          reviewText: review['review'] ?? '',
                           rating: review['rating']?.toDouble() ?? 0.0,
-                          reviewDate: review['review_date']?.toString() ?? 'No Date',
+                          reviewDate: review['review_date'].toString(),
                         );
                       }),
                     ],
@@ -147,10 +163,6 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
             ),
     );
   }
-}
-
-extension on PostgrestResponse {
-  get error => null;
 }
 
 class ReviewCard extends StatelessWidget {

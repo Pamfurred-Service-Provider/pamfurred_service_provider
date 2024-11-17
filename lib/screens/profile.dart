@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/screens/edit_profile.dart';
 import 'package:service_provider/screens/login.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
+import 'package:service_provider/components/date_and_time_formatter.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -171,159 +172,184 @@ class ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator()) // Show loading spinner
-          : ListView(
+      body:
+          // isLoading
+          //     ? Center(child: CircularProgressIndicator()) // Show loading spinner
+          //     :
+          ListView(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
               children: [
+                Expanded(
+                    child: Container()), // Spacer to push content to the right
+                Text(
+                  profileData?['name'] ?? '',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Color.fromRGBO(160, 62, 6, 1),
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.logout, size: 30),
+                      onPressed: () {
+                        Supabase.instance.client.auth.signOut().then((_) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Center(
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(150.0),
+                      child: image == null
+                          ? (profileData?['image'] != null &&
+                                  profileData!['image'].isNotEmpty
+                              ? Image.network(
+                                  profileData!['image'],
+                                  width: 200,
+                                  height: 200,
+                                  fit: BoxFit.fill,
+                                )
+                              : Image.asset(
+                                  'assets/Image_null.png',
+                                  width: 200,
+                                  height: 200,
+                                  fit: BoxFit.fill,
+                                ))
+                          : Image.file(
+                              image!,
+                              width: 200,
+                              height: 200,
+                              fit: BoxFit.fill,
+                            ),
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: ElevatedButton(
+                        onPressed: changeImage,
+                        child: const Row(
+                          children: [
+                            Icon(Icons.camera_alt_rounded, size: 16),
+                            SizedBox(width: 5),
+                            Text("Edit Photo"),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(indent: 16.0, endIndent: 16.0),
+                const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                          child:
-                              Container()), // Spacer to push content to the right
-                      Text(
-                        profileData?['name'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          color: Color.fromRGBO(160, 62, 6, 1),
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: IconButton(
-                            icon: const Icon(Icons.logout, size: 30),
-                            onPressed: () {
-                              Supabase.instance.client.auth.signOut().then((_) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginScreen(),
-                                  ),
-                                );
-                              });
-                            },
-                          ),
+                      const Text("Details: ",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      TextButton(
+                        onPressed: _navigateToEditProfile,
+                        child: const Row(
+                          children: [
+                            Icon(Icons.edit, size: 16),
+                            SizedBox(width: 5),
+                            Text("Edit Details"),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                Center(
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(150.0),
-                            child: image == null
-                                ? (profileData?['image'] != null &&
-                                        profileData!['image'].isNotEmpty
-                                    ? Image.network(
-                                        profileData!['image'],
-                                        width: 200,
-                                        height: 200,
-                                        fit: BoxFit.fill,
-                                      )
-                                    : Image.asset(
-                                        'assets/Image_null.png',
-                                        width: 200,
-                                        height: 200,
-                                        fit: BoxFit.fill,
-                                      ))
-                                : Image.file(
-                                    image!,
-                                    width: 200,
-                                    height: 200,
-                                    fit: BoxFit.fill,
-                                  ),
-                          ),
-                          Positioned(
-                            bottom: 10,
-                            right: 10,
-                            child: ElevatedButton(
-                              onPressed: changeImage,
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.camera_alt_rounded, size: 16),
-                                  SizedBox(width: 5),
-                                  Text("Edit Photo"),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(indent: 16.0, endIndent: 16.0),
+                      _buildDetailRow(
+                          "Opening Time:", profileData?['time_open']),
                       const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text("Details: ",
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold)),
-                            TextButton(
-                              onPressed: _navigateToEditProfile,
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.edit, size: 16),
-                                  SizedBox(width: 5),
-                                  Text("Edit Details"),
-                                ],
-                              ),
-                            ),
-                          ],
+                      _buildDetailRow(
+                          "Closing Time:", profileData?['time_close']),
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 20),
+                      _buildDetailRow("Number of Pets Catered per day:",
+                          profileData?['number_of_pets']?.toString() ?? ''),
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const Text("Business Address: ",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "Address:",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildDetailRow(
-                                "Opening Time:", profileData?['time_open']),
-                            const SizedBox(height: 10),
-                            _buildDetailRow(
-                                "Closing Time:", profileData?['time_close']),
-                            const SizedBox(height: 20),
-                            const Divider(),
-                            const SizedBox(height: 20),
-                            _buildDetailRow(
-                                "Number of Pets Catered per day:",
-                                profileData?['number_of_pets']?.toString() ?? ''),
-                            const SizedBox(height: 20),
-                            const Divider(),
-                            const Text("Business Address: ",
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 20),
-                            _buildDetailRow(
-                              "Address:",
-                              "${profileData?['address']?['floor_unit_room'] ?? ''}, "
-                                  "${profileData?['address']?['street'] ?? ''}, "
-                                  "${profileData?['address']?['barangay'] ?? ''}, "
-                                  "${profileData?['address']?['city'] ?? ''}",
-                            ),
-                            const SizedBox(height: 10),
-                          ],
-                        ),
-                      ),
+                      _buildDetailWrapRow(
+                          '',
+                          "${profileData?['address']?['floor_unit_room'] ?? ''}, "
+                              "${profileData?['address']?['street'] ?? ''}, "
+                              "${profileData?['address']?['barangay'] ?? ''}, "
+                              "${profileData?['address']?['city'] ?? ''}"),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildDetailRow(String label, String? value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          value ?? 'N/A', // Default to 'N/A' if value is null
+          style: const TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailWrapRow(String label, String? value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
           label,
