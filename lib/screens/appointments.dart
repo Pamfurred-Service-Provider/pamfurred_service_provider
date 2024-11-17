@@ -189,19 +189,31 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
       DateTime appointmentDate;
 
       try {
-        appointmentDate = DateTime.parse(appointment['appointment_date']);
+        appointmentDate =
+            DateTime.parse(appointment['appointment_date']).toLocal();
       } catch (e) {
         appointmentDate = DateTime.now();
       }
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
+// Debug print for today filtering
+      if (tabIndex == 0) {
+        // Only print when filtering for the "Today" tab
+        print('Appointment Date: $appointmentDate, Today: $today');
+      }
       switch (tabIndex) {
         case 0: // Today
-          final today = DateTime.now();
-          return appointmentDate.year == today.year &&
-              appointmentDate.month == today.month &&
-              appointmentDate.day == today.day;
+          final normalizedAppointmentDate = DateTime(
+            appointmentDate.year,
+            appointmentDate.month,
+            appointmentDate.day,
+          );
+          return normalizedAppointmentDate == today;
+
         case 1: // Upcoming
-          return appointment['appointment_status'] == 'Upcoming';
+          return appointmentDate.isAfter(today) &&
+              appointment['appointment_status'] == 'Upcoming';
         case 2: // All
           return true;
         case 3: // Done
@@ -291,8 +303,4 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
       },
     );
   }
-}
-
-extension on PostgrestResponse {
-  get error => null;
 }

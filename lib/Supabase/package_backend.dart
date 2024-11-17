@@ -64,7 +64,7 @@ class PackageBackend {
     // Check if the upload was successful
     if (response == null) {
       print("Image upload error");
-      throw Exception('Image upload failed');
+      throw Exception('Failed to upload image, please try again');
     }
 // If the upload is successful, get the public URL
     final publicUrl = _supabase.storage

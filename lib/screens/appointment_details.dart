@@ -72,6 +72,10 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                 const Spacer(),
                 DropdownButton<String>(
                   value: dropdownValue,
+                  icon: const Icon(Icons.arrow_drop_down),
+                  style: const TextStyle(
+                      fontSize: 18, color: Color.fromRGBO(160, 62, 6, 1)),
+                  underline: Container(),
                   items: statusOptions
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
@@ -119,8 +123,10 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
             buildDetailSection('Name:',
                 '${widget.appointment['pet_owner_first_name']} ${widget.appointment['pet_owner_last_name'] ?? ''}'),
-            buildDetailSection('Address:',
-                '${widget.appointment['appointment_address'] ?? ''}'),
+            if (widget.appointment['appointment_type'] == 'Home service') ...[
+              buildDetailSection('Address:',
+                  '${widget.appointment['appointment_address'] ?? ''}'),
+            ],
             buildDetailSection('Contact Number:',
                 '${widget.appointment['pet_owner_phone_number'] ?? ''}'),
             const Divider(),

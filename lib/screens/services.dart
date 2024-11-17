@@ -146,11 +146,28 @@ class ServicesScreenState extends State<ServicesScreen> {
 
   Future<void> _deleteService(Map<String, dynamic> service) async {
     final serviceId = service['id'];
+    final imageUrl = service['service_image'];
 
     print("Deleting service with ID: $service['id']");
     print("Service Provider ID: $serviceProviderId");
 
     try {
+      // Delete the image from the bucket (if URL exists)
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        final fileName =
+            imageUrl.split('/').last; // Get the file name from the URL
+        final filePath =
+            'service_images/$fileName'; // Construct the full path for service images
+
+        final response = await supabase.storage
+            .from('service_provider_images')
+            .remove([filePath]);
+
+        print("Image deleted from the bucket successfully.");
+      } else {
+        print("No image found to delete.");
+      }
+
       // First, delete from the bridge table
       await supabase
           .from('serviceprovider_service')
@@ -314,21 +331,6 @@ class ServicesScreenState extends State<ServicesScreen> {
       showErrorDialog(context, 'Failed to delete package: ${error.toString()}');
     }
   }
-
-  // // Method to navigate to the AddPackageScreen and get the new package
-  // void _navigateToAddPackage(BuildContext context) async {
-  //   final updatedService = await Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => const AddPackageScreen(),
-  //     ),
-  //   );
-  //   if (updatedService != null) {
-  //     setState(() {
-  //       packages.add(updatedService);
-  //     });
-  //   }
-  // }
 
   // Method to show delete dialog
   void _showDeleteDialog(
@@ -512,14 +514,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                                         _navigateToServiceDetails(
                                             context, service);
                                       },
-                                      //   // Navigate to EditServiceScreen with the service data
-                                      //   final updatedService = await Navigator.push(
-                                      //     context,
-                                      //     MaterialPageRoute(
-                                      //       builder: (context) =>
-                                      //           ServiceDetails(serviceData: service),
-                                      //     ),
-                                      //   );
+
                                       //   // If service was edited, update the list
                                       //   if (updatedService != null) {
                                       //     setState(() {

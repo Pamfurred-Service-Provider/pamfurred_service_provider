@@ -6,7 +6,6 @@ import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/screens/register.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../components/globals.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -68,8 +67,9 @@ class LoginScreenState extends State<LoginScreen> {
       if (user != null) {
         // Check the service provider's approval status
         final statusResponse = await Supabase.instance.client.rpc(
-            'get_service_provider_approval_status',
-            params: {'uid': user.id});
+          'get_service_provider_approval_status',
+          params: {'uid': user.id},
+        );
 
         final providerStatus = statusResponse as String?;
         if (providerStatus == 'approved') {
