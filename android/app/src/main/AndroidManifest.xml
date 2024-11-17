@@ -10,7 +10,7 @@
 
 
     <application
-        android:label="service_provider"
+        android:label="Pamfurred Service Provider"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
