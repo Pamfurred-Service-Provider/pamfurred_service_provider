@@ -52,8 +52,8 @@ class RealtimeService {
         );
   }
 
-  final Set<int> sentNotificationIds =
-      {}; // Store IDs of already sent notifications
+  // Create a set to track sent notification IDs
+  final Set<String> sentNotificationIds = {};
 
   void sendNotification(Map<String, dynamic> appointment) async {
     print(
@@ -61,9 +61,17 @@ class RealtimeService {
 
     final userId = appointment[
         'pet_owner_id']; // Foreign key pointing to the pet_owner table
+    final appointmentId = appointment['appointment_id'];
 
-    if (userId != null) {
+    if (userId != null && appointmentId != null) {
       try {
+        // Check if the notification for this appointment ID has already been sent
+        if (sentNotificationIds.contains(appointmentId)) {
+          print(
+              'Notification for appointment ID $appointmentId already sent. Skipping...');
+          return; // Skip sending the notification if it's already been sent
+        }
+
         // Fetch the username from the pet_owner table
         final response = await Supabase.instance.client
             .from('pet_owner')
@@ -76,20 +84,6 @@ class RealtimeService {
           final username = response['username'] ??
               'Unknown User'; // Access 'username' directly
 
-          // Generate a unique notification ID using the lower 32 bits of the timestamp
-          final uniqueNotificationId =
-              (DateTime.now().millisecondsSinceEpoch % 2147483647).abs();
-
-          // Check if the notification ID has already been sent
-          if (sentNotificationIds.contains(uniqueNotificationId)) {
-            print(
-                'Notification for ID $uniqueNotificationId already sent. Skipping...');
-            return; // Skip sending duplicate notifications
-          }
-
-          // Add the notification ID to the sent list
-          sentNotificationIds.add(uniqueNotificationId);
-
           // Notification details
           const AndroidNotificationDetails androidDetails =
               AndroidNotificationDetails(
@@ -100,6 +94,10 @@ class RealtimeService {
             priority: Priority.high,
             icon: 'pamfurred',
           );
+
+          // Generate a unique notification ID using the lower 32 bits of the timestamp
+          final uniqueNotificationId =
+              (DateTime.now().millisecondsSinceEpoch % 2147483647).abs();
 
           const NotificationDetails details =
               NotificationDetails(android: androidDetails);
@@ -112,8 +110,10 @@ class RealtimeService {
             details,
           );
 
-          print(
-              'Notification sent for appointment ID ${appointment['appointment_id']}');
+          // After sending the notification, mark it as sent by adding the appointment ID to the set
+          sentNotificationIds.add(appointmentId);
+
+          print('Notification sent for appointment ID $appointmentId');
         } else {
           // Handle case where no data was returned for the pet_owner_id
           print('No data found for pet_owner_id: $userId');
@@ -123,8 +123,9 @@ class RealtimeService {
         print('Error during notification process: $e');
       }
     } else {
-      // Handle case where pet_owner_id is missing from the appointment data
-      print('Error: No pet_owner_id in appointment data.');
+      // Handle case where pet_owner_id or appointment_id is missing from the appointment data
+      print(
+          'Error: Missing pet_owner_id or appointment_id in appointment data.');
     }
   }
 }
