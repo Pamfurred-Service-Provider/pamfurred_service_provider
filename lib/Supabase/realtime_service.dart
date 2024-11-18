@@ -31,9 +31,9 @@ class RealtimeService {
               final appointmentId = change['appointment_id'];
               final appointmentStatus = change['appointment_status'];
 
-              // Check if it's a new appointment and the service provider matches
-              if (spId == null || appointmentId == null) {
-                continue; // Skip if no relevant data found
+              // Check if it's a valid appointment for the logged-in service provider
+              if (spId != loggedInServiceProviderId || appointmentId == null) {
+                continue; // Skip if the service provider doesn't match or appointment ID is invalid
               }
 
               // Only send notifications for "Upcoming" appointments
@@ -52,9 +52,12 @@ class RealtimeService {
         );
   }
 
+  final Set<int> sentNotificationIds =
+      {}; // Store IDs of already sent notifications
+
   void sendNotification(Map<String, dynamic> appointment) async {
     print(
-        'Sending notification for appointment: ${appointment['appointment_id']}');
+        'Preparing to send notification for appointment: ${appointment['appointment_id']}');
 
     final userId = appointment[
         'pet_owner_id']; // Foreign key pointing to the pet_owner table
@@ -73,14 +76,19 @@ class RealtimeService {
           final username = response['username'] ??
               'Unknown User'; // Access 'username' directly
 
-          // Ensure appointment_id is an integer (if it's a string, convert it to an integer)
-          final appointmentId =
-              int.tryParse(appointment['appointment_id'].toString()) ??
-                  0; // Default to 0 if parsing fails
-
           // Generate a unique notification ID using the lower 32 bits of the timestamp
           final uniqueNotificationId =
               (DateTime.now().millisecondsSinceEpoch % 2147483647).abs();
+
+          // Check if the notification ID has already been sent
+          if (sentNotificationIds.contains(uniqueNotificationId)) {
+            print(
+                'Notification for ID $uniqueNotificationId already sent. Skipping...');
+            return; // Skip sending duplicate notifications
+          }
+
+          // Add the notification ID to the sent list
+          sentNotificationIds.add(uniqueNotificationId);
 
           // Notification details
           const AndroidNotificationDetails androidDetails =
@@ -103,6 +111,9 @@ class RealtimeService {
             'You have an upcoming appointment with $username.',
             details,
           );
+
+          print(
+              'Notification sent for appointment ID ${appointment['appointment_id']}');
         } else {
           // Handle case where no data was returned for the pet_owner_id
           print('No data found for pet_owner_id: $userId');
