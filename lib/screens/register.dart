@@ -81,6 +81,7 @@ class RegisterScreenState extends State<RegisterScreen> {
           'phone_number': phoneNumber,
           'user_type': 'service_provider',
           'password': password,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
         }).select();
 
         // final serviceProviderResponse = await supabase.from('user').insert({
