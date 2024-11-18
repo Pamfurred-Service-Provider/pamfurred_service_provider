@@ -17,6 +17,9 @@ class RealtimeService {
     final loggedInServiceProviderId = currentUser
         .id; // Assumes `currentUser.id` corresponds to the service provider ID
 
+// Set to track the appointment IDs that have been processed (to detect updates)
+    final Set<String> processedAppointmentIds = {};
+
     // Listen to new appointments in the 'appointment' table in real-time
     _client
         .from('appointment')
@@ -36,12 +39,23 @@ class RealtimeService {
                 continue; // Skip if the service provider doesn't match or appointment ID is invalid
               }
 
-              // Only send notifications for "Upcoming" appointments
-              if (appointmentStatus == 'Upcoming') {
+              // Check if it's an insert (appointment_id is new)
+              if (!processedAppointmentIds.contains(appointmentId)) {
+                // Only send notifications for "Upcoming" appointments
+                if (appointmentStatus == 'Upcoming') {
+                  print(
+                      'New upcoming appointment detected for service provider: $appointmentId, $appointmentStatus');
+                  processedAppointmentIds
+                      .add(appointmentId); // Mark this appointment as processed
+                  sendNotification(
+                      change); // Send notification for the new appointment
+                }
+              } else {
+                // Handle updates here
                 print(
-                    'New upcoming appointment detected for service provider: $appointmentId, $appointmentStatus');
-                sendNotification(
-                    change); // Trigger notification for each new appointment
+                    'Appointment update detected for appointment: $appointmentId, $appointmentStatus');
+                // You could send a different type of notification for updates if needed
+                // Example: sendUpdateNotification(change);
               }
             }
           },
@@ -128,4 +142,10 @@ class RealtimeService {
           'Error: Missing pet_owner_id or appointment_id in appointment data.');
     }
   }
+
+// FOR UPDATE
+//   void sendUpdateNotification(Map<String, dynamic> appointment) {
+//   print('Sending update notification for appointment: ${appointment['appointment_id']}');
+//   // Logic for sending update notifications
+// }
 }
