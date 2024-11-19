@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class ProfileDetailsWidget extends StatelessWidget {
   final Map<String, dynamic>? profileData;
 
-  const ProfileDetailsWidget({Key? key, required this.profileData})
-      : super(key: key);
+  const ProfileDetailsWidget({super.key, required this.profileData});
 
   @override
   Widget build(BuildContext context) {

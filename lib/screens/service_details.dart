@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:service_provider/screens/edit_service.dart';
+import 'package:service_provider/screens/update_service.dart';
 
 class ServiceDetails extends StatefulWidget {
   final Map<String, dynamic> serviceData;
@@ -24,26 +24,56 @@ class ServiceDetailsState extends State<ServiceDetails> {
     return Scaffold(
       appBar: AppBar(
         title: Text(serviceData['name']),
-        //   actions: [
-        //     TextButton(
-        //       onPressed: () async {
-        //         final updatedService = await Navigator.push(
-        //           context,
-        //           MaterialPageRoute(
-        //             builder: (context) =>
-        //                 EditServiceScreen(serviceData: serviceData),
-        //           ),
-        //         );
-        //         if (updatedService != null) {
-        //           setState(() {
-        //             serviceData = updatedService; // Update with edited data
-        //           });
-        //           Navigator.pop(context, updatedService);
-        //         }
-        //       },
-        //       child: const Text("Edit"),
-        //     ),
-        //   ],
+        actions: [
+          TextButton(
+            onPressed: () async {
+              // Navigate to UpdateServiceScreen for editing
+              final updatedService = await Navigator.push<Map<String, dynamic>>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UpdateServiceScreen(
+                    serviceData: serviceData,
+                    serviceProviderId: widget.serviceData['serviceProviderId'],
+                  ),
+                ),
+              );
+              print("Updated Service: $updatedService"); // Debug print
+              // Update the UI with the edited data
+              if (updatedService != null) {
+                setState(() {
+                  serviceData = {
+                    'name': updatedService['name'] ?? serviceData['name'] ?? '',
+                    'image':
+                        updatedService['image'] ?? serviceData['image'] ?? '',
+                    'pets': updatedService['pets'] ?? serviceData['pets'] ?? '',
+                    'availability': updatedService['availability'] ??
+                        serviceData['availability'] ??
+                        '',
+                    'size': updatedService['size'] ?? serviceData['size'] ?? '',
+                    'minWeight': updatedService['minWeight']?.toString() ??
+                        serviceData['minWeight']?.toString() ??
+                        'N/A',
+                    'maxWeight': updatedService['maxWeight']?.toString() ??
+                        serviceData['maxWeight']?.toString() ??
+                        'N/A',
+                    'price': updatedService['price']?.toString() ??
+                        serviceData['price']?.toString() ??
+                        'N/A',
+                    'type': updatedService['type'] ??
+                        serviceData['type'] ??
+                        'No Service Type Info',
+                    // Add any other fields that are part of your service data
+                  };
+                });
+                print("Updated Service Data: $serviceData"); // Debug print
+              }
+            },
+            child: const Text(
+              "Edit",
+              style: TextStyle(color: Color.fromARGB(255, 108, 12, 12)),
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

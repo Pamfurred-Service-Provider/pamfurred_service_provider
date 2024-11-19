@@ -22,17 +22,19 @@ final Map<DateTime, bool> _availability = {
 List<String> petsList = ['dog'];
 
 class EditProfileScreenState extends State<EditProfileScreen> {
-   // Initialize Supabase and user session variables
+  // Initialize Supabase and user session variables
   final supabase = Supabase.instance.client;
   late final String userId;
   String dropdownValue = number.first; //dropdown for # of pets catered per day
-  
+
   // Controllers
-  final TextEditingController establishmentNameController = TextEditingController();
+  final TextEditingController establishmentNameController =
+      TextEditingController();
   final TextEditingController timeOpenController = TextEditingController();
   final TextEditingController timeCloseController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
-  final TextEditingController numberOfPetsCaterController = TextEditingController();
+  final TextEditingController numberOfPetsCaterController =
+      TextEditingController();
   final TextEditingController datePickerController = TextEditingController();
   final TextEditingController exactAddressController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
@@ -63,18 +65,20 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Retrieve the user ID from the Supabase session
     final serviceSession = supabase.auth.currentSession;
-    userId = serviceSession?.user?.id ?? '';
+    userId = serviceSession?.user.id ?? '';
     print('User ID: $userId');
-    
+
     if (widget.profileData != null) {
-      establishmentNameController.text = widget.profileData?['establishment name'] ?? '';
+      establishmentNameController.text =
+          widget.profileData?['establishment name'] ?? '';
       timeOpenController.text = widget.profileData?['time open'] ?? '';
       timeCloseController.text = widget.profileData?['time close'] ?? '';
       petsToCaterController.text = widget.profileData?['pets to cater'] ?? '';
-      numberOfPetsCaterController.text = widget.profileData?['number of pets'] ?? '';
+      numberOfPetsCaterController.text =
+          widget.profileData?['number of pets'] ?? '';
       datePickerController.text = widget.profileData?['date picker'] ?? '';
       exactAddressController.text = widget.profileData?['exact address'] ?? '';
       cityController.text = widget.profileData?['city'] ?? '';
@@ -82,11 +86,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       streetController.text = widget.profileData?['street'] ?? '';
       doorNoController.text = widget.profileData?['door no'] ?? '';
       dropdownValue = widget.profileData?['number of pets'] ?? number.first;
-    } 
+    }
   }
-
-
-
 
   Future<void> saveProfile() async {
     // 1. Fetch the address_id of the user
@@ -94,8 +95,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         .from('user')
         .select('address_id')
         .eq('user_id', userId)
-        .single()
-        .execute();
+        .single();
 
     if (userResponse.error != null || userResponse.data == null) {
       print('Error fetching user address ID: ${userResponse.error?.message}');
@@ -117,13 +117,13 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       final response = await supabase
           .from('service_provider')
           .update(updatedProfile)
-          .eq('sp_id', userId) // Match the sp_id with userId
-          .execute();
+          .eq('sp_id', userId); // Match the sp_id with userId
 
       if (response.error == null) {
         print('Service provider profile updated successfully');
       } else {
-        print('Error updating service provider profile: ${response.error?.message}');
+        print(
+            'Error updating service provider profile: ${response.error?.message}');
       }
 
       // 4. Update the address table with the new address details
@@ -131,14 +131,14 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         'city': cityController.text,
         'barangay': barangayController.text,
         'street': streetController.text,
-        'floor_unit_room': doorNoController.text, // Assuming this is where door_no is stored
+        'floor_unit_room':
+            doorNoController.text, // Assuming this is where door_no is stored
       };
 
       final addressResponse = await supabase
           .from('address')
           .update(updatedAddress)
-          .eq('address_id', addressId)
-          .execute();
+          .eq('address_id', addressId);
 
       if (addressResponse.error == null) {
         // Address updated successfully
@@ -320,8 +320,10 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        AppointmentTimeSlotScreen(selectedDate: selectedDay, spId: userId,),
+                    builder: (context) => AppointmentTimeSlotScreen(
+                      selectedDate: selectedDay,
+                      spId: userId,
+                    ),
                   ),
                 );
               },
@@ -544,8 +546,4 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       ],
     );
   }
-}
-
-extension on PostgrestResponse {
-  get error => null;
 }

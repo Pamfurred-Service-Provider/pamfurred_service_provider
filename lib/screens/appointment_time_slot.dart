@@ -17,26 +17,16 @@ class AppointmentTimeSlotScreen extends StatefulWidget {
 class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Predefined time slots
-  List<String> availableTimeSlots = ["08:30", "11:00", "01:00", "03:00"];
-
   // Initially selected time slots and availability status
   List<String> timeSlots = ["09:00", "11:00", "01:00", "03:00"];
-  String dropdownValue = 'Available';
-  List<String> availabilityOptions = [
-    'Available',
-    'Unavailable',
-    'Fully Booked'
-  ];
-
   bool isLoading = false; // Loading state for save operation
 
   final DateFormat dateFormat = DateFormat('MMMM d, y'); // Format for month e
 
   // Method to add a new time slot
-  void _addTimeSlot() {
+  void addTimeSlot() {
     setState(() {
-      timeSlots.add(availableTimeSlots.first);
+      timeSlots.add("8:30");
     });
   }
 
@@ -197,60 +187,25 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
           .eq('availability_date', selectedDateString)
           .maybeSingle();
 
-      if (availabilityResponse != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Error checking availability: ${availabilityResponse!.message}')),
-        );
-        return;
-      }
-
       if (availabilityResponse == null) {
-        final insertResponse =
-            await supabase.from('service_provider_availability').insert({
+        await supabase.from('service_provider_availability').insert({
           'sp_id': widget.spId,
           'availability_date': selectedDateString,
           'timeslots': timeSlots,
-          'status': dropdownValue,
         });
-
-        if (insertResponse != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text('Error inserting data: ${insertResponse!.message}')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Availability saved successfully')),
-          );
-          Navigator.pop(context);
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Availability saved successfully')),
+        );
+        Navigator.pop(context);
       } else {
         final availabilityId = availabilityResponse['availability_id'];
-        final updateResponse = await supabase
-            .from('service_provider_availability')
-            .update({
-              'timeslots': timeSlots,
-              'status': dropdownValue,
-            })
-            .eq('availability_id', availabilityId)
-            .eq('sp_id', widget.spId)
-            .eq('availability_date', selectedDateString);
-
-        if (updateResponse != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text('Error updating data: ${updateResponse!.message}')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Availability updated successfully')),
-          );
-          Navigator.pop(context);
-        }
+        await supabase.from('service_provider_availability').update({
+          'timeslots': timeSlots,
+        }).eq('availability_id', availabilityId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Availability updated successfully')),
+        );
+        Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -283,23 +238,6 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
             Text(
               dateFormat.format(widget.selectedDate),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            ToggleButtons(
-              isSelected: availabilityOptions
-                  .map((option) => option == dropdownValue)
-                  .toList(),
-              children: availabilityOptions.map((option) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(option),
-                );
-              }).toList(),
-              onPressed: (index) {
-                setState(() {
-                  dropdownValue = availabilityOptions[index];
-                });
-              },
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -380,8 +318,4 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
       ),
     );
   }
-}
-
-extension on PostgrestResponse {
-  get error => null;
 }
