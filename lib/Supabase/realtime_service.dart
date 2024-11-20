@@ -7,6 +7,59 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 class RealtimeService {
   final SupabaseClient _client = Supabase.instance.client;
 
+  // A Set to track the processed appointment IDs
+  final Set<String> processedAppointmentIds = {};
+
+  // // Constructor to call the necessary functions when the service is initialized
+  // RealtimeService() {
+  //   loadProcessedAppointmentIds(); // Load processed appointment IDs on initialization
+  // }
+
+  // Function to load processed appointment IDs from the 'user' table
+  Future<void> loadProcessedAppointmentIds() async {
+    final currentUser = _client.auth.currentUser;
+    if (currentUser == null) {
+      print('No logged-in user.');
+      return;
+    }
+    final loggedInUserId = currentUser.id;
+
+    final response = await _client
+        .from('user') // Use the 'users' table
+        .select(
+            'processed_appointment_ids') // Column storing processed appointment IDs
+        .eq('user_id', loggedInUserId) // Fetch for the current user
+        .single();
+    print(response);
+
+    if (response != null) {
+      final ids = response['processed_appointment_ids'] as List<dynamic>;
+      processedAppointmentIds.addAll(ids.cast<String>());
+      print('Loaded processed appointment IDs: $processedAppointmentIds');
+    }
+  }
+
+  // Function to save processed appointment IDs to the 'user' table
+  Future<void> saveProcessedAppointmentIds() async {
+    final currentUser = _client.auth.currentUser;
+    if (currentUser == null) {
+      print('No logged-in user.');
+      return;
+    }
+    final loggedInUserId = currentUser.id;
+
+    final response = await _client
+        .from('user') // Use the 'users' table
+        .update({
+      'processed_appointment_ids': processedAppointmentIds.toList(),
+    }).eq('user_id', loggedInUserId); // Use user_id for the specific user
+
+    if (response != null) {
+      print('Processed appointment IDs: ${response}');
+    }
+  }
+
+  // Listen to new appointments in the 'appointment' table in real-time
   void listenToAppointments() {
     final currentUser = _client.auth.currentUser;
     if (currentUser == null) {
@@ -17,17 +70,13 @@ class RealtimeService {
     final loggedInServiceProviderId = currentUser
         .id; // Assumes `currentUser.id` corresponds to the service provider ID
 
-// Set to track the appointment IDs that have been processed (to detect updates)
-    final Set<String> processedAppointmentIds = {};
-
-    // Listen to new appointments in the 'appointment' table in real-time
     _client
         .from('appointment')
         .stream(primaryKey: ['appointment_id']) // Specify the primary key
         .eq('sp_id',
             loggedInServiceProviderId) // Filter for the current service provider
         .listen(
-          (changes) {
+          (changes) async {
             for (final change in changes) {
               // Extract the details of the new appointment from the change object
               final spId = change['sp_id'];
@@ -47,6 +96,7 @@ class RealtimeService {
                       'New upcoming appointment detected for service provider: $appointmentId, $appointmentStatus');
                   processedAppointmentIds
                       .add(appointmentId); // Mark this appointment as processed
+                  await saveProcessedAppointmentIds(); // Save the updated set to the database
                   sendNotification(
                       change); // Send notification for the new appointment
                 }
@@ -54,13 +104,10 @@ class RealtimeService {
                 // Handle updates here
                 print(
                     'Appointment update detected for appointment: $appointmentId, $appointmentStatus');
-                // You could send a different type of notification for updates if needed
-                // Example: sendUpdateNotification(change);
               }
             }
           },
           onError: (error) {
-            // Handle errors during the real-time stream
             print('Real-time stream error: $error');
           },
         );
@@ -69,7 +116,7 @@ class RealtimeService {
   // Create a set to track sent notification IDs
   final Set<String> sentNotificationIds = {};
 
-  void sendNotification(Map<String, dynamic> appointment) async {
+  Future<void> sendNotification(Map<String, dynamic> appointment) async {
     print(
         'Preparing to send notification for appointment: ${appointment['appointment_id']}');
 
@@ -93,8 +140,7 @@ class RealtimeService {
             .eq('pet_owner_id', userId)
             .single(); // Ensures you get only one result
 
-        // Check if the response contains data
-        if (response != null && response.isNotEmpty) {
+        if (response != null) {
           final username = response['username'] ??
               'Unknown User'; // Access 'username' directly
 
@@ -127,25 +173,41 @@ class RealtimeService {
           // After sending the notification, mark it as sent by adding the appointment ID to the set
           sentNotificationIds.add(appointmentId);
 
+          // Save sent notification IDs to the 'user' table
+          await saveSentNotificationIds();
+
           print('Notification sent for appointment ID $appointmentId');
         } else {
-          // Handle case where no data was returned for the pet_owner_id
           print('No data found for pet_owner_id: $userId');
         }
       } catch (e) {
-        // Handle any unexpected errors
         print('Error during notification process: $e');
       }
     } else {
-      // Handle case where pet_owner_id or appointment_id is missing from the appointment data
       print(
           'Error: Missing pet_owner_id or appointment_id in appointment data.');
     }
   }
 
-// FOR UPDATE
-//   void sendUpdateNotification(Map<String, dynamic> appointment) {
-//   print('Sending update notification for appointment: ${appointment['appointment_id']}');
-//   // Logic for sending update notifications
-// }
+  // Function to save sent notification IDs to the 'user' table
+  Future<void> saveSentNotificationIds() async {
+    final currentUser = _client.auth.currentUser;
+    if (currentUser == null) {
+      print('No logged-in user.');
+      return;
+    }
+    final loggedInUserId = currentUser.id;
+
+    final response = await _client
+        .from('user') // Use the 'users' table
+        .update({
+      'sent_notification_ids': sentNotificationIds.toList(),
+    }).eq('user_id', loggedInUserId); // Use user_id for the specific user
+
+    if (response.error != null) {
+      print('Sent notification IDs saved successfully: ${response}');
+    } else {
+      print('Sent notification IDs saved successfully.');
+    }
+  }
 }

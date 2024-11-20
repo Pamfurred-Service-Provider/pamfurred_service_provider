@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/Supabase/realtime_service.dart';
 import 'package:service_provider/screens/login.dart';
 import 'package:service_provider/screens/main_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,6 +16,17 @@ class AuthRedirectState extends State<AuthRedirect> {
   void initState() {
     super.initState();
     _checkSession();
+    initializeAndListenToAppointments();
+  }
+
+  void initializeAndListenToAppointments() async {
+    final realtimeService = RealtimeService();
+
+    // Load processed appointment IDs
+    await realtimeService.loadProcessedAppointmentIds();
+
+    // Start listening to appointments
+    realtimeService.listenToAppointments();
   }
 
   Future<void> _checkSession() async {
