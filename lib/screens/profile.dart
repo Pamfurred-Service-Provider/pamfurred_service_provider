@@ -38,7 +38,6 @@ class ProfileScreenState extends State<ProfileScreen> {
       }
 
       final spId = userSession.user.id;
-      print('Service Provider ID: $spId');
 
       final serviceProviderResponse = await Supabase.instance.client
           .from('service_provider')
@@ -46,16 +45,12 @@ class ProfileScreenState extends State<ProfileScreen> {
           .eq('sp_id', spId)
           .single();
 
-      print('Service Provider Response: $serviceProviderResponse');
-
       if (serviceProviderResponse != null) {
         final userResponse = await Supabase.instance.client
             .from('user')
             .select('address_id')
             .eq('user_id', spId)
             .single();
-
-        print('User Response: $userResponse');
 
         if (userResponse != null && userResponse['address_id'] != null) {
           final addressId = userResponse['address_id'];
@@ -65,8 +60,6 @@ class ProfileScreenState extends State<ProfileScreen> {
               .select('floor_unit_room, street, city, barangay')
               .eq('address_id', addressId)
               .single();
-
-          print('Address Response: $addressResponse');
 
           if (addressResponse != null) {
             setState(() {
@@ -86,7 +79,6 @@ class ProfileScreenState extends State<ProfileScreen> {
         throw Exception("Error fetching service provider data");
       }
     } catch (e) {
-      print("Error fetching user data: $e");
       setState(() {
         isLoading = false; // Stop loading even on error
       });
@@ -120,7 +112,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             .from('service_provider_images')
             .uploadBinary(fileName, bytes);
 
-        if (response.error == null) {
+        if (response == null) {
           final imageUrl = Supabase.instance.client.storage
               .from('service_provider_images')
               .getPublicUrl(fileName);
@@ -137,13 +129,11 @@ class ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             isLoading = false; // Stop loading if there is an error
           });
-          print("Failed to upload image: ${response.error!.message}");
         }
       } catch (e) {
         setState(() {
           isLoading = false; // Stop loading if there is an error
         });
-        print("Error uploading image: $e");
       }
     } else {
       setState(() {
@@ -163,7 +153,6 @@ class ProfileScreenState extends State<ProfileScreen> {
     if (result != null && result is Map<String, dynamic>) {
       setState(() {
         profileData = result;
-        print('Updated profile data: $profileData');
       });
       _fetchUserData(); // Re-fetch user data after edit to get updated address
     }
@@ -231,7 +220,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                                   fit: BoxFit.fill,
                                 )
                               : Image.asset(
-                                  'assets/Image_null.png',
+                                  'assets/pamfurred_secondarylogo.png',
                                   width: 200,
                                   height: 200,
                                   fit: BoxFit.fill,
@@ -288,10 +277,14 @@ class ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildDetailRow(
-                          "Opening Time:", profileData?['time_open']),
+                        'Opening Time:',
+                        (profileData?['time_open'] ?? ''),
+                      ),
                       const SizedBox(height: 10),
                       _buildDetailRow(
-                          "Closing Time:", profileData?['time_close']),
+                        'Closing Time:',
+                        (profileData?['time_close'] ?? ''),
+                      ),
                       const SizedBox(height: 20),
                       const Divider(),
                       const SizedBox(height: 20),
@@ -310,7 +303,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      _buildDetailWrapRow(
+                      _buildDetailRow(
                           '',
                           "${profileData?['address']?['floor_unit_room'] ?? ''}, "
                               "${profileData?['address']?['street'] ?? ''}, "
@@ -340,33 +333,10 @@ class ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         Text(
-          value ?? 'N/A', // Default to 'N/A' if value is null
+          value ?? '',
           style: const TextStyle(fontSize: 16, color: Colors.black54),
         ),
       ],
     );
   }
-
-  Widget _buildDetailWrapRow(String label, String? value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          value ?? 'N/A', // Default to 'N/A' if value is null
-          style: const TextStyle(fontSize: 16, color: Colors.black54),
-        ),
-      ],
-    );
-  }
-}
-
-extension on String {
-  get error => null;
 }

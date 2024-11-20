@@ -12,6 +12,7 @@ class AddServiceScreen extends StatefulWidget {
     super.key,
     required this.serviceProviderId,
     this.serviceCategory,
+    required Map<String, dynamic> serviceData,
   });
   @override
   State<AddServiceScreen> createState() => _AddServiceScreenState();
@@ -94,9 +95,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     setState(() {
       _isLoading = true; // Start loading
     });
-    int price;
-    int minWeight;
-    int maxWeight;
+    int price, minWeight, maxWeight;
+
     try {
       price = int.parse(priceController.text);
     } catch (e) {
@@ -126,23 +126,10 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       if (_image != null) {
         imageUrl = await backend
             .uploadImage(_image!); // Get the image URL after uploading
-        print("Uploaded image URL: $imageUrl"); // Debug print
       }
       int price = int.parse(priceController.text);
       int minWeight = int.parse(minWeightController.text);
       int maxWeight = int.parse(maxWeightController.text);
-
-      // print("Adding service with category: ${widget.serviceCategory}");
-      // print("Name: ${nameController.text}");
-      // print("Pet Specific Service: $petsList");
-      // print("Price: $price");
-      // print("Size: $sizes");
-      // print("serviceType: $serviceType");
-      // print("Min Weight: $minWeight");
-      // print("Max Weight: $maxWeight");
-      // print("Availability: $availability");
-      // print("Service Category: ${widget.serviceCategory}"); // Debug print
-      // print("Image URL: $imageUrl");
 
       final serviceId = await backend.addService(
         serviceName: nameController.text,
@@ -161,10 +148,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       if (serviceId != null) {
         Navigator.pop(context, 'Service Added');
       } else {
-        throw Exception('Failed to add service: serviceId is null');
+        throw Exception('Failed to add service, please try again');
       }
-    } catch (e) {
-      print('Error adding service: ${e.toString()}');
     } finally {
       setState(() => _isLoading = false);
     }

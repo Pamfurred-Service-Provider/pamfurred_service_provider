@@ -183,24 +183,45 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     );
   }
 
+//   Widget _buildAppointmentList(
+//       int tabIndex, List<Map<String, dynamic>> appointmentList) {
+//     final filteredAppointments = appointmentList.where((appointment) {
+//       DateTime appointmentDate;
+
+//       try {
+//         appointmentDate =
+//             DateTime.parse(appointment['appointment_date']).toLocal();
+//       } catch (e) {
+//         appointmentDate = DateTime.now();
+//       }
+//       final now = DateTime.now();
+//       final today = DateTime.now();
+
+// // Debug print for today filtering
+//       if (tabIndex == 0) {
+//         // Only print when filtering for the "Today" tab
+//         print('Appointment Date: $appointmentDate, Today: $today');
+//         print(
+//             'Raw appointment date from DB: ${appointment['appointment_date']}');
+//       }
   Widget _buildAppointmentList(
       int tabIndex, List<Map<String, dynamic>> appointmentList) {
     final filteredAppointments = appointmentList.where((appointment) {
       DateTime appointmentDate;
-
-      try {
-        appointmentDate =
-            DateTime.parse(appointment['appointment_date']).toLocal();
-      } catch (e) {
-        appointmentDate = DateTime.now();
-      }
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
 
-// Debug print for today filtering
-      if (tabIndex == 0) {
-        // Only print when filtering for the "Today" tab
-        print('Appointment Date: $appointmentDate, Today: $today');
+      try {
+        // Parse the date string from "MM/DD/YYYY" format
+        final dateParts = appointment['appointment_date'].split('/');
+        appointmentDate = DateTime(
+          int.parse(dateParts[2]), // Year
+          int.parse(dateParts[0]), // Month
+          int.parse(dateParts[1]), // Day
+        );
+      } catch (e) {
+        print('Error parsing date: ${appointment['appointment_date']}');
+        return false; // Skip this appointment if date parsing fails
       }
       switch (tabIndex) {
         case 0: // Today
@@ -209,8 +230,12 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
             appointmentDate.month,
             appointmentDate.day,
           );
-          return normalizedAppointmentDate == today;
-
+          final normalizedToday = DateTime(today.year, today.month, today.day);
+          final isToday =
+              normalizedAppointmentDate.isAtSameMomentAs(normalizedToday);
+          print(
+              'Appointment Date: $normalizedAppointmentDate, Today: $normalizedToday, Is Today: $isToday');
+          return isToday;
         case 1: // Upcoming
           return appointmentDate.isAfter(today) &&
               appointment['appointment_status'] == 'Upcoming';

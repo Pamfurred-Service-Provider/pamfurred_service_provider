@@ -549,3 +549,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 extension on PostgrestResponse {
   get error => null;
 }
+
+
+

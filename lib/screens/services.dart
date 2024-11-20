@@ -119,7 +119,7 @@ class ServicesScreenState extends State<ServicesScreen> {
         MaterialPageRoute(
           builder: (context) => AddServiceScreen(
             serviceProviderId: serviceProviderId!, // Pass non-null value
-            serviceCategory: selectedCategory,
+            serviceCategory: selectedCategory, serviceData: {},
           ),
         ),
       );
@@ -189,7 +189,6 @@ class ServicesScreenState extends State<ServicesScreen> {
 
   Future<void> _fetchPackagesByCategory(String category) async {
     if (serviceProviderId == null) return;
-    print("Fetching packages for category: $category");
 
     final response = await supabase
         .from('serviceprovider_package')
@@ -199,7 +198,6 @@ class ServicesScreenState extends State<ServicesScreen> {
         .filter('package.package_category', 'cs', '["$category"]');
     // .eq('package.package_category', category);
     // .contains('package.package_category', [category]);
-    print("Raw response: $response");
 
     // Check if the response contains data
     if (response is List && response.isNotEmpty) {

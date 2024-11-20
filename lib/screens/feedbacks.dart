@@ -106,7 +106,7 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                               );
                             }
                             // If rating is at least 0.5 and less than the next whole number, it's a half star
-                            else if (averageRating >= index + 0.5) {
+                            else if (averageRating <= index + 0.5) {
                               return const Icon(
                                 Icons.star_half,
                                 color:
