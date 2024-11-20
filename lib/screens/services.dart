@@ -20,7 +20,7 @@ class ServicesScreenState extends State<ServicesScreen> {
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
   String? selectedCategory = 'All services'; // Default selected category
-  bool isLoading = false;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -55,7 +55,9 @@ class ServicesScreenState extends State<ServicesScreen> {
 
   Future<void> _fetchServices() async {
     if (serviceProviderId == null) return;
-
+    setState(() {
+      isLoading = true; // Start loading
+    });
     final response = await supabase
         .from('serviceprovider_service')
         .select(
@@ -91,6 +93,9 @@ class ServicesScreenState extends State<ServicesScreen> {
         services = [];
       });
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Future<void> _createService(Map<String, dynamic> newService) async {
@@ -146,27 +151,31 @@ class ServicesScreenState extends State<ServicesScreen> {
 
   Future<void> _deleteService(Map<String, dynamic> service) async {
     final serviceId = service['id'];
-    final imageUrl = service['service_image'];
+    // final imageUrl = service['image'];
 
     print("Deleting service with ID: $service['id']");
     print("Service Provider ID: $serviceProviderId");
+    if (serviceId == null) {
+      showErrorDialog(context, 'Failed to delete service: Invalid service ID');
+      return;
+    }
 
     try {
       // Delete the image from the bucket (if URL exists)
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        final fileName =
-            imageUrl.split('/').last; // Get the file name from the URL
-        final filePath =
-            'service_images/$fileName'; // Construct the full path for service images
+      // if (imageUrl != null && imageUrl.isNotEmpty) {
+      //   final fileName =
+      //       imageUrl.split('/').last; // Get the file name from the URL
+      //   final filePath =
+      //       'service_images/$fileName'; // Construct the full path for service images
 
-        final response = await supabase.storage
-            .from('service_provider_images')
-            .remove([filePath]);
+      //   final response = await supabase.storage
+      //       .from('service_provider_images')
+      //       .remove([filePath]);
 
-        print("Image deleted from the bucket successfully.");
-      } else {
-        print("No image found to delete.");
-      }
+      //   print("Image deleted from the bucket successfully.");
+      // } else {
+      //   print("No image found to delete.");
+      // }
 
       // First, delete from the bridge table
       await supabase
@@ -194,10 +203,7 @@ class ServicesScreenState extends State<ServicesScreen> {
         .from('serviceprovider_package')
         .select('*, package!inner(package_name, price, package_image)')
         .eq('sp_id', serviceProviderId)
-        // .eq('package_category', category);
         .filter('package.package_category', 'cs', '["$category"]');
-    // .eq('package.package_category', category);
-    // .contains('package.package_category', [category]);
 
     // Check if the response contains data
     if (response is List && response.isNotEmpty) {
@@ -414,6 +420,7 @@ class ServicesScreenState extends State<ServicesScreen> {
       setState(() {
         services = List<Map<String, dynamic>>.from(response.map((item) {
           return {
+            'id': item['service_id'],
             'name': item['service']['service_name'] ?? 'Unknown',
             'price': item['service']['price'] ?? 0,
             'image': item['service']['service_image'] ??
@@ -602,7 +609,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                                     icon: const Icon(Icons.delete,
                                         color: Colors.red),
                                     onPressed: () => _showDeleteDialog(
-                                        context, package, false)),
+                                        context, package, true)),
                               ],
                             ),
                           );

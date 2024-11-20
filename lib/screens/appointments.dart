@@ -212,12 +212,12 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
       final today = DateTime(now.year, now.month, now.day);
 
       try {
-        // Parse the date string from "MM/DD/YYYY" format
-        final dateParts = appointment['appointment_date'].split('/');
+        // Parse the date string from "yyyy-mm-dd" format
+        final dateParts = appointment['appointment_date'].split('-');
         appointmentDate = DateTime(
-          int.parse(dateParts[2]), // Year
-          int.parse(dateParts[0]), // Month
-          int.parse(dateParts[1]), // Day
+          int.parse(dateParts[0]), // Year
+          int.parse(dateParts[1]), // Month
+          int.parse(dateParts[2]), // Day
         );
       } catch (e) {
         print('Error parsing date: ${appointment['appointment_date']}');
@@ -275,7 +275,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
                   children: <Widget>[
                     const SizedBox(height: 8.0),
                     Text(
-                      formatDate(appointment['appointment_date']),
+                      secondaryFormatDate(appointment['appointment_date']),
                       style: const TextStyle(color: Colors.grey),
                     ),
                     const SizedBox(height: 5.0),
