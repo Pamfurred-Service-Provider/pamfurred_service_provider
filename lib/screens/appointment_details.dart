@@ -149,7 +149,8 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             const SizedBox(height: 10),
             buildDetailSection(
               'Date:',
-              formatDate(widget.appointment['appointment_date'] ?? 'N/A'),
+              formatDateToShort(
+                  widget.appointment['appointment_date'] ?? 'N/A'),
             ),
             buildDetailSection(
               'Time:',
