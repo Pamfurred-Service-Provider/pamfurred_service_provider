@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:service_provider/Authentication/auth_redirect.dart';
+import 'package:service_provider/Supabase/realtime_service.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -37,8 +38,12 @@ void main() async {
   );
   await initializeNotifications(); // Initialize local notifications
 
+  final realtimeService = RealtimeService();
+
+  // Start listening to appointments
+  realtimeService.listenToAppointments();
+
   runApp(const MyApp());
-  // Initialize and start RealtimeService
 }
 
 class MyApp extends StatelessWidget {

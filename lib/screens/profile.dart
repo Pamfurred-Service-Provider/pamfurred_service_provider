@@ -85,7 +85,6 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Method to change the profile picture
   Future<void> changeImage() async {
     setState(() {
       isLoading = true; // Set loading state to true while uploading
@@ -108,32 +107,61 @@ class ProfileScreenState extends State<ProfileScreen> {
         final fileName =
             'profile_pic/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
+        // Upload image to Supabase Storage
         final response = await Supabase.instance.client.storage
             .from('service_provider_images')
             .uploadBinary(fileName, bytes);
 
+        // Check if the response indicates failure (null response means failure)
         if (response == null) {
-          final imageUrl = Supabase.instance.client.storage
-              .from('service_provider_images')
-              .getPublicUrl(fileName);
-
-          await Supabase.instance.client
-              .from('service_provider')
-              .update({'image': imageUrl}).eq('sp_id', userSession.user.id);
-
           setState(() {
-            profileData?['image'] = imageUrl; // Update state with new image
-            isLoading = false; // Set loading to false after image is uploaded
+            isLoading =
+                false; // Stop loading if there is an error uploading the image
           });
-        } else {
-          setState(() {
-            isLoading = false; // Stop loading if there is an error
-          });
+          print('Error uploading image: Unknown error');
+          return; // Stop further execution
         }
+
+        // If the upload is successful, get the public URL of the uploaded image
+        final imageUrl = Supabase.instance.client.storage
+            .from('service_provider_images')
+            .getPublicUrl(fileName);
+
+        // Update the service provider table with the new image URL
+        final updateResponse = await Supabase.instance.client
+            .from('service_provider')
+            .update({'image': imageUrl}).eq('sp_id', userSession.user.id);
+
+        if (updateResponse == null) {
+          setState(() {
+            isLoading =
+                false; // Stop loading if there is an error updating the table
+          });
+          print('Error updating the service provider image: Unknown error');
+          return; // Stop further execution
+        }
+
+        // If update response is successful, print the update response
+        if (updateResponse.error != null) {
+          setState(() {
+            isLoading =
+                false; // Stop loading if there is an error in the response
+          });
+          print(
+              'Error updating service provider image: ${updateResponse.error!.message}');
+          return; // Stop further execution
+        }
+
+        // If update is successful, update state
+        setState(() {
+          profileData?['image'] = imageUrl; // Update state with new image
+          isLoading = false; // Set loading to false after image is uploaded
+        });
       } catch (e) {
         setState(() {
-          isLoading = false; // Stop loading if there is an error
+          isLoading = false; // Stop loading if there is an exception
         });
+        print('Error: $e');
       }
     } else {
       setState(() {
