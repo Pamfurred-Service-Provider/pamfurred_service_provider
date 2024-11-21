@@ -7,103 +7,44 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 class RealtimeService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  // A Set to track the processed appointment IDs
-  final Set<String> processedAppointmentIds = {};
-
-  // // Constructor to call the necessary functions when the service is initialized
-  // RealtimeService() {
-  //   loadProcessedAppointmentIds(); // Load processed appointment IDs on initialization
-  // }
-
-  // Function to load processed appointment IDs from the 'user' table
-  Future<void> loadProcessedAppointmentIds() async {
-    final currentUser = _client.auth.currentUser;
-    if (currentUser == null) {
-      print('No logged-in user.');
-      return;
-    }
-    final loggedInUserId = currentUser.id;
-
-    final response = await _client
-        .from('user') // Use the 'users' table
-        .select(
-            'processed_appointment_ids') // Column storing processed appointment IDs
-        .eq('user_id', loggedInUserId) // Fetch for the current user
-        .single();
-    print(response);
-
-    if (response != null) {
-      final ids = response['processed_appointment_ids'] as List<dynamic>;
-      processedAppointmentIds.addAll(ids.cast<String>());
-      print('Loaded processed appointment IDs: $processedAppointmentIds');
-    }
-  }
-
-  // Function to save processed appointment IDs to the 'user' table
-  Future<void> saveProcessedAppointmentIds() async {
-    final currentUser = _client.auth.currentUser;
-    if (currentUser == null) {
-      print('No logged-in user.');
-      return;
-    }
-    final loggedInUserId = currentUser.id;
-
-    final response = await _client
-        .from('user') // Use the 'users' table
-        .update({
-      'processed_appointment_ids': processedAppointmentIds.toList(),
-    }).eq('user_id', loggedInUserId); // Use user_id for the specific user
-
-    if (response != null) {
-      print('Processed appointment IDs: ${response}');
-    }
-  }
-
-  // Listen to new appointments in the 'appointment' table in real-time
-  void listenToAppointments() {
+  void listenToAppointments() async {
     final currentUser = _client.auth.currentUser;
     if (currentUser == null) {
       print('No logged-in user.');
       return;
     }
 
-    final loggedInServiceProviderId = currentUser
-        .id; // Assumes `currentUser.id` corresponds to the service provider ID
+    final loggedInServiceProviderId = currentUser.id;
 
+    // Fetch existing processed appointment IDs and sent notification IDs from Supabase
+    final Set<String> processedAppointmentIds =
+        await _fetchProcessedAppointmentIds(loggedInServiceProviderId);
+    final Set<String> sentNotificationIds =
+        await _fetchSentNotificationIds(loggedInServiceProviderId);
+
+    // Listen to real-time updates in the 'appointment' table
     _client
         .from('appointment')
-        .stream(primaryKey: ['appointment_id']) // Specify the primary key
-        .eq('sp_id',
-            loggedInServiceProviderId) // Filter for the current service provider
+        .stream(primaryKey: ['appointment_id'])
+        .eq('sp_id', loggedInServiceProviderId)
         .listen(
           (changes) async {
             for (final change in changes) {
-              // Extract the details of the new appointment from the change object
               final spId = change['sp_id'];
               final appointmentId = change['appointment_id'];
               final appointmentStatus = change['appointment_status'];
 
-              // Check if it's a valid appointment for the logged-in service provider
               if (spId != loggedInServiceProviderId || appointmentId == null) {
-                continue; // Skip if the service provider doesn't match or appointment ID is invalid
+                continue;
               }
 
-              // Check if it's an insert (appointment_id is new)
               if (!processedAppointmentIds.contains(appointmentId)) {
-                // Only send notifications for "Upcoming" appointments
                 if (appointmentStatus == 'Upcoming') {
-                  print(
-                      'New upcoming appointment detected for service provider: $appointmentId, $appointmentStatus');
-                  processedAppointmentIds
-                      .add(appointmentId); // Mark this appointment as processed
-                  await saveProcessedAppointmentIds(); // Save the updated set to the database
-                  sendNotification(
-                      change); // Send notification for the new appointment
+                  processedAppointmentIds.add(appointmentId);
+                  _updateProcessedAppointmentIds(
+                      loggedInServiceProviderId, processedAppointmentIds);
+                  sendNotification(change, sentNotificationIds);
                 }
-              } else {
-                // Handle updates here
-                print(
-                    'Appointment update detected for appointment: $appointmentId, $appointmentStatus');
               }
             }
           },
@@ -113,38 +54,97 @@ class RealtimeService {
         );
   }
 
-  // Create a set to track sent notification IDs
-  final Set<String> sentNotificationIds = {};
+  Future<Set<String>> _fetchProcessedAppointmentIds(String userId) async {
+    try {
+      final response = await _client
+          .from('user')
+          .select('processed_appointment_ids')
+          .eq('user_id', userId)
+          .single();
 
-  Future<void> sendNotification(Map<String, dynamic> appointment) async {
-    print(
-        'Preparing to send notification for appointment: ${appointment['appointment_id']}');
+      if (response != null &&
+          response['processed_appointment_ids'] is List<dynamic>) {
+        return (response['processed_appointment_ids'] as List<dynamic>)
+            .cast<String>()
+            .toSet();
+      }
+    } catch (e) {
+      print('Error fetching processed appointment IDs: $e');
+    }
+    return {};
+  }
 
-    final userId = appointment[
-        'pet_owner_id']; // Foreign key pointing to the pet_owner table
+  Future<Set<String>> _fetchSentNotificationIds(String userId) async {
+    try {
+      final response = await _client
+          .from('user')
+          .select('sent_notification_ids')
+          .eq('user_id', userId)
+          .single();
+
+      if (response != null &&
+          response['sent_notification_ids'] is List<dynamic>) {
+        return (response['sent_notification_ids'] as List<dynamic>)
+            .cast<String>()
+            .toSet();
+      }
+    } catch (e) {
+      print('Error fetching sent notification IDs: $e');
+    }
+    return {};
+  }
+
+  Future<void> _updateProcessedAppointmentIds(
+      String userId, Set<String> processedAppointmentIds) async {
+    try {
+      final response = await _client.from('user').update({
+        'processed_appointment_ids': processedAppointmentIds.toList(),
+      }).eq('user_id', userId);
+
+      if (response != null) {
+        print('Error updating processed appointment IDs: ${response!.message}');
+      }
+    } catch (e) {
+      print('Error updating processed appointment IDs: $e');
+    }
+  }
+
+  Future<void> _updateSentNotificationIds(
+      String userId, Set<String> sentNotificationIds) async {
+    try {
+      final response = await _client.from('user').update({
+        'sent_notification_ids': sentNotificationIds.toList(),
+      }).eq('user_id', userId);
+
+      if (response != null) {
+        print('Error updating sent notification IDs: ${response.message}');
+      }
+    } catch (e) {
+      print('Error updating sent notification IDs: $e');
+    }
+  }
+
+  void sendNotification(
+      Map<String, dynamic> appointment, Set<String> sentNotificationIds) async {
+    final userId = appointment['pet_owner_id'];
     final appointmentId = appointment['appointment_id'];
 
     if (userId != null && appointmentId != null) {
-      try {
-        // Check if the notification for this appointment ID has already been sent
-        if (sentNotificationIds.contains(appointmentId)) {
-          print(
-              'Notification for appointment ID $appointmentId already sent. Skipping...');
-          return; // Skip sending the notification if it's already been sent
-        }
+      if (sentNotificationIds.contains(appointmentId)) {
+        print('Notification already sent for appointment ID $appointmentId');
+        return;
+      }
 
-        // Fetch the username from the pet_owner table
+      try {
         final response = await Supabase.instance.client
             .from('pet_owner')
-            .select('username') // Fetch username directly from pet_owner
+            .select('username')
             .eq('pet_owner_id', userId)
-            .single(); // Ensures you get only one result
+            .single();
 
-        if (response != null) {
-          final username = response['username'] ??
-              'Unknown User'; // Access 'username' directly
+        if (response != null && response.isNotEmpty) {
+          final username = response['username'] ?? 'Unknown User';
 
-          // Notification details
           const AndroidNotificationDetails androidDetails =
               AndroidNotificationDetails(
             'appointment_channel',
@@ -155,59 +155,53 @@ class RealtimeService {
             icon: 'pamfurred',
           );
 
-          // Generate a unique notification ID using the lower 32 bits of the timestamp
           final uniqueNotificationId =
               (DateTime.now().millisecondsSinceEpoch % 2147483647).abs();
 
           const NotificationDetails details =
               NotificationDetails(android: androidDetails);
 
-          // Send the notification for the new appointment with a unique ID
           await flutterLocalNotificationsPlugin.show(
-            uniqueNotificationId, // Unique notification ID within the 32-bit range
+            uniqueNotificationId,
             'Upcoming Appointment',
             'You have an upcoming appointment with $username.',
             details,
           );
 
-          // After sending the notification, mark it as sent by adding the appointment ID to the set
           sentNotificationIds.add(appointmentId);
+          _updateSentNotificationIds(userId, sentNotificationIds);
 
           // Save sent notification IDs to the 'user' table
           await saveSentNotificationIds();
 
           print('Notification sent for appointment ID $appointmentId');
-        } else {
-          print('No data found for pet_owner_id: $userId');
         }
       } catch (e) {
-        print('Error during notification process: $e');
+        print('Error sending notification: $e');
       }
-    } else {
-      print(
-          'Error: Missing pet_owner_id or appointment_id in appointment data.');
     }
   }
 
-  // Function to save sent notification IDs to the 'user' table
   Future<void> saveSentNotificationIds() async {
-    final currentUser = _client.auth.currentUser;
-    if (currentUser == null) {
-      print('No logged-in user.');
-      return;
-    }
-    final loggedInUserId = currentUser.id;
+    try {
+      final currentUser = _client.auth.currentUser;
+      if (currentUser == null) {
+        print('No logged-in user.');
+        return;
+      }
 
-    final response = await _client
-        .from('user') // Use the 'users' table
-        .update({
-      'sent_notification_ids': sentNotificationIds.toList(),
-    }).eq('user_id', loggedInUserId); // Use user_id for the specific user
+      final loggedInServiceProviderId = currentUser.id;
 
-    if (response.error != null) {
-      print('Sent notification IDs saved successfully: ${response}');
-    } else {
+      // Fetch the sent notification IDs to ensure you're adding to the existing list
+      final Set<String> sentNotificationIds =
+          await _fetchSentNotificationIds(loggedInServiceProviderId);
+
+      await _updateSentNotificationIds(
+          loggedInServiceProviderId, sentNotificationIds);
+
       print('Sent notification IDs saved successfully.');
+    } catch (e) {
+      print('Error saving sent notification IDs: $e');
     }
   }
 }
