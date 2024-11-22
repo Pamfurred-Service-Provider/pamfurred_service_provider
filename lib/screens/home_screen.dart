@@ -137,11 +137,11 @@ Future<void> _fetchFeedbackData() async {
       double compoundScore = feedback['compound_score'] as double;
 
       // Update thresholds based on compound_score ranges for satisfaction
-      if (compoundScore >= 0.5) {
+      if (compoundScore >= 0.05) {
         satisfiedCount++;
-      } else if (compoundScore >= -0.5 && compoundScore < 0.5) {
+      } else if (compoundScore >= -0.05 && compoundScore < 0.05) {
         neutralCount++;
-      } else if (compoundScore < -0.5) {
+      } else if (compoundScore < -0.05) {
         negativeCount++;
       }
     }
