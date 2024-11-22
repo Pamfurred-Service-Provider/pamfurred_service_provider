@@ -60,41 +60,82 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         padding: const EdgeInsets.all(18.0),
         child: ListView(
           children: [
+            const Text(
+              'Status:',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color.fromRGBO(160, 62, 6, 1),
+              ),
+            ),
+            const SizedBox(height: 10),
             Row(
-              children: [
-                const Text(
-                  'Status:',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromRGBO(160, 62, 6, 1)),
-                ),
-                const Spacer(),
-                DropdownButton<String>(
-                  value: dropdownValue,
-                  icon: const Icon(Icons.arrow_drop_down),
-                  style: const TextStyle(
-                      fontSize: 18, color: Color.fromRGBO(160, 62, 6, 1)),
-                  underline: Container(),
-                  items: statusOptions
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) async {
-                    if (newValue != null && newValue != dropdownValue) {
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: statusOptions.map((status) {
+                // Define colors and styles based on status
+                final isSelected = dropdownValue == status;
+                Color backgroundColor;
+                Color textColor;
+
+                switch (status) {
+                  case 'Done':
+                    backgroundColor = isSelected
+                        ? Colors.green
+                        : Color.fromARGB(255, 166, 239, 141);
+                    textColor = isSelected
+                        ? Colors.black
+                        : Color.fromARGB(255, 68, 103, 56);
+                    break;
+                  case 'Cancelled':
+                    backgroundColor = isSelected
+                        ? Color.fromRGBO(164, 36, 36, 1)
+                        : Colors.red[100]!;
+                    textColor = isSelected ? Colors.white : Colors.red;
+                    break;
+                  case 'Upcoming':
+                    backgroundColor = isSelected
+                        ? Color.fromRGBO(251, 188, 4, 1)
+                        : Color.fromRGBO(231, 199, 103, 1);
+                    textColor = isSelected
+                        ? Colors.black
+                        : Color.fromRGBO(183, 134, 66, 1);
+                    break;
+                  default:
+                    backgroundColor = Colors.grey[200]!;
+                    textColor = Colors.black;
+                }
+
+                return ElevatedButton(
+                  onPressed: () async {
+                    if (!isSelected) {
                       setState(() {
-                        dropdownValue = newValue;
+                        dropdownValue = status;
                       });
-                      await updateAppointmentStatus(
-                          newValue); // Update in Supabase
+                      await updateAppointmentStatus(status);
                     }
                   },
-                ),
-              ],
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: backgroundColor,
+                    foregroundColor: textColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: isSelected
+                            ? Color.fromARGB(255, 60, 60, 60)
+                            : Colors.transparent,
+                        width:
+                            isSelected ? 2 : 1, // Highlight border for selected
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    status,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                );
+              }).toList(),
             ),
+
             const Divider(),
             const SizedBox(height: 10),
 

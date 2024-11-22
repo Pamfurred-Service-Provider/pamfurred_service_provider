@@ -210,7 +210,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                         BorderRadius.zero, // No rounding to keep it square
                     image: DecorationImage(
                       image: _image == null
-                          ? const AssetImage('assets/image.png')
+                          ? const AssetImage(
+                              'assets/assets/pamfurred_secondarylogo.png')
                           : FileImage(_image!) as ImageProvider,
                       fit: BoxFit.cover, // Cover the container
                     ),

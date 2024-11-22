@@ -182,7 +182,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                         BorderRadius.zero, // No rounding to keep it square
                     image: DecorationImage(
                       image: _image == null
-                          ? const AssetImage('assets/image.png')
+                          ? const AssetImage(
+                              'assets/pamfurred_secondarylogo.png')
                           : FileImage(_image!) as ImageProvider,
                       fit: BoxFit.cover,
                     ),

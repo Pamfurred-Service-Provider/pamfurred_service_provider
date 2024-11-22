@@ -11,7 +11,7 @@ import 'package:service_provider/screens/services.dart';
 import 'package:service_provider/components/year_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final List<int> years = [2023, 2024];
+final List<int> years = [2024, 2025];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required Null Function() onCardTap});
@@ -202,6 +202,10 @@ class HomeScreenState extends State<HomeScreen> {
         revenueData.map((e) => e['value'] as double).toList();
     final List<String> labels =
         revenueData.map((e) => e['month'] as String).toList();
+    print('Debug: Selected Year: $selectedYear');
+    print('Debug: Revenue Data: $data');
+    print('Debug: Labels: $labels');
+    print('Debug: Service Provider Name: $serviceProviderName');
     return Scaffold(
       appBar: appBar(context),
       body: ListView(
@@ -259,9 +263,10 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
                   RevenueChart(
-                    data: data,
-                    labels: labels,
-                    revenueData: const [],
+                    data: [],
+                    labels: [],
+                    // revenueData: const [],
+                    year: selectedYear,
                   ),
                 ],
               ),

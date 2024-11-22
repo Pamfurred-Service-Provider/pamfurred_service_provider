@@ -5,6 +5,8 @@ import 'package:service_provider/components/custom_padded_button.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/otp_input.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,6 +17,7 @@ class RegisterScreen extends StatefulWidget {
 
 class RegisterScreenState extends State<RegisterScreen> {
   final supabase = Supabase.instance.client;
+  File? imageFile;
 
   // TextEditingControllers
   late Map<String, TextEditingController> controllers = {
@@ -33,7 +36,7 @@ class RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  final bool _obscureText = true;
+  bool obscureText = true;
   bool _isLoading = false;
 
   Future<void> registerUser() async {
@@ -53,6 +56,7 @@ class RegisterScreenState extends State<RegisterScreen> {
         establishmentName.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
+        imageFile == null ||
         phoneNumber.isEmpty) {
       _showErrorDialog("All fields are required.");
       setState(() {
@@ -61,6 +65,21 @@ class RegisterScreenState extends State<RegisterScreen> {
       return;
     }
     try {
+      final filePath =
+          'business_permit/${DateTime.now().millisecondsSinceEpoch}.jpg'; // Generate a unique file name
+      final storageResponse = await supabase.storage
+          .from('service_provider_images')
+          .upload(filePath, imageFile!);
+
+      if (storageResponse != null) {
+        throw Exception("Failed to upload image:");
+      }
+
+      // Step 2: Get the public URL of the uploaded image
+      final imageUrl = supabase.storage
+          .from('service_provider_images')
+          .getPublicUrl(filePath);
+
       final response = await supabase.auth.signUp(
         email: email,
         password: password,
@@ -84,28 +103,13 @@ class RegisterScreenState extends State<RegisterScreen> {
           'created_at': DateTime.now().toUtc().toIso8601String(),
         }).select();
 
-        // final serviceProviderResponse = await supabase.from('user').insert({
-        //   'user_id': userId,
-        //   'first_name': firstName,
-        //   'last_name': lastName,
-        //   'phone_number': phoneNumber,
-        //   'user_type': 'service_provider',
-        //   'password': password,
-        // }).select();
-
-        // // Now, insert into the `service_provider` table with the existing `user_id`
-        // if (serviceProviderResponse.error == null) {
-        //   await supabase
-        //       .from('service_provider')
-        //       .insert({'name': establishmentName, 'user_id': userId}).select();
-        // Navigate to the RegistrationConfirmation screen on successful registration
         if (userInsertResponse.isNotEmpty) {
-          final serviceProviderInsertResponse = await supabase
-              .from('service_provider')
-              .insert({
+          final serviceProviderInsertResponse =
+              await supabase.from('service_provider').insert({
             'name': establishmentName,
             'email': email,
-            'sp_id': userId
+            'sp_id': userId,
+            'sp_business_permit': imageUrl,
           }).select();
           if (serviceProviderInsertResponse.isNotEmpty) {
             if (mounted) {
@@ -159,6 +163,23 @@ class RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // Function to open the camera
+  Future<void> captureImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      setState(() {
+        imageFile = File(pickedFile.path);
+      });
+    } else {
+      // Handle the case where no image was captured
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No image captured!')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,7 +193,7 @@ class RegisterScreenState extends State<RegisterScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50.0, vertical: 30.0),
+          padding: const EdgeInsets.all(25.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -376,7 +397,7 @@ class RegisterScreenState extends State<RegisterScreen> {
                 child: TextFormField(
                   cursorColor: Colors.black,
                   controller: controllers['password'],
-                  obscureText: true, // Hide the text for password
+                  obscureText: obscureText, // Hide the text for password
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.all(10.0),
                     border: OutlineInputBorder(
@@ -388,6 +409,18 @@ class RegisterScreenState extends State<RegisterScreen> {
                       borderSide: const BorderSide(color: secondaryColor),
                       borderRadius:
                           BorderRadius.circular(secondaryBorderRadius),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureText
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureText = !obscureText;
+                        });
+                      },
                     ),
                   ),
                 ),
@@ -430,6 +463,43 @@ class RegisterScreenState extends State<RegisterScreen> {
                             borderRadius:
                                 BorderRadius.circular(secondaryBorderRadius))),
                   )),
+              const SizedBox(height: primarySizedBox),
+              RichText(
+                text: const TextSpan(children: [
+                  TextSpan(
+                    text: "Business Permit ",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: regularText,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "*",
+                    style: TextStyle(color: primaryColor),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: secondarySizedBox),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: captureImage,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Please attach your business permit'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: secondarySizedBox),
+              if (imageFile != null)
+                Image.file(
+                  imageFile!,
+                  width: double.infinity,
+                  // height: 200,
+                  fit: BoxFit.cover,
+                ),
+              // else
+              //   const Text('Please attach your business permit'),
               const SizedBox(height: secondarySizedBox),
               Center(
                 child: _isLoading

@@ -151,7 +151,7 @@ class ServicesScreenState extends State<ServicesScreen> {
 
   Future<void> _deleteService(Map<String, dynamic> service) async {
     final serviceId = service['id'];
-    // final imageUrl = service['image'];
+    final imageUrl = service['image'];
 
     print("Deleting service with ID: $service['id']");
     print("Service Provider ID: $serviceProviderId");
@@ -162,20 +162,27 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     try {
       // Delete the image from the bucket (if URL exists)
-      // if (imageUrl != null && imageUrl.isNotEmpty) {
-      //   final fileName =
-      //       imageUrl.split('/').last; // Get the file name from the URL
-      //   final filePath =
-      //       'service_images/$fileName'; // Construct the full path for service images
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        final fileName =
+            imageUrl.split('/').last; // Get the file name from the URL
+        // final filePath =
+        //     'service_images/$fileName'; // Construct the full path for service images
+        final filePath = fileName;
 
-      //   final response = await supabase.storage
-      //       .from('service_provider_images')
-      //       .remove([filePath]);
-
-      //   print("Image deleted from the bucket successfully.");
-      // } else {
-      //   print("No image found to delete.");
-      // }
+        final response = await supabase.storage
+            .from('service_provider_images')
+            .remove([filePath]);
+        if (response != null) {
+          print("Image deleted from the bucket successfully.");
+        } else if (response == null || response.isEmpty) {
+          {
+            print(
+                'Image deletion failed: No confirmation of deletion from server.');
+          }
+        } else {
+          print('Image deleted successfully: ${response}');
+        }
+      }
 
       // First, delete from the bridge table
       await supabase
@@ -609,7 +616,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                                     icon: const Icon(Icons.delete,
                                         color: Colors.red),
                                     onPressed: () => _showDeleteDialog(
-                                        context, package, true)),
+                                        context, package, false)),
                               ],
                             ),
                           );

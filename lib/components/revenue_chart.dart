@@ -1,15 +1,17 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RevenueChart extends StatefulWidget {
   final List<double> data;
   final List<String> labels;
+  final int year;
 
   const RevenueChart(
       {super.key,
       required this.data,
       required this.labels,
-      required List<Map<String, dynamic>> revenueData});
+      required this.year});
 
   @override
   RevenueChartState createState() => RevenueChartState();
@@ -17,6 +19,91 @@ class RevenueChart extends StatefulWidget {
 
 class RevenueChartState extends State<RevenueChart> {
   final Color normalColor = const Color(0xFFD14C01).withOpacity(0.7);
+  bool isLoading = true;
+  List<double> data = [];
+  List<String> labels = [];
+  @override
+  void initState() {
+    super.initState();
+    _fetchMonthlyRevenueData(widget.year);
+  }
+
+  Future<void> _fetchMonthlyRevenueData(int year) async {
+    try {
+      final userSession = Supabase.instance.client.auth.currentSession;
+      if (userSession == null) {
+        throw Exception("User not logged in");
+      }
+
+      final userId = userSession.user.id;
+      print('Fetching revenue data for user: $userId');
+
+      // Fetch the monthly revenue data for the logged-in user and selected year
+      final response = await Supabase.instance.client
+          .rpc('get_monthly_revenue', params: {'user_sp_id': userId});
+      print('Raw response from get_monthly_revenue: $response');
+
+      // if (response != null) {
+      //   throw Exception('Error fetching revenue data: ');
+      // }
+      // if (response == null || !(response is List)) {
+      //   throw Exception('Invalid response data');
+      // }
+      // final revenueData = List<Map<String, dynamic>>.from(response);
+      if (response == null) {
+        throw Exception('No response from get_monthly_revenue RPC');
+      }
+
+      final revenueData = List<Map<String, dynamic>>.from(response);
+
+      print('Revenue data: $revenueData');
+      // Filter the data by the selected year and prepare it for display
+      final filteredData = revenueData
+          .where((data) => data['revenue_year'] == year.toString())
+          .toList();
+      print('Filtered data for year $year: $filteredData'); // Log filtered data
+
+      // final revenueList = filteredData.map((data) {
+      //   return {
+      //     'month': data['revenue_month'] as String,
+      //     'value': data['total_revenue'] as double
+      //   };
+      // }).toList();
+      if (filteredData.isEmpty) {
+        setState(() {
+          data = [];
+          labels = [];
+          isLoading = false;
+        });
+        return;
+      }
+
+      // Prepare data for the chart
+      final chartData = filteredData
+          .map((e) => (e['total_revenue'] as num).toDouble())
+          .toList();
+      final chartLabels =
+          filteredData.map((e) => e['revenue_month'] as String).toList();
+
+      setState(() {
+        data = chartData;
+        labels = chartLabels;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching monthly revenue data: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load revenue data')),
+        );
+      }
+      setState(() {
+        isLoading = false;
+        data = [];
+        labels = [];
+      });
+    }
+  }
 
   Widget _bottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontSize: 10);

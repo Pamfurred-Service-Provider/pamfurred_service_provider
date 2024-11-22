@@ -352,26 +352,6 @@ class LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  child: Container(
-                    alignment: Alignment.bottomCenter,
-                    padding: const EdgeInsets.only(bottom: 50.0),
-                    child: RichText(
-                      textAlign: TextAlign.center,
-                      text: const TextSpan(
-                        style: TextStyle(
-                            color: Colors.black, fontSize: regularText),
-                        children: [
-                          TextSpan(text: "About Pamfurred"),
-                          TextSpan(text: " • "),
-                          TextSpan(text: "Privacy Policy"),
-                          TextSpan(text: " • "),
-                          TextSpan(text: "Terms of use"),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
