@@ -24,32 +24,20 @@ class HomeScreenState extends State<HomeScreen> {
   String serviceProviderName = '';
   int selectedYear = years.first;
   int selectedIndex = 0;
-  // Static Data
+
+  final List<Map<String, dynamic>> satisfactionData = [
+    {'label': 'Satisfied', 'value': 0.0, 'color': Colors.green},
+    {'label': 'Neutral', 'value': 0.0, 'color': Colors.orange},
+    {'label': 'Negative', 'value': 0.0, 'color': Colors.red},
+  ];
+
   void onButtomNavTap(int index) {
     setState(() {
       selectedIndex = index;
     });
   }
 
-  // final List<String> store = [
-  //   'Paws and Claws Pet Station',
-  //   'Groomers on the Go'
-  // ];
-  final List<Map<String, dynamic>> revenueData = [
-    {'month': 'Jan', 'value': 2500.00},
-    {'month': 'Feb', 'value': 5000.00},
-    {'month': 'Mar', 'value': 1000.00},
-    {'month': 'Apr', 'value': 2000.00},
-    {'month': 'May', 'value': 3000.00},
-    {'month': 'Jun', 'value': 4080.00},
-    {'month': 'Jul', 'value': 5480.00},
-    {'month': 'Aug', 'value': 5050.00},
-    {'month': 'Sep', 'value': 6540.00},
-    {'month': 'Oct', 'value': 7000.00},
-    {'month': 'Nov', 'value': 8000.00},
-    {'month': 'Dec', 'value': 3152.00},
-  ];
-  final List<Map<String, dynamic>> mostAvailedData = [
+   final List<Map<String, dynamic>> mostAvailedData = [
     {
       'service': 'Nail Clipping',
       'counts': [50, 30, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
@@ -67,37 +55,22 @@ class HomeScreenState extends State<HomeScreen> {
       'counts': [50, 35, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
     },
   ];
-  final List<Map<String, dynamic>> annualAppointmentData = [
-    {'month': 'Jan', 'value': 3000.00},
-    {'month': 'Feb', 'value': 1000.00},
-    {'month': 'Mar', 'value': 5000.00},
+
+  final List<Map<String, dynamic>> revenueData = [
+    {'month': 'Jan', 'value': 2500.00},
+    {'month': 'Feb', 'value': 5000.00},
+    {'month': 'Mar', 'value': 1000.00},
     {'month': 'Apr', 'value': 2000.00},
     {'month': 'May', 'value': 3000.00},
     {'month': 'Jun', 'value': 4080.00},
     {'month': 'Jul', 'value': 5480.00},
-    {'month': 'Aug', 'value': 1080.00},
+    {'month': 'Aug', 'value': 5050.00},
     {'month': 'Sep', 'value': 6540.00},
-    {'month': 'Oct', 'value': 6540.00},
+    {'month': 'Oct', 'value': 7000.00},
     {'month': 'Nov', 'value': 8000.00},
-    {'month': 'Dec', 'value': 8000.00},
+    {'month': 'Dec', 'value': 3152.00},
   ];
-  final List<Map<String, dynamic>> satisfactionData = [
-    {
-      'label': 'Satisfied',
-      'value': 95.0,
-      'color': const Color.fromRGBO(251, 188, 4, 1)
-    },
-    {
-      'label': 'Neutral',
-      'value': 2.0,
-      'color': const Color.fromRGBO(102, 22, 22, 1)
-    },
-    {
-      'label': 'Negative',
-      'value': 2.5,
-      'color': const Color.fromRGBO(255, 0, 0, 1)
-    },
-  ];
+
   final List<String> cardTitles = [
     'Appointments \nToday',
     'Upcoming \nAppointments',
@@ -106,88 +79,33 @@ class HomeScreenState extends State<HomeScreen> {
     'Packages',
     'Feedback'
   ];
-  void navigateToScreen(String title) {
-    if (title == 'Services' || title == 'Packages') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ServicesScreen()),
-      );
-      return; // Prevents further navigation to AppointmentsScreen
-    }
 
-    int initialTabIndex = 0;
-
-    if (title == 'Appointments Today') {
-      initialTabIndex = 0; // "Today" tab
-    } else if (title == 'Upcoming \nAppointments') {
-      initialTabIndex = 1; // "Upcoming" tab
-    } else if (title == 'Cancelled Appointments') {
-      initialTabIndex = 4; // "Cancelled" tab
-    } else if (title == 'Feedback') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const FeedbacksScreen()),
-      );
-      return; // Prevents further navigation to AppointmentsScreen
-    }
-
-    // Navigate to AppointmentsScreen if it's an appointment related title
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AppointmentsScreen(),
-        // (initialTabIndex: initialTabIndex),
-      ),
-    );
-  }
-
-  final List<int> notificationCounts = [
-    5,
-    2,
-    0,
-    3,
-    1,
-    4
-  ]; //static data for notification
-  void updateDataForYear(int year) {
-    setState(() {
-      selectedYear = year;
-    });
-  }
+  final List<int> notificationCounts = [5, 2, 0, 3, 1, 4];
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
+    _fetchFeedbackData(); // Fetch satisfaction ratings from feedback table
   }
 
   Future<void> _fetchUserData() async {
     try {
       final userSession = Supabase.instance.client.auth.currentSession;
+      if (userSession == null) throw Exception("User not logged in");
 
-      if (userSession == null) {
-        throw Exception("User not logged in");
-      }
-
-      // Get user ID from session
       final userId = userSession.user.id;
-
-      print('User ID: $userId');
-
-      // Fetch only the name of the service provider
       final response = await Supabase.instance.client
           .from('service_provider')
           .select('name')
           .eq('sp_id', userId)
-          .single(); // Ensures only a single row is returned
+          .single();
 
       setState(() {
         serviceProviderName = response['name'] ?? '';
       });
-      // Directly access the name from the response data
     } catch (e) {
       print("Error fetching user data: $e");
-      // Handle the error, maybe show a Snackbar
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to load user data')),
@@ -196,16 +114,90 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+Future<void> _fetchFeedbackData() async {
+  try {
+    final userSession = Supabase.instance.client.auth.currentSession;
+    if (userSession == null) throw Exception("User not logged in");
+
+    final userId = userSession.user.id;
+    final response = await Supabase.instance.client
+        .from('feedback')
+        .select('compound_score')
+        .eq('sp_id', userId)
+        .execute();
+
+    if (response.error != null) {
+      throw response.error!;
+    }
+
+    final List<dynamic> feedbacks = response.data ?? [];
+    int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
+
+    for (var feedback in feedbacks) {
+      double compoundScore = feedback['compound_score'] as double;
+
+      // Update thresholds based on compound_score ranges for satisfaction
+      if (compoundScore >= 0.05) {
+        satisfiedCount++;
+      } else if (compoundScore >= -0.05 && compoundScore < 0.05) {
+        neutralCount++;
+      } else if (compoundScore < -0.05) {
+        negativeCount++;
+      }
+    }
+
+    final totalFeedbacks = satisfiedCount + neutralCount + negativeCount;
+    if (totalFeedbacks > 0) {
+      satisfactionData[0]['value'] = (satisfiedCount / totalFeedbacks) * 100;
+      satisfactionData[1]['value'] = (neutralCount / totalFeedbacks) * 100;
+      satisfactionData[2]['value'] = (negativeCount / totalFeedbacks) * 100;
+    }
+
+    setState(() {});
+  } catch (e) {
+    print("Error fetching feedback data: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to load feedback data')),
+    );
+  }
+}
+
+  void updateDataForYear(int year) {
+    setState(() {
+      selectedYear = year;
+    });
+  }
+
+  void navigateToScreen(String title) {
+    if (title == 'Services' || title == 'Packages') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+      );
+      return;
+    }
+    if (title == 'Feedback') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const FeedbacksScreen()),
+      );
+      return;
+    }
+
+    int initialTabIndex = title == 'Appointments Today' ? 0 : title == 'Upcoming \nAppointments' ? 1 : 4;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
+    );
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
-    final List<double> data =
-        revenueData.map((e) => e['value'] as double).toList();
-    final List<String> labels =
-        revenueData.map((e) => e['month'] as String).toList();
-    print('Debug: Selected Year: $selectedYear');
-    print('Debug: Revenue Data: $data');
-    print('Debug: Labels: $labels');
-    print('Debug: Service Provider Name: $serviceProviderName');
+    final List<double> data = revenueData.map((e) => e['value'] as double).toList();
+    final List<String> labels = revenueData.map((e) => e['month'] as String).toList();
+
     return Scaffold(
       appBar: appBar(context),
       body: ListView(
@@ -222,6 +214,7 @@ class HomeScreenState extends State<HomeScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               const SizedBox(height: 10),
               Text(
                 serviceProviderName,
@@ -233,6 +226,7 @@ class HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
             ],
           ),
+
           Card(
             color: Colors.white,
             elevation: 10,
@@ -272,6 +266,7 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
           Card(
             color: Colors.white,
             elevation: 10,
@@ -309,6 +304,7 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          
           Card(
             color: Colors.white,
             elevation: 10,
@@ -347,6 +343,7 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
           Card(
             color: Colors.white,
             elevation: 10,
@@ -354,26 +351,16 @@ class HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(15),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(15), // Padding inside the card
+              padding: const EdgeInsets.all(15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Satisfaction Rating',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                      YearDropdown(
-                        years: years,
-                        initialYear: selectedYear,
-                        onYearChanged: updateDataForYear,
-                      ),
-                    ],
+                  const Text(
+                    'Satisfaction Rating',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.normal,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   SatisfactionRatingChart(
@@ -383,6 +370,8 @@ class HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
+
           const SizedBox(height: 5),
           GridView.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -455,4 +444,8 @@ class HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+extension on PostgrestResponse {
+  get error => null;
 }
