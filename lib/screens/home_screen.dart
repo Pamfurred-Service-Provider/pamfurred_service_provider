@@ -122,7 +122,7 @@ Future<void> _fetchFeedbackData() async {
     final userId = userSession.user.id;
     final response = await Supabase.instance.client
         .from('feedback')
-        .select('rating')
+        .select('compound_score')
         .eq('sp_id', userId)
         .execute();
 
@@ -134,12 +134,14 @@ Future<void> _fetchFeedbackData() async {
     int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
 
     for (var feedback in feedbacks) {
-      double rating = feedback['rating'] as double;
-      if (rating >= 4.0) {
+      double compoundScore = feedback['compound_score'] as double;
+
+      // Update thresholds based on compound_score ranges for satisfaction
+      if (compoundScore >= 0.5) {
         satisfiedCount++;
-      } else if (rating == 3.0) {
+      } else if (compoundScore >= -0.5 && compoundScore < 0.5) {
         neutralCount++;
-      } else if (rating <= 2.0) {
+      } else if (compoundScore < -0.5) {
         negativeCount++;
       }
     }
