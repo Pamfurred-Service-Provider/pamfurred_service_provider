@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/screens/edit_profile.dart';
 import 'package:service_provider/screens/login.dart';
+import 'package:service_provider/screens/pin_location.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
 import 'package:service_provider/components/date_and_time_formatter.dart';
 
@@ -142,7 +143,7 @@ class ProfileScreenState extends State<ProfileScreen> {
         }
 
         // If update response is successful, print the update response
-        if (updateResponse.error != null) {
+        if (updateResponse != null) {
           setState(() {
             isLoading =
                 false; // Stop loading if there is an error in the response
@@ -324,19 +325,13 @@ class ProfileScreenState extends State<ProfileScreen> {
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 20),
-                      const Text(
-                        "Address:",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                       _buildDetailRow(
-                          '',
-                          "${profileData?['address']?['floor_unit_room'] ?? ''}, "
-                              "${profileData?['address']?['street'] ?? ''}, "
-                              "${profileData?['address']?['barangay'] ?? ''}, "
-                              "${profileData?['address']?['city'] ?? ''}"),
+                          'Address:',
+                          "${profileData?['address']?['floor_unit_room'] ?? ''} "
+                              "${profileData?['address']?['street'] ?? ''} "
+                              "${profileData?['address']?['barangay'] ?? ''} \n"
+                              "${profileData?['address']?['city'] ?? ''}",
+                          isAddress: true),
                       const SizedBox(height: 10),
                     ],
                   ),
@@ -349,20 +344,30 @@ class ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String? value) {
+  Widget _buildDetailRow(String label, String? value,
+      {bool isAddress = false}) {
     return Row(
+      crossAxisAlignment:
+          isAddress ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        Flexible(
+          flex: 1,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-        Text(
-          value ?? '',
-          style: const TextStyle(fontSize: 16, color: Colors.black54),
+        Flexible(
+          flex: 1,
+          child: Text(
+            value ?? '',
+            style: const TextStyle(fontSize: 16, color: Colors.black54),
+            textAlign: TextAlign.right,
+          ),
         ),
       ],
     );

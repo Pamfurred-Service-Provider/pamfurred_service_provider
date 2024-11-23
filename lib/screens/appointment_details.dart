@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
+import 'package:service_provider/Widgets/confirmation_dialog.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> appointment;
@@ -37,8 +38,24 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     if (response != null) {
       print('Error updating appointment status: ${response.message}');
     } else {
-      widget
-          .updateStatus(status); // Notify the parent widget (appointments.dart)
+      widget.updateStatus(status);
+    }
+  }
+
+  // Show confirmation dialog before changing status
+  Future<void> showConfirmationDialog(String newStatus) async {
+    final confirm = await ConfirmationDialog.show(
+      context,
+      title: 'Confirm Status',
+      content: 'Are you sure you want to change the status to $newStatus?',
+    );
+
+    // If the user confirms, update the status
+    if (confirm == true) {
+      setState(() {
+        dropdownValue = newStatus;
+      });
+      await updateAppointmentStatus(newStatus);
     }
   }
 
@@ -46,6 +63,12 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Widget build(BuildContext context) {
     final services = widget.appointment['services'] as List<dynamic>;
     final packages = widget.appointment['packages'] as List<dynamic>;
+    // Restrict buttons based on the current status
+    final List<String> displayedStatusOptions =
+        dropdownValue == 'Done' || dropdownValue == 'Cancelled'
+            ? [dropdownValue]
+            : statusOptions;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointment Details"),
@@ -71,7 +94,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: statusOptions.map((status) {
+              children: displayedStatusOptions.map((status) {
                 // Define colors and styles based on status
                 final isSelected = dropdownValue == status;
                 Color backgroundColor;
@@ -108,10 +131,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                 return ElevatedButton(
                   onPressed: () async {
                     if (!isSelected) {
-                      setState(() {
-                        dropdownValue = status;
-                      });
-                      await updateAppointmentStatus(status);
+                      await showConfirmationDialog(status);
                     }
                   },
                   style: ElevatedButton.styleFrom(

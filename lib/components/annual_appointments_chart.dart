@@ -6,7 +6,7 @@ class AnnualAppointmentsChart extends StatefulWidget {
   final List<String> labels; // X-axis labels
 
   const AnnualAppointmentsChart({
-    super.key,
+    super.key, 
     required this.data,
     required this.labels,
   });
