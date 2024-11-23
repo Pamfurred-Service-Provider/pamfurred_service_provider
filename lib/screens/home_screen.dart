@@ -24,6 +24,7 @@ class HomeScreenState extends State<HomeScreen> {
   String serviceProviderName = '';
   int selectedYear = years.first;
   int selectedIndex = 0;
+  List<double> annualAppointmentData = List.filled(12, 0.0); // Changed to List<double>
 
   final List<Map<String, dynamic>> satisfactionData = [
     {'label': 'Satisfied', 'value': 0.0, 'color': Colors.green},
@@ -87,6 +88,7 @@ class HomeScreenState extends State<HomeScreen> {
     super.initState();
     _fetchUserData();
     _fetchFeedbackData(); // Fetch satisfaction ratings from feedback table
+    _fetchAnnualAppointments(); // Fetch annual appointments data
   }
 
   Future<void> _fetchUserData() async {
@@ -162,10 +164,48 @@ Future<void> _fetchFeedbackData() async {
   }
 }
 
+ Future<void> _fetchAnnualAppointments() async {
+  try {
+    final userSession = Supabase.instance.client.auth.currentSession;
+    if (userSession == null) throw Exception("User not logged in");
+
+    final userId = userSession.user.id;
+    final response = await Supabase.instance.client
+        .from('appointment')
+        .select('appointment_date')
+        .eq('sp_id', userId)
+        .gte('appointment_date', '$selectedYear-01-01')
+        .lte('appointment_date', '$selectedYear-12-31')
+        .execute();
+
+    if (response.data == null) {
+      throw Exception("No appointment data found");
+    }
+
+    final List<dynamic> appointments = response.data;
+    final monthlyCounts = List<double>.filled(12, 0.0); // Initialize as List<double>
+
+    for (var appointment in appointments) {
+      final date = DateTime.parse(appointment['appointment_date']);
+      monthlyCounts[date.month - 1] += 1.0; // Convert count to double
+    }
+
+    setState(() {
+      annualAppointmentData = monthlyCounts;
+    });
+  } catch (e) {
+    print("Error fetching appointment data: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to load annual appointments data')),
+    );
+  }
+}
+
   void updateDataForYear(int year) {
     setState(() {
       selectedYear = year;
     });
+    _fetchAnnualAppointments(); // Refresh data for the selected year
   }
 
   void navigateToScreen(String title) {
@@ -312,7 +352,7 @@ Future<void> _fetchFeedbackData() async {
               borderRadius: BorderRadius.circular(15),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(15), // Padding inside the card
+              padding: const EdgeInsets.all(15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -320,7 +360,7 @@ Future<void> _fetchFeedbackData() async {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        ' Annual Appointments',
+                        'Annual Appointments',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.normal,
@@ -335,9 +375,11 @@ Future<void> _fetchFeedbackData() async {
                   ),
                   const SizedBox(height: 10),
                   AnnualAppointmentsChart(
-                    data: data,
-                    labels: labels,
-                    annualAppointmentData: const [],
+                    data: annualAppointmentData,
+                    labels: const [
+                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                    ],
                   ),
                 ],
               ),
@@ -449,3 +491,4 @@ Future<void> _fetchFeedbackData() async {
 extension on PostgrestResponse {
   get error => null;
 }
+
