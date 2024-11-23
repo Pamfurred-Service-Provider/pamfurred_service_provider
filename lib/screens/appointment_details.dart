@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
+import 'package:service_provider/Widgets/confirmation_dialog.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> appointment;
@@ -29,15 +30,6 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
   // Function to update the appointment status in Supabase
   Future<void> updateAppointmentStatus(String status) async {
-    // // Check if the current status is 'Done'
-    // if (dropdownValue == 'Done') {
-    //   // Show an alert that status can't be changed
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text("Status can't be changed once it's Done")),
-    //   );
-    //   return;
-    // }
-
     final response = await supabase
         .from('appointment')
         .update({'appointment_status': status}).eq(
@@ -47,6 +39,23 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       print('Error updating appointment status: ${response.message}');
     } else {
       widget.updateStatus(status);
+    }
+  }
+
+  // Show confirmation dialog before changing status
+  Future<void> showConfirmationDialog(String newStatus) async {
+    final confirm = await ConfirmationDialog.show(
+      context,
+      title: 'Confirm Status',
+      content: 'Are you sure you want to change the status to $newStatus?',
+    );
+
+    // If the user confirms, update the status
+    if (confirm == true) {
+      setState(() {
+        dropdownValue = newStatus;
+      });
+      await updateAppointmentStatus(newStatus);
     }
   }
 
@@ -122,18 +131,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                 return ElevatedButton(
                   onPressed: () async {
                     if (!isSelected) {
-                      setState(() {
-                        dropdownValue = status;
-                      });
-                      await updateAppointmentStatus(status);
-                    } else if (dropdownValue == 'Done' ||
-                        dropdownValue == 'Cancelled') {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              "Status can't be changed once it's ${dropdownValue}"),
-                        ),
-                      );
+                      await showConfirmationDialog(status);
                     }
                   },
                   style: ElevatedButton.styleFrom(
