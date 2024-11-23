@@ -1,7 +1,6 @@
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-import 'package:service_provider/components/custom_padded_button.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/otp_input.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -133,7 +132,7 @@ class RegisterScreenState extends State<RegisterScreen> {
         _showErrorDialog("User sign-up failed.");
       }
     } catch (e) {
-      _showErrorDialog("An error occurred: $e");
+      _showErrorDialog("An error occurred. Please try again.");
     } finally {
       if (mounted) {
         setState(() {
@@ -502,14 +501,20 @@ class RegisterScreenState extends State<RegisterScreen> {
               //   const Text('Please attach your business permit'),
               const SizedBox(height: secondarySizedBox),
               Center(
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : customPaddedTextButton(
-                        text: "Register",
-                        onPressed: () async {
-                          await registerUser();
-                        },
-                      ),
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await registerUser();
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
+                      : const Text('Register',
+                          style: TextStyle(color: Colors.white)),
+                ),
               ),
             ],
           ),

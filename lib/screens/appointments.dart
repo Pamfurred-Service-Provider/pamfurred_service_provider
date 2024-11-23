@@ -70,10 +70,6 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     // Group the data by appointment ID
     final groupedData = groupAppointmentData(dataList);
 
-    // Print the grouped data
-    print('Grouped data: $groupedData');
-    print('Raw appointment data: $dataList'); // Add this line
-
     return groupedData;
   }
 
@@ -233,8 +229,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
           final normalizedToday = DateTime(today.year, today.month, today.day);
           final isToday =
               normalizedAppointmentDate.isAtSameMomentAs(normalizedToday);
-          print(
-              'Appointment Date: $normalizedAppointmentDate, Today: $normalizedToday, Is Today: $isToday');
+
           return isToday;
         case 1: // Upcoming
           return appointmentDate.isAfter(today) &&
@@ -249,6 +244,12 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
           return false;
       }
     }).toList();
+    // Sort appointments by date, descending (most recent first)
+    filteredAppointments.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['appointment_date']);
+      DateTime dateB = DateTime.parse(b['appointment_date']);
+      return dateB.compareTo(dateA); // Sort by descending order
+    });
 
     if (filteredAppointments.isEmpty) {
       return const Center(child: Text('No Appointments Available'));

@@ -29,6 +29,15 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
   // Function to update the appointment status in Supabase
   Future<void> updateAppointmentStatus(String status) async {
+    // // Check if the current status is 'Done'
+    // if (dropdownValue == 'Done') {
+    //   // Show an alert that status can't be changed
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text("Status can't be changed once it's Done")),
+    //   );
+    //   return;
+    // }
+
     final response = await supabase
         .from('appointment')
         .update({'appointment_status': status}).eq(
@@ -37,8 +46,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     if (response != null) {
       print('Error updating appointment status: ${response.message}');
     } else {
-      widget
-          .updateStatus(status); // Notify the parent widget (appointments.dart)
+      widget.updateStatus(status);
     }
   }
 
@@ -46,6 +54,12 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Widget build(BuildContext context) {
     final services = widget.appointment['services'] as List<dynamic>;
     final packages = widget.appointment['packages'] as List<dynamic>;
+    // Restrict buttons based on the current status
+    final List<String> displayedStatusOptions =
+        dropdownValue == 'Done' || dropdownValue == 'Cancelled'
+            ? [dropdownValue]
+            : statusOptions;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointment Details"),
@@ -71,7 +85,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: statusOptions.map((status) {
+              children: displayedStatusOptions.map((status) {
                 // Define colors and styles based on status
                 final isSelected = dropdownValue == status;
                 Color backgroundColor;
@@ -112,6 +126,14 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                         dropdownValue = status;
                       });
                       await updateAppointmentStatus(status);
+                    } else if (dropdownValue == 'Done' ||
+                        dropdownValue == 'Cancelled') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              "Status can't be changed once it's ${dropdownValue}"),
+                        ),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(

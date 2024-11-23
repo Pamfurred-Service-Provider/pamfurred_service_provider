@@ -105,10 +105,8 @@ class LoginScreenState extends State<LoginScreen> {
         });
       }
     } catch (error) {
-      print('Login error: $error');
       setState(() {
-        loginErrorMessage =
-            'An unexpected error occurred. Please try again. Details: $error';
+        loginErrorMessage = 'Invalid login credentials';
       });
     } finally {
       setState(() {
