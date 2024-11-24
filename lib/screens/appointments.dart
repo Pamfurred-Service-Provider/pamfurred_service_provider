@@ -142,9 +142,9 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
           tabs: [
             _buildTab('Today'),
             _buildTab('Upcoming'),
-            _buildTab('All'),
             _buildTab('Done'),
             _buildTab('Cancelled'),
+            _buildTab('All'),
           ],
           indicatorColor: const Color.fromRGBO(160, 62, 6, 1),
           labelPadding: const EdgeInsets.symmetric(horizontal: 2),
@@ -236,14 +236,13 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
 
           return isToday;
         case 1: // Upcoming
-          return appointmentDate.isAfter(today) &&
-              appointment['appointment_status'] == 'Upcoming';
-        case 2: // All
-          return true;
-        case 3: // Done
+          return appointment['appointment_status'] == 'Upcoming';
+        case 2: // Done
           return appointment['appointment_status'] == 'Done';
-        case 4: // Cancelled
+        case 3: // Cancelled
           return appointment['appointment_status'] == 'Cancelled';
+        case 4: // All
+          return true;
         default:
           return false;
       }
