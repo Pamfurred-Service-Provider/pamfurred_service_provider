@@ -70,7 +70,7 @@ class RegisterScreenState extends State<RegisterScreen> {
           .from('service_provider_images')
           .upload(filePath, imageFile!);
 
-      if (storageResponse != null) {
+      if (storageResponse.isEmpty) {
         throw Exception("Failed to upload image:");
       }
 
@@ -115,28 +115,24 @@ class RegisterScreenState extends State<RegisterScreen> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => OtpVerificationScreen(
-                          email: email,
-                        )),
+                    builder: (context) => OtpVerificationScreen(email: email)),
               );
             }
           } else {
-            // _showErrorDialog(serviceProviderResponse.error!.message);
-            _showErrorDialog(
-                "Failed to add data to the service_provider table.");
+            _showErrorDialog("Failed create account. Please try again");
           }
         } else {
-          _showErrorDialog("Failed to add data to the user table.");
+          _showErrorDialog("Failed create account.");
         }
       } else {
         _showErrorDialog("User sign-up failed.");
       }
     } catch (e) {
-      _showErrorDialog("An error occurred. Please try again.");
+      _showErrorDialog("Account already exists. Please try another email");
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false; // Stop loading spinner
+          _isLoading = false;
         });
       }
     }
@@ -497,8 +493,6 @@ class RegisterScreenState extends State<RegisterScreen> {
                   // height: 200,
                   fit: BoxFit.cover,
                 ),
-              // else
-              //   const Text('Please attach your business permit'),
               const SizedBox(height: secondarySizedBox),
               Center(
                 child: ElevatedButton(
