@@ -22,23 +22,25 @@ final Map<DateTime, bool> _availability = {
 List<String> petsList = ['dog'];
 
 class EditProfileScreenState extends State<EditProfileScreen> {
-   // Initialize Supabase and user session variables
+  // Initialize Supabase and user session variables
   final supabase = Supabase.instance.client;
   late final String userId;
   String dropdownValue = number.first; //dropdown for # of pets catered per day
-  
+
   // Controllers
-  final TextEditingController establishmentNameController = TextEditingController();
+  final TextEditingController establishmentNameController =
+      TextEditingController();
   final TextEditingController timeOpenController = TextEditingController();
   final TextEditingController timeCloseController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
-  final TextEditingController numberOfPetsCaterController = TextEditingController();
+  final TextEditingController numberOfPetsCaterController =
+      TextEditingController();
   final TextEditingController datePickerController = TextEditingController();
   final TextEditingController exactAddressController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController barangayController = TextEditingController();
   final TextEditingController streetController = TextEditingController();
-  final TextEditingController doorNoController = TextEditingController();
+  final TextEditingController floorNoController = TextEditingController();
 
   Future<void> _selectTime(
       BuildContext context, TextEditingController controller) async {
@@ -63,30 +65,80 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Retrieve the user ID from the Supabase session
     final serviceSession = supabase.auth.currentSession;
     userId = serviceSession?.user?.id ?? '';
     print('User ID: $userId');
-    
-    if (widget.profileData != null) {
-      establishmentNameController.text = widget.profileData?['establishment name'] ?? '';
-      timeOpenController.text = widget.profileData?['time open'] ?? '';
-      timeCloseController.text = widget.profileData?['time close'] ?? '';
-      petsToCaterController.text = widget.profileData?['pets to cater'] ?? '';
-      numberOfPetsCaterController.text = widget.profileData?['number of pets'] ?? '';
-      datePickerController.text = widget.profileData?['date picker'] ?? '';
-      exactAddressController.text = widget.profileData?['exact address'] ?? '';
-      cityController.text = widget.profileData?['city'] ?? '';
-      barangayController.text = widget.profileData?['barangay'] ?? '';
-      streetController.text = widget.profileData?['street'] ?? '';
-      doorNoController.text = widget.profileData?['door no'] ?? '';
-      dropdownValue = widget.profileData?['number of pets'] ?? number.first;
-    } 
+
+    // Fetch the user's service provider data from Supabase
+    _fetchServiceProviderData();
   }
 
+  Future<void> _fetchServiceProviderData() async {
+    try {
+      // Fetch the service provider data based on the logged-in user's ID
+      final serviceProviderResponse = await supabase
+          .from('service_provider')
+          .select('name, time_open, time_close, number_of_pets')
+          .eq('sp_id',
+              userId) // Assuming 'sp_id' is the field that corresponds to the user ID
+          .single()
+          .execute();
 
+      // Fetch the address data based on the logged-in user's ID
+      final addressResponse = await supabase
+          .from('user')
+          .select(
+              'address:address_id(floor_unit_room, street, city, barangay, latitude, longitude)') // Using relation with foreign key
+          .eq('user_id', userId) // Fetch the data for the logged-in user
+          .single()
+          .execute();
 
+      if (serviceProviderResponse.error == null &&
+          serviceProviderResponse.data != null) {
+        setState(() {
+          // Prefill the service provider data
+          establishmentNameController.text =
+              serviceProviderResponse.data['name'] ?? '';
+          timeOpenController.text =
+              serviceProviderResponse.data['time_open'] ?? '';
+          timeCloseController.text =
+              serviceProviderResponse.data['time_close'] ?? '';
+          dropdownValue =
+              serviceProviderResponse.data['number_of_pets'].toString();
+        });
+      } else {
+        print(
+            'Error fetching service provider data: ${serviceProviderResponse.error?.message}');
+      }
+
+      if (addressResponse.error == null && addressResponse.data != null) {
+        setState(() {
+          var addressData =
+              addressResponse.data['address']; // Address data from the response
+
+          // Prefill the address data
+          floorNoController.text = addressData['floor_unit_room'] ?? '';
+          streetController.text = addressData['street'] ?? '';
+          cityController.text = addressData['city'] ?? '';
+          barangayController.text = addressData['barangay'] ?? '';
+
+          // For exactAddressController, format the address as needed
+          exactAddressController.text =
+              '${addressData['city'] ?? "Not Available"}, '
+              '${addressData['barangay'] ?? "Not Available"}, '
+              '${addressData['street'] ?? "Not Available"}, '
+              '${addressData['latitude'] ?? "Not Available"}, '
+              '${addressData['longitude'] ?? "Not Available"}';
+        });
+      } else {
+        print('Error fetching address data: ${addressResponse.error?.message}');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
 
   Future<void> saveProfile() async {
     // 1. Fetch the address_id of the user
@@ -123,7 +175,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       if (response.error == null) {
         print('Service provider profile updated successfully');
       } else {
-        print('Error updating service provider profile: ${response.error?.message}');
+        print(
+            'Error updating service provider profile: ${response.error?.message}');
       }
 
       // 4. Update the address table with the new address details
@@ -131,7 +184,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         'city': cityController.text,
         'barangay': barangayController.text,
         'street': streetController.text,
-        'floor_unit_room': doorNoController.text, // Assuming this is where door_no is stored
+        'floor_unit_room':
+            floorNoController.text, // Assuming this is where floor_no is stored
       };
 
       final addressResponse = await supabase
@@ -314,46 +368,70 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                 CalendarFormat.month: 'Month',
               },
               selectedDayPredicate: (day) {
-                return false;
+                return false; // No pre-selection logic, so this can be kept as is
               },
               onDaySelected: (selectedDay, focusedDay) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AppointmentTimeSlotScreen(selectedDate: selectedDay, spId: userId,),
-                  ),
-                );
+                // Only navigate if the selected day is not in the past
+                if (selectedDay
+                    .isAfter(DateTime.now().subtract(Duration(days: 1)))) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AppointmentTimeSlotScreen(
+                        selectedDate: selectedDay,
+                        spId: userId,
+                      ),
+                    ),
+                  );
+                }
               },
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, day, focusedDay) {
                   bool isAvailable = _isDayAvailable(day);
+                  bool isPast =
+                      day.isBefore(DateTime.now().subtract(Duration(days: 1)));
+
                   return Container(
                     decoration: BoxDecoration(
-                      color: isAvailable ? Colors.green : Colors.red,
+                      color: isPast
+                          ? Colors.grey // Gray color for past days
+                          : (isAvailable ? Colors.green : Colors.red),
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     margin: const EdgeInsets.all(4.0),
                     child: Center(
                       child: Text(
                         '${day.day}',
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: isPast
+                              ? Colors.black
+                              : Colors.white, // Black text for past days
+                        ),
                       ),
                     ),
                   );
                 },
                 todayBuilder: (context, day, focusedDay) {
                   bool isAvailable = _isDayAvailable(day);
+                  bool isPast =
+                      day.isBefore(DateTime.now().subtract(Duration(days: 1)));
+
                   return Container(
                     decoration: BoxDecoration(
-                      color: isAvailable ? Colors.green : Colors.red,
+                      color: isPast
+                          ? Colors.grey // Gray color for past days
+                          : (isAvailable ? Colors.green : Colors.red),
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     margin: const EdgeInsets.all(4.0),
                     child: Center(
                       child: Text(
                         '${day.day}',
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: isPast
+                              ? Colors.black
+                              : Colors.white, // Black text for past days
+                        ),
                       ),
                     ),
                   );
@@ -414,12 +492,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "Door No.",
+                            "Floor/Unit/Room No.",
                             style: TextStyle(fontSize: 16),
                           ),
                           const SizedBox(height: 10),
                           TextField(
-                            controller: doorNoController,
+                            controller: floorNoController,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.all(
@@ -549,6 +627,3 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 extension on PostgrestResponse {
   get error => null;
 }
-
-
-
