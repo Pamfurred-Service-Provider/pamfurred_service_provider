@@ -7,6 +7,7 @@ import 'package:service_provider/components/annual_appointments_chart.dart';
 import 'package:service_provider/components/satisfaction_rating_chart.dart';
 import 'package:service_provider/screens/appointments.dart';
 import 'package:service_provider/screens/feedbacks.dart';
+import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/screens/services.dart';
 import 'package:service_provider/components/year_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -227,7 +228,10 @@ class HomeScreenState extends State<HomeScreen> {
     if (title == 'Services' || title == 'Packages') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+        MaterialPageRoute(
+            builder: (context) => const MainScreen(
+                  selectedIndex: 1,
+                )),
       );
       return;
     }

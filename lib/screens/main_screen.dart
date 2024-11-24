@@ -6,7 +6,8 @@ import 'package:service_provider/screens/notification_screen.dart';
 import 'package:service_provider/screens/services.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int selectedIndex;
+  const MainScreen({Key? key, this.selectedIndex = 0}) : super(key: key);
 
   @override
   MainScreenState createState() => MainScreenState();
@@ -20,6 +21,12 @@ class MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    currentIndex = widget.selectedIndex; // Use the passed index
+    // Using WidgetsBinding to delay the jumpToPage until after the widget is mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pageController
+          .jumpToPage(currentIndex); // Now it's safe to call jumpToPage
+    });
     _screens.addAll([
       HomeScreen(
         onCardTap: () {
