@@ -50,7 +50,9 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     );
     if (pickedTime != null) {
       setState(() {
-        controller.text = pickedTime.format(context);
+        // Format time as 24-hour (e.g., "14:30" for 2:30 PM)
+        controller.text =
+            "${pickedTime.hour}:${pickedTime.minute.toString().padLeft(2, '0')}";
       });
     }
   }

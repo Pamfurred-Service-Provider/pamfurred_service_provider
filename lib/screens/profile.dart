@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/screens/edit_profile.dart';
 import 'package:service_provider/screens/login.dart';
-import 'package:service_provider/screens/pin_location.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
 import 'package:service_provider/components/date_and_time_formatter.dart';
 
@@ -183,7 +182,7 @@ class ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         profileData = result;
       });
-      _fetchUserData(); // Re-fetch user data after edit to get updated address
+      // _fetchUserData(); // Re-fetch user data after edit to get updated address
     }
   }
 
@@ -307,12 +306,12 @@ class ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildDetailRow(
                         'Opening Time:',
-                        (profileData?['time_open'] ?? ''),
+                        formatTime(profileData?['time_open'] ?? ''),
                       ),
                       const SizedBox(height: 10),
                       _buildDetailRow(
-                        'Closing Time:',
-                        (profileData?['time_close'] ?? ''),
+                        'Closing Time:', // Corrected label
+                        formatTime(profileData?['time_close'] ?? ''),
                       ),
                       const SizedBox(height: 20),
                       const Divider(),
@@ -321,9 +320,6 @@ class ProfileScreenState extends State<ProfileScreen> {
                           profileData?['number_of_pets']?.toString() ?? ''),
                       const SizedBox(height: 20),
                       const Divider(),
-                      const Text("Business Address: ",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 20),
                       _buildDetailRow(
                           'Address:',
