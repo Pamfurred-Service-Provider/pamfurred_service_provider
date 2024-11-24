@@ -45,3 +45,25 @@ String formatDateToShort(String date) {
 
   return formattedDate;
 }
+
+String formatTimeToAMPM(String time) {
+  if (time.isEmpty) return '';
+  final parts = time.split(':');
+  if (parts.length >= 2) {
+    int hour = int.parse(parts[0]);
+    String ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour == 0 ? 12 : hour;
+    return '${hour.toString().padLeft(2, '0')}:${parts[1]} $ampm';
+  }
+  return time;
+}
+
+String convertTo24HourFormat(String time) {
+  if (time.isEmpty) return '';
+  final parts = time.split(':');
+  if (parts.length >= 2) {
+    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  }
+  return time;
+}

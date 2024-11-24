@@ -306,12 +306,12 @@ class ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildDetailRow(
                         'Opening Time:',
-                        formatTime(profileData?['time_open'] ?? ''),
+                        formatTimeToAMPM(profileData?['time_open'] ?? ''),
                       ),
                       const SizedBox(height: 10),
                       _buildDetailRow(
-                        'Closing Time:', // Corrected label
-                        formatTime(profileData?['time_close'] ?? ''),
+                        'Closing Time:',
+                        formatTimeToAMPM(profileData?['time_close'] ?? ''),
                       ),
                       const SizedBox(height: 20),
                       const Divider(),

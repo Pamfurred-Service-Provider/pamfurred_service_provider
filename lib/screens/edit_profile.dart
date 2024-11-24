@@ -3,6 +3,7 @@ import 'package:service_provider/screens/appointment_time_slot.dart';
 import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:service_provider/components/date_and_time_formatter.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, this.profileData});
@@ -49,11 +50,10 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       initialTime: TimeOfDay.now(),
     );
     if (pickedTime != null) {
-      setState(() {
-        // Format time as 24-hour (e.g., "14:30" for 2:30 PM)
-        controller.text =
-            "${pickedTime.hour}:${pickedTime.minute.toString().padLeft(2, '0')}";
-      });
+      // Format the picked time as 24-hour (HH:mm)
+      final formattedTime =
+          "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
+      controller.text = formattedTime; // Update the text field
     }
   }
 
@@ -96,6 +96,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .eq('user_id', userId) // Fetch the data for the logged-in user
           .single()
           .execute();
+// Helper method to convert time to 24-hour format
 
       if (serviceProviderResponse.error == null &&
           serviceProviderResponse.data != null) {
@@ -103,10 +104,11 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           // Prefill the service provider data
           establishmentNameController.text =
               serviceProviderResponse.data['name'] ?? '';
-          timeOpenController.text =
-              serviceProviderResponse.data['time_open'] ?? '';
-          timeCloseController.text =
-              serviceProviderResponse.data['time_close'] ?? '';
+          // Convert time_open to 24-hour format (HH:mm)
+          timeOpenController.text = convertTo24HourFormat(
+              serviceProviderResponse.data['time_open'] ?? '');
+          timeCloseController.text = convertTo24HourFormat(
+              serviceProviderResponse.data['time_close'] ?? '');
           dropdownValue =
               serviceProviderResponse.data['number_of_pets'].toString();
         });
