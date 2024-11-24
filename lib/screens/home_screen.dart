@@ -28,9 +28,21 @@ class HomeScreenState extends State<HomeScreen> {
       List.filled(12, 0.0); // Changed to List<double>
 
   final List<Map<String, dynamic>> satisfactionData = [
-    {'label': 'Satisfied', 'value': 0.0, 'color': Colors.green},
-    {'label': 'Neutral', 'value': 0.0, 'color': Colors.orange},
-    {'label': 'Negative', 'value': 0.0, 'color': Colors.red},
+    {
+      'label': 'Satisfied',
+      'value': 0.0,
+      'color': const Color.fromRGBO(251, 188, 4, 1)
+    },
+    {
+      'label': 'Neutral',
+      'value': 0.0,
+      'color': const Color.fromRGBO(102, 22, 22, 1)
+    },
+    {
+      'label': 'Negative',
+      'value': 0.0,
+      'color': const Color.fromRGBO(255, 0, 0, 1)
+    },
   ];
 
   void onButtomNavTap(int index) {
