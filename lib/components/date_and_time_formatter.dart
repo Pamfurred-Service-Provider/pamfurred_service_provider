@@ -7,20 +7,21 @@ String formatTime(String timeString) {
       return "Not available"; // Return a default message if time is empty
     }
 
-    // Split the string by colon (:) to extract hours, minutes, and seconds
+    // Split the string by colon (:) to extract hours, minutes, and optionally seconds
     final timeParts = timeString.split(':');
 
-    // Ensure there are exactly three parts: hour, minute, and second
-    if (timeParts.length != 3) {
+    // Ensure there are either two or three parts: hour, minute, and optional second
+    if (timeParts.length != 2 && timeParts.length != 3) {
       return "Invalid time format"; // Handle invalid format
     }
 
     final hour = int.parse(timeParts[0]);
     final minute = int.parse(timeParts[1]);
-    final second = int.parse(
-        timeParts[2]); // Seconds, though we'll ignore this in formatting
 
-    // Ensure the hour is within a valid range (0-23 for 24-hour format)
+    // Default second to 0 if not present
+    final second = timeParts.length == 3 ? int.parse(timeParts[2]) : 0;
+
+    // Ensure the hour, minute, and second are within valid ranges
     if (hour < 0 ||
         hour > 23 ||
         minute < 0 ||
