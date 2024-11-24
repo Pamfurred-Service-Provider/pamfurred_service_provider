@@ -25,7 +25,8 @@ AppBar appBar(BuildContext context) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const AppointmentsScreen()),
+                  builder: (context) =>
+                      const AppointmentsScreen(initialTabIndex: 0)),
             );
           },
         ),

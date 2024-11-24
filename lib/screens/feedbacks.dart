@@ -76,7 +76,7 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
               // Show a loading spinner while data is being fetched
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    Color.fromRGBO(209, 76, 1, 1)), // Use primary color
+                    Color.fromRGBO(160, 62, 6, 1)), // Use primary color
               ),
             )
           : ListView(

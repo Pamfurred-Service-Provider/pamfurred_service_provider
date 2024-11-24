@@ -24,7 +24,8 @@ class HomeScreenState extends State<HomeScreen> {
   String serviceProviderName = '';
   int selectedYear = years.first;
   int selectedIndex = 0;
-  List<double> annualAppointmentData = List.filled(12, 0.0); // Changed to List<double>
+  List<double> annualAppointmentData =
+      List.filled(12, 0.0); // Changed to List<double>
 
   final List<Map<String, dynamic>> satisfactionData = [
     {'label': 'Satisfied', 'value': 0.0, 'color': Colors.green},
@@ -38,7 +39,7 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
-   final List<Map<String, dynamic>> mostAvailedData = [
+  final List<Map<String, dynamic>> mostAvailedData = [
     {
       'service': 'Nail Clipping',
       'counts': [50, 30, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
@@ -116,90 +117,92 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-Future<void> _fetchFeedbackData() async {
-  try {
-    final userSession = Supabase.instance.client.auth.currentSession;
-    if (userSession == null) throw Exception("User not logged in");
+  Future<void> _fetchFeedbackData() async {
+    try {
+      final userSession = Supabase.instance.client.auth.currentSession;
+      if (userSession == null) throw Exception("User not logged in");
 
-    final userId = userSession.user.id;
-    final response = await Supabase.instance.client
-        .from('feedback')
-        .select('compound_score')
-        .eq('sp_id', userId)
-        .execute();
+      final userId = userSession.user.id;
+      final response = await Supabase.instance.client
+          .from('feedback')
+          .select('compound_score')
+          .eq('sp_id', userId)
+          .execute();
 
-    if (response.error != null) {
-      throw response.error!;
-    }
-
-    final List<dynamic> feedbacks = response.data ?? [];
-    int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
-
-    for (var feedback in feedbacks) {
-      double compoundScore = feedback['compound_score'] as double;
-
-      // Update thresholds based on compound_score ranges for satisfaction
-      if (compoundScore >= 0.05) {
-        satisfiedCount++;
-      } else if (compoundScore >= -0.05 && compoundScore < 0.05) {
-        neutralCount++;
-      } else if (compoundScore < -0.05) {
-        negativeCount++;
+      if (response.error != null) {
+        throw response.error!;
       }
-    }
 
-    final totalFeedbacks = satisfiedCount + neutralCount + negativeCount;
-    if (totalFeedbacks > 0) {
-      satisfactionData[0]['value'] = (satisfiedCount / totalFeedbacks) * 100;
-      satisfactionData[1]['value'] = (neutralCount / totalFeedbacks) * 100;
-      satisfactionData[2]['value'] = (negativeCount / totalFeedbacks) * 100;
-    }
+      final List<dynamic> feedbacks = response.data ?? [];
+      int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
 
-    setState(() {});
-  } catch (e) {
-    print("Error fetching feedback data: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to load feedback data')),
-    );
+      for (var feedback in feedbacks) {
+        double compoundScore = feedback['compound_score'] as double;
+
+        // Update thresholds based on compound_score ranges for satisfaction
+        if (compoundScore >= 0.05) {
+          satisfiedCount++;
+        } else if (compoundScore >= -0.05 && compoundScore < 0.05) {
+          neutralCount++;
+        } else if (compoundScore < -0.05) {
+          negativeCount++;
+        }
+      }
+
+      final totalFeedbacks = satisfiedCount + neutralCount + negativeCount;
+      if (totalFeedbacks > 0) {
+        satisfactionData[0]['value'] = (satisfiedCount / totalFeedbacks) * 100;
+        satisfactionData[1]['value'] = (neutralCount / totalFeedbacks) * 100;
+        satisfactionData[2]['value'] = (negativeCount / totalFeedbacks) * 100;
+      }
+
+      setState(() {});
+    } catch (e) {
+      print("Error fetching feedback data: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load feedback data')),
+      );
+    }
   }
-}
 
- Future<void> _fetchAnnualAppointments() async {
-  try {
-    final userSession = Supabase.instance.client.auth.currentSession;
-    if (userSession == null) throw Exception("User not logged in");
+  Future<void> _fetchAnnualAppointments() async {
+    try {
+      final userSession = Supabase.instance.client.auth.currentSession;
+      if (userSession == null) throw Exception("User not logged in");
 
-    final userId = userSession.user.id;
-    final response = await Supabase.instance.client
-        .from('appointment')
-        .select('appointment_date')
-        .eq('sp_id', userId)
-        .gte('appointment_date', '$selectedYear-01-01')
-        .lte('appointment_date', '$selectedYear-12-31')
-        .execute();
+      final userId = userSession.user.id;
+      final response = await Supabase.instance.client
+          .from('appointment')
+          .select('appointment_date')
+          .eq('sp_id', userId)
+          .gte('appointment_date', '$selectedYear-01-01')
+          .lte('appointment_date', '$selectedYear-12-31')
+          .execute();
 
-    if (response.data == null) {
-      throw Exception("No appointment data found");
+      if (response.data == null) {
+        throw Exception("No appointment data found");
+      }
+
+      final List<dynamic> appointments = response.data;
+      final monthlyCounts =
+          List<double>.filled(12, 0.0); // Initialize as List<double>
+
+      for (var appointment in appointments) {
+        final date = DateTime.parse(appointment['appointment_date']);
+        monthlyCounts[date.month - 1] += 1.0; // Convert count to double
+      }
+
+      setState(() {
+        annualAppointmentData = monthlyCounts;
+      });
+    } catch (e) {
+      print("Error fetching appointment data: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Failed to load annual appointments data')),
+      );
     }
-
-    final List<dynamic> appointments = response.data;
-    final monthlyCounts = List<double>.filled(12, 0.0); // Initialize as List<double>
-
-    for (var appointment in appointments) {
-      final date = DateTime.parse(appointment['appointment_date']);
-      monthlyCounts[date.month - 1] += 1.0; // Convert count to double
-    }
-
-    setState(() {
-      annualAppointmentData = monthlyCounts;
-    });
-  } catch (e) {
-    print("Error fetching appointment data: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to load annual appointments data')),
-    );
   }
-}
 
   void updateDataForYear(int year) {
     setState(() {
@@ -224,19 +227,31 @@ Future<void> _fetchFeedbackData() async {
       return;
     }
 
-    int initialTabIndex = title == 'Appointments Today' ? 0 : title == 'Upcoming \nAppointments' ? 1 : 4;
+    // Set the initial tab index based on the title
+    int initialTabIndex = title == 'Appointments \nToday'
+        ? 0
+        : title == 'Upcoming \nAppointments'
+            ? 1
+            : 4;
+    print('Navigating to screen with title: $title');
+    print('Initial tab index set to: $initialTabIndex');
+
+    // Navigate to AppointmentsScreen and pass the initialTabIndex
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AppointmentsScreen()),
+      MaterialPageRoute(
+        builder: (context) =>
+            AppointmentsScreen(initialTabIndex: initialTabIndex),
+      ),
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    final List<double> data = revenueData.map((e) => e['value'] as double).toList();
-    final List<String> labels = revenueData.map((e) => e['month'] as String).toList();
+    final List<double> data =
+        revenueData.map((e) => e['value'] as double).toList();
+    final List<String> labels =
+        revenueData.map((e) => e['month'] as String).toList();
 
     return Scaffold(
       appBar: appBar(context),
@@ -254,7 +269,6 @@ Future<void> _fetchFeedbackData() async {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 10),
               Text(
                 serviceProviderName,
@@ -266,7 +280,6 @@ Future<void> _fetchFeedbackData() async {
               const SizedBox(height: 20),
             ],
           ),
-
           Card(
             color: Colors.white,
             elevation: 10,
@@ -306,7 +319,6 @@ Future<void> _fetchFeedbackData() async {
               ),
             ),
           ),
-
           Card(
             color: Colors.white,
             elevation: 10,
@@ -344,7 +356,6 @@ Future<void> _fetchFeedbackData() async {
               ),
             ),
           ),
-          
           Card(
             color: Colors.white,
             elevation: 10,
@@ -377,15 +388,24 @@ Future<void> _fetchFeedbackData() async {
                   AnnualAppointmentsChart(
                     data: annualAppointmentData,
                     labels: const [
-                      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                      'Jan',
+                      'Feb',
+                      'Mar',
+                      'Apr',
+                      'May',
+                      'Jun',
+                      'Jul',
+                      'Aug',
+                      'Sep',
+                      'Oct',
+                      'Nov',
+                      'Dec'
                     ],
                   ),
                 ],
               ),
             ),
           ),
-
           Card(
             color: Colors.white,
             elevation: 10,
@@ -412,8 +432,6 @@ Future<void> _fetchFeedbackData() async {
               ),
             ),
           ),
-
-
           const SizedBox(height: 5),
           GridView.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

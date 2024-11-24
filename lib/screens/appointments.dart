@@ -4,7 +4,8 @@ import 'package:service_provider/screens/appointment_details.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
 
 class AppointmentsScreen extends StatefulWidget {
-  const AppointmentsScreen({super.key});
+  final int initialTabIndex;
+  const AppointmentsScreen({super.key, required this.initialTabIndex});
 
   @override
   AppointmentsScreenState createState() => AppointmentsScreenState();
@@ -24,7 +25,10 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(
+        length: 5,
+        vsync: this,
+        initialIndex: widget.initialTabIndex); // Use the initialTabIndex here
     _initializeSession();
   }
 
