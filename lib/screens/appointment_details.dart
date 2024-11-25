@@ -42,6 +42,28 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     }
   }
 
+// Insert a notification into the 'notification' table
+  Future<void> insertNotification(String status) async {
+    try {
+      // Insert a notification for the appointment
+      final response = await supabase
+          .from('notification') // Replace with your actual notification table
+          .insert({
+        'appointment_id': widget.appointment[
+            'appointment_id'], // Replace with actual appointment ID
+        'appointment_notif_type': '$status', // Notification type
+        'created_at': DateTime.now().toIso8601String(), // Current timestamp
+      }).execute();
+
+      // Check if the insert was successful
+      if (response.status == 200) {
+        print('Notification inserted for status change: $status');
+      }
+    } catch (e) {
+      print('Error inserting notification: $e');
+    }
+  }
+
   // Show confirmation dialog before changing status
   Future<void> showConfirmationDialog(String newStatus) async {
     final confirm = await ConfirmationDialog.show(
@@ -56,6 +78,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         dropdownValue = newStatus;
       });
       await updateAppointmentStatus(newStatus);
+      await insertNotification(newStatus);
     }
   }
 
@@ -63,11 +86,6 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Widget build(BuildContext context) {
     final services = widget.appointment['services'] as List<dynamic>;
     final packages = widget.appointment['packages'] as List<dynamic>;
-    // Restrict buttons based on the current status
-    final List<String> displayedStatusOptions =
-        dropdownValue == 'Done' || dropdownValue == 'Cancelled'
-            ? [dropdownValue]
-            : statusOptions;
 
     return Scaffold(
       appBar: AppBar(
@@ -84,76 +102,93 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         child: ListView(
           children: [
             const Text(
-              'Status:',
+              'Status: ',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Color.fromRGBO(160, 62, 6, 1),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: displayedStatusOptions.map((status) {
-                // Define colors and styles based on status
-                final isSelected = dropdownValue == status;
-                Color backgroundColor;
-                Color textColor;
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // Display "Upcoming", "Done", or "Cancelled" as text
+                if (dropdownValue == 'Upcoming') ...[
+                  const Text(
+                    'Upcoming',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ] else if (dropdownValue == 'Done') ...[
+                  const Text(
+                    'Done',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ] else if (dropdownValue == 'Cancelled') ...[
+                  const Text(
+                    'Cancelled',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ],
+            ),
 
-                switch (status) {
-                  case 'Done':
-                    backgroundColor = isSelected
-                        ? Colors.green
-                        : Color.fromARGB(255, 166, 239, 141);
-                    textColor = isSelected
-                        ? Colors.black
-                        : Color.fromARGB(255, 68, 103, 56);
-                    break;
-                  case 'Cancelled':
-                    backgroundColor = isSelected
-                        ? Color.fromRGBO(164, 36, 36, 1)
-                        : Colors.red[100]!;
-                    textColor = isSelected ? Colors.white : Colors.red;
-                    break;
-                  case 'Upcoming':
-                    backgroundColor = isSelected
-                        ? Color.fromRGBO(251, 188, 4, 1)
-                        : Color.fromRGBO(231, 199, 103, 1);
-                    textColor = isSelected
-                        ? Colors.black
-                        : Color.fromRGBO(183, 134, 66, 1);
-                    break;
-                  default:
-                    backgroundColor = Colors.grey[200]!;
-                    textColor = Colors.black;
-                }
-
-                return ElevatedButton(
-                  onPressed: () async {
-                    if (!isSelected) {
-                      await showConfirmationDialog(status);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: backgroundColor,
-                    foregroundColor: textColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: isSelected
-                            ? Color.fromARGB(255, 60, 60, 60)
-                            : Colors.transparent,
-                        width:
-                            isSelected ? 2 : 1, // Highlight border for selected
+// Buttons below the status text
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (dropdownValue == 'Upcoming') ...[
+                  ElevatedButton(
+                    onPressed: dropdownValue == 'Done'
+                        ? null
+                        : () async {
+                            await showConfirmationDialog('Done');
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color.fromARGB(255, 166, 239, 141),
+                      foregroundColor: Color.fromARGB(255, 68, 103, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: Colors.transparent,
+                          width: 1,
+                        ),
                       ),
                     ),
+                    child: const Text(
+                      'Done',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
-                  child: Text(
-                    status,
-                    style: const TextStyle(fontSize: 16),
+                  const SizedBox(
+                    height: 10,
+                    width: 10,
                   ),
-                );
-              }).toList(),
+                  ElevatedButton(
+                    onPressed: dropdownValue == 'Cancelled'
+                        ? null
+                        : () async {
+                            await showConfirmationDialog('Cancelled');
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[100]!,
+                      foregroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancelled',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+                // No buttons for "Done" or "Cancelled"
+              ],
             ),
 
             const Divider(),
@@ -304,9 +339,9 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   ),
                 ),
                 Text(
-                  '₱ ${widget.appointment['total_amount'] ?? ''}',
+                  '₱ ${widget.appointment['total_amount'] ?? '0.0'}',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Color.fromRGBO(160, 62, 6, 1),
                   ),
@@ -319,19 +354,19 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     );
   }
 
+  // Build detail section method
   Widget buildDetailSection(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
         Text(
           label,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
+        const Spacer(),
         Text(
           value,
           style: const TextStyle(fontSize: 16),
         ),
-        const SizedBox(height: 10),
       ],
     );
   }
