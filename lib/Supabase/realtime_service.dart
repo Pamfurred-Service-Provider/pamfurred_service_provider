@@ -54,7 +54,8 @@ class RealtimeService {
           .from('notification')
           .select('notification_id')
           .eq('appointment_id', appointmentId)
-          .maybeSingle();
+          .limit(1)
+          .single();
 
       if (existingNotification != null) {
         print('Notification already exists for appointment ID $appointmentId');
