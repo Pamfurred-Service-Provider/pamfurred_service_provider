@@ -16,12 +16,6 @@ class RealtimeService {
 
     final loggedInServiceProviderId = currentUser.id;
 
-    // Fetch existing processed appointment IDs and sent notification IDs from Supabase
-    final Set<String> processedAppointmentIds =
-        await _fetchProcessedAppointmentIds(loggedInServiceProviderId);
-    final Set<String> sentNotificationIds =
-        await _fetchSentNotificationIds(loggedInServiceProviderId);
-
     // Listen to real-time updates in the 'appointment' table
     _client
         .from('appointment')
@@ -38,13 +32,9 @@ class RealtimeService {
                 continue;
               }
 
-              if (!processedAppointmentIds.contains(appointmentId)) {
-                if (appointmentStatus == 'Upcoming') {
-                  processedAppointmentIds.add(appointmentId);
-                  _updateProcessedAppointmentIds(
-                      loggedInServiceProviderId, processedAppointmentIds);
-                  sendNotification(change, sentNotificationIds);
-                }
+              // Process only 'Upcoming' status
+              if (appointmentStatus == 'Upcoming') {
+                sendNotification(change);
               }
             }
           },
@@ -54,84 +44,20 @@ class RealtimeService {
         );
   }
 
-  Future<Set<String>> _fetchProcessedAppointmentIds(String userId) async {
-    try {
-      final response = await _client
-          .from('user')
-          .select('processed_appointment_ids')
-          .eq('user_id', userId)
-          .single();
-
-      if (response != null &&
-          response['processed_appointment_ids'] is List<dynamic>) {
-        return (response['processed_appointment_ids'] as List<dynamic>)
-            .cast<String>()
-            .toSet();
-      }
-    } catch (e) {
-      print('Error fetching processed appointment IDs: $e');
-    }
-    return {};
-  }
-
-  Future<Set<String>> _fetchSentNotificationIds(String userId) async {
-    try {
-      final response = await _client
-          .from('user')
-          .select('sent_notification_ids')
-          .eq('user_id', userId)
-          .single();
-
-      if (response != null &&
-          response['sent_notification_ids'] is List<dynamic>) {
-        return (response['sent_notification_ids'] as List<dynamic>)
-            .cast<String>()
-            .toSet();
-      }
-    } catch (e) {
-      print('Error fetching sent notification IDs: $e');
-    }
-    return {};
-  }
-
-  Future<void> _updateProcessedAppointmentIds(
-      String userId, Set<String> processedAppointmentIds) async {
-    try {
-      final response = await _client.from('user').update({
-        'processed_appointment_ids': processedAppointmentIds.toList(),
-      }).eq('user_id', userId);
-
-      if (response != null) {
-        print('Error updating processed appointment IDs: ${response!.message}');
-      }
-    } catch (e) {
-      print('Error updating processed appointment IDs: $e');
-    }
-  }
-
-  Future<void> _updateSentNotificationIds(
-      String userId, Set<String> sentNotificationIds) async {
-    try {
-      final response = await _client.from('user').update({
-        'sent_notification_ids': sentNotificationIds.toList(),
-      }).eq('user_id', userId);
-
-      if (response != null) {
-        print('Error updating sent notification IDs: ${response.message}');
-      }
-    } catch (e) {
-      print('Error updating sent notification IDs: $e');
-    }
-  }
-
-  void sendNotification(
-      Map<String, dynamic> appointment, Set<String> sentNotificationIds) async {
-    final userId = appointment['pet_owner_id'];
+  void sendNotification(Map<String, dynamic> appointment) async {
     final appointmentId = appointment['appointment_id'];
+    final userId = appointment['pet_owner_id'];
 
     if (userId != null && appointmentId != null) {
-      if (sentNotificationIds.contains(appointmentId)) {
-        print('Notification already sent for appointment ID $appointmentId');
+      // Check if a notification already exists for this appointment
+      final existingNotification = await _client
+          .from('notification')
+          .select('notification_id')
+          .eq('appointment_id', appointmentId)
+          .maybeSingle();
+
+      if (existingNotification != null) {
+        print('Notification already exists for appointment ID $appointmentId');
         return;
       }
 
@@ -144,6 +70,13 @@ class RealtimeService {
 
         if (response != null && response.isNotEmpty) {
           final username = response['username'] ?? 'Unknown User';
+
+          // Create the notification in the 'notification' table
+          await _client.from('notification').insert({
+            'appointment_id': appointmentId,
+            'appointment_notif_type': 'Upcoming', // Assuming notification type
+            'created_at': DateTime.now().toIso8601String(),
+          });
 
           const AndroidNotificationDetails androidDetails =
               AndroidNotificationDetails(
@@ -168,40 +101,11 @@ class RealtimeService {
             details,
           );
 
-          sentNotificationIds.add(appointmentId);
-          _updateSentNotificationIds(userId, sentNotificationIds);
-
-          // Save sent notification IDs to the 'user' table
-          await saveSentNotificationIds();
-
           print('Notification sent for appointment ID $appointmentId');
         }
       } catch (e) {
         print('Error sending notification: $e');
       }
-    }
-  }
-
-  Future<void> saveSentNotificationIds() async {
-    try {
-      final currentUser = _client.auth.currentUser;
-      if (currentUser == null) {
-        print('No logged-in user.');
-        return;
-      }
-
-      final loggedInServiceProviderId = currentUser.id;
-
-      // Fetch the sent notification IDs to ensure you're adding to the existing list
-      final Set<String> sentNotificationIds =
-          await _fetchSentNotificationIds(loggedInServiceProviderId);
-
-      await _updateSentNotificationIds(
-          loggedInServiceProviderId, sentNotificationIds);
-
-      print('Sent notification IDs saved successfully.');
-    } catch (e) {
-      print('Error saving sent notification IDs: $e');
     }
   }
 }
