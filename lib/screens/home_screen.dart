@@ -25,8 +25,7 @@ class HomeScreenState extends State<HomeScreen> {
   String serviceProviderName = '';
   int selectedYear = years.first;
   int selectedIndex = 0;
-  List<double> annualAppointmentData =
-      List.filled(12, 0.0); // Changed to List<double>
+  List<double> annualAppointmentData = List.filled(12, 0.0); // Changed to List<double>
 
   final List<Map<String, dynamic>> satisfactionData = [
     {
@@ -52,24 +51,7 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  final List<Map<String, dynamic>> mostAvailedData = [
-    {
-      'service': 'Nail Clipping',
-      'counts': [50, 30, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
-    }, // Monthly counts of service availed
-    {
-      'service': 'Hair Color',
-      'counts': [50, 10, 30, 15, 25, 35, 45, 55, 25, 35, 45, 55]
-    },
-    {
-      'service': 'Bathe',
-      'counts': [30, 10, 30, 15, 25, 35, 15, 55, 25, 35, 45, 8]
-    },
-    {
-      'service': 'Oral Care',
-      'counts': [50, 35, 40, 20, 60, 70, 80, 90, 10, 20, 50, 60]
-    },
-  ];
+  List<Map<String, dynamic>> mostAvailedData = []; // Initialize as an empty list 
 
   final List<Map<String, dynamic>> revenueData = [
     {'month': 'Jan', 'value': 2500.00},
@@ -103,6 +85,7 @@ class HomeScreenState extends State<HomeScreen> {
     _fetchUserData();
     _fetchFeedbackData(); // Fetch satisfaction ratings from feedback table
     _fetchAnnualAppointments(); // Fetch annual appointments data
+    _fetchMostAvailedServices(); // Fetch most availed services
   }
 
   Future<void> _fetchUserData() async {
@@ -129,6 +112,44 @@ class HomeScreenState extends State<HomeScreen> {
       }
     }
   }
+
+Future<List<Map<String, dynamic>>> _fetchMostAvailedServices() async {
+  try {
+    final userSession = Supabase.instance.client.auth.currentSession;
+    if (userSession == null) throw Exception("User not logged in");
+
+    final userId = userSession.user.id;
+
+    // Fetch the monthly service counts
+    final response = await Supabase.instance.client
+        .rpc('get_monthly_service_counts', params: {
+          'provider_id': userId,
+          'year': selectedYear,  // Use the selected year
+        })
+        .execute();
+
+    if (response.error != null) {
+      throw response.error!;
+    }
+
+    final List<dynamic> services = response.data ?? [];
+
+    // Process the data to include month, service_name, and count
+    List<Map<String, dynamic>> processedServices = services.map((service) {
+      return {
+        'service_name': service['service_name'],
+        'month': service['month'],
+        'count': service['count'],
+      };
+    }).toList();
+
+    return processedServices;
+
+  } catch (e) {
+    print("Error fetching monthly service counts: $e");
+    return [];  // Ensure that an empty list is returned in case of error
+  }
+}
 
   Future<void> _fetchFeedbackData() async {
     try {
@@ -178,50 +199,60 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _fetchAnnualAppointments() async {
-    try {
-      final userSession = Supabase.instance.client.auth.currentSession;
-      if (userSession == null) throw Exception("User not logged in");
+Future<List<Map<String, dynamic>>> _fetchAnnualAppointments() async {
+  try {
+    final userSession = Supabase.instance.client.auth.currentSession;
+    if (userSession == null) throw Exception("User not logged in");
 
-      final userId = userSession.user.id;
-      final response = await Supabase.instance.client
-          .from('appointment')
-          .select('appointment_date')
-          .eq('sp_id', userId)
-          .gte('appointment_date', '$selectedYear-01-01')
-          .lte('appointment_date', '$selectedYear-12-31')
-          .execute();
+    final userId = userSession.user.id;
 
-      if (response.data == null) {
-        throw Exception("No appointment data found");
-      }
+    // Fetch the annual appointments
+    final response = await Supabase.instance.client
+        .rpc('get_monthly_service_counts', params: {
+          'provider_id': userId,
+          'year': selectedYear,
+        })
+        .execute();
 
-      final List<dynamic> appointments = response.data;
-      final monthlyCounts =
-          List<double>.filled(12, 0.0); // Initialize as List<double>
-
-      for (var appointment in appointments) {
-        final date = DateTime.parse(appointment['appointment_date']);
-        monthlyCounts[date.month - 1] += 1.0; // Convert count to double
-      }
-
-      setState(() {
-        annualAppointmentData = monthlyCounts;
-      });
-    } catch (e) {
-      print("Error fetching appointment data: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Failed to load annual appointments data')),
-      );
+    if (response.error != null) {
+      throw response.error!;
     }
+
+    final List<dynamic> services = response.data ?? [];
+
+    // Process the data
+    List<Map<String, dynamic>> processedServices = services.fold([], (result, service) {
+      var existingService = result.firstWhere(
+        (item) => item['service'] == service['service_name'], 
+        orElse: () => {}
+      );
+
+      if (existingService.isEmpty) {
+        result.add({
+          'service': service['service_name'],
+          'counts': List<int>.filled(12, 0)..[service['month'] - 1] = service['count'],
+        });
+      } else {
+        existingService['counts'][service['month'] - 1] = service['count'];
+      }
+
+      return result;
+    });
+
+    return processedServices; // Always return processed data
+
+  } catch (e) {
+    print("Error fetching annual appointments data: $e");
+    return []; // Return an empty list on error, ensures non-nullable return type
   }
+}
 
   void updateDataForYear(int year) {
     setState(() {
       selectedYear = year;
     });
     _fetchAnnualAppointments(); // Refresh data for the selected year
+    _fetchMostAvailedServices();
   }
 
   void navigateToScreen(String title) {
@@ -365,6 +396,7 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
                   MostAvailedChart(
+                    fetchData: _fetchMostAvailedServices,
                     data: mostAvailedData, // Pass the data for stacking
                     labels: labels,
                   ),
