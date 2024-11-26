@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Ensure Supabase Flutter package is imported
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FeedbacksScreen extends StatefulWidget {
   const FeedbacksScreen({super.key});
@@ -9,27 +9,25 @@ class FeedbacksScreen extends StatefulWidget {
 }
 
 class FeedbacksScreenState extends State<FeedbacksScreen> {
-  late final SupabaseClient supabaseClient; // Declare Supabase Client
+  late final SupabaseClient supabaseClient;
   List<Map<String, dynamic>> reviews = [];
-  bool isLoading = true; // Flag to manage loading state
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    supabaseClient = Supabase.instance.client; // Initialize the client
+    supabaseClient = Supabase.instance.client;
     _loadReviews();
   }
 
-  // Function to fetch reviews by service provider ID (current user ID)
   Future<void> _loadReviews() async {
     try {
       final userSession = supabaseClient.auth.currentSession;
-      final userId = userSession?.user.id; // Get current user ID
+      final userId = userSession?.user.id;
 
-      final response = await supabaseClient.rpc('get_feedback_by_sp_id',
-          params: {'sp_id_param': userId}); // Call the custom function
+      final response = await supabaseClient.rpc(
+          'get_feedback_by_sp_id', params: {'sp_id_param': userId});
 
-      // Check if we have a response
       if (response.isEmpty) {
         setState(() {
           isLoading = false;
@@ -37,24 +35,25 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
         print('No reviews found');
       } else {
         setState(() {
-          reviews = List<Map<String, dynamic>>.from(
-              response); // Directly use the response
+          reviews = List<Map<String, dynamic>>.from(response);
           isLoading = false;
         });
       }
     } catch (e) {
       print('Error: $e');
       setState(() {
-        isLoading = false; // Stop loading in case of an exception
+        isLoading = false;
       });
     }
   }
 
-  // Method to calculate average rating
+  String maskName(String firstName, String lastName) {
+    return '${firstName[0]}*** ${lastName[0]}***';
+  }
+
   double calculateAverageRating() {
     if (reviews.isEmpty) return 0.0;
-    double totalRating =
-        reviews.fold(0.0, (sum, review) => sum + review['rating']);
+    double totalRating = reviews.fold(0.0, (sum, review) => sum + review['rating']);
     return totalRating / reviews.length;
   }
 
@@ -73,10 +72,9 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
       ),
       body: isLoading
           ? const Center(
-              // Show a loading spinner while data is being fetched
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    Color.fromRGBO(160, 62, 6, 1)), // Use primary color
+                    Color.fromRGBO(160, 62, 6, 1)),
               ),
             )
           : ListView(
@@ -101,30 +99,23 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                             if (averageRating >= index + 1) {
                               return const Icon(
                                 Icons.star,
-                                color:
-                                    Color.fromRGBO(209, 76, 1, 1), // Gold color
+                                color: Color.fromRGBO(209, 76, 1, 1),
                               );
-                            }
-                            // If rating is at least 0.5 and less than the next whole number, it's a half star
-                            else if (averageRating <= index + 0.5) {
+                            } else if (averageRating <= index + 0.5) {
                               return const Icon(
                                 Icons.star_half,
-                                color:
-                                    Color.fromRGBO(209, 76, 1, 1), // Gold color
+                                color: Color.fromRGBO(209, 76, 1, 1),
                               );
-                            }
-                            // Otherwise, it's an empty star
-                            else {
+                            } else {
                               return const Icon(
                                 Icons.star_border,
-                                color:
-                                    Colors.grey, // Grey color for empty stars
+                                color: Colors.grey,
                               );
                             }
                           }),
                           const SizedBox(width: 5),
                           Text(
-                            "(${averageRating.toStringAsFixed(1)})", // Display rating with one decimal point
+                            "(${averageRating.toStringAsFixed(1)})",
                             style: const TextStyle(fontSize: 17),
                           ),
                         ],
@@ -140,17 +131,15 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            '${reviews.length}', // Display number of reviews
+                            '${reviews.length}',
                             style: const TextStyle(fontSize: 18),
                           ),
                         ],
                       ),
                       const SizedBox(height: 10),
-                      // Display the reviews dynamically
                       ...reviews.map((review) {
                         return ReviewCard(
-                          name:
-                              '${review['pet_owner_first_name']} ${review['pet_owner_last_name']}', // Display pet owner's full name
+                          name: maskName(review['pet_owner_first_name'], review['pet_owner_last_name']),
                           reviewText: review['review'] ?? '',
                           rating: review['rating']?.toDouble() ?? 0.0,
                           reviewDate: review['review_date'].toString(),
@@ -213,7 +202,7 @@ class ReviewCard extends StatelessWidget {
                 }),
                 const SizedBox(width: 5),
                 Text(
-                  "(${rating.toStringAsFixed(1)})", // Display each review's rating
+                  "(${rating.toStringAsFixed(1)})",
                   style: const TextStyle(fontSize: 14),
                 ),
                 const Spacer(),
