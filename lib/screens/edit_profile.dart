@@ -4,6 +4,7 @@ import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
+import 'package:philippines_rpcmb/philippines_rpcmb.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, this.profileData});
@@ -15,11 +16,8 @@ class EditProfileScreen extends StatefulWidget {
 
 //Static Data
 const List<String> number = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-final Map<DateTime, bool> _availability = {
-  DateTime.utc(2024, 9, 10): false, // Fully booked
-  DateTime.utc(2024, 9, 11): true, // Available
-  DateTime.utc(2024, 9, 12): true, // Available
-};
+Map<DateTime, bool> _availability =
+    {}; // Track availability (fully booked or not)
 List<String> petsList = ['dog'];
 
 class EditProfileScreenState extends State<EditProfileScreen> {
@@ -27,6 +25,16 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   final supabase = Supabase.instance.client;
   late final String userId;
   String dropdownValue = number.first; //dropdown for # of pets catered per day
+  final Region predefinedRegion = philippineRegions.firstWhere(
+    (region) => region.regionName == 'REGION X',
+  );
+  final Province predefinedProvince = philippineRegions
+      .firstWhere((region) => region.regionName == 'REGION X')
+      .provinces
+      .firstWhere((province) => province.name == 'MISAMIS ORIENTAL');
+
+  Municipality? municipality;
+  String? barangay;
 
   // Controllers
   final TextEditingController establishmentNameController =
@@ -62,6 +70,13 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
   bool _isDayAvailable(DateTime day) {
     return _availability[DateTime.utc(day.year, day.month, day.day)] ?? true;
+  }
+
+// Function to update the availability of a specific date
+  void _updateAvailability(DateTime date, bool isFullyBooked) {
+    setState(() {
+      _availability[date] = isFullyBooked;
+    });
   }
 
   @override
@@ -130,11 +145,11 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
           // For exactAddressController, format the address as needed
           exactAddressController.text =
-              '${addressData['city'] ?? "Not Available"}, '
-              '${addressData['barangay'] ?? "Not Available"}, '
-              '${addressData['street'] ?? "Not Available"}, '
-              '${addressData['latitude'] ?? "Not Available"}, '
-              '${addressData['longitude'] ?? "Not Available"}';
+              '${addressData['city'] ?? "Not Found"}, '
+              '${addressData['barangay'] ?? "Not Found"}, '
+              '${addressData['street'] ?? "Not Found"}, '
+              '${addressData['latitude'] ?? "Not Found"}, '
+              '${addressData['longitude'] ?? "Not Found"}';
         });
       } else {
         print('Error fetching address data: ${addressResponse.error?.message}');
@@ -222,17 +237,21 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     // If a location is returned, set it in the controller
     if (selectedLocation != null) {
       setState(() {
-        cityController.text = selectedLocation['city'] ?? 'N/A';
-        barangayController.text = selectedLocation['province'] ?? 'N/A';
-        streetController.text = selectedLocation['streetAddress'] ?? 'N/A';
+        cityController.text = selectedLocation['city'] ?? 'Not Found';
+        barangayController.text = selectedLocation['barangay'] ?? 'Not Found';
+        streetController.text =
+            selectedLocation['streetAddress'] ?? 'Not Found';
         exactAddressController.text =
+            'Floor: ${selectedLocation['floor_unit_room'] ?? "Not Available"}, '
             'City: ${selectedLocation['city'] ?? "Not Available"}, '
+            'Barangay: ${selectedLocation['barangay'] ?? "Not Available"}, '
             'Province: ${selectedLocation['province'] ?? "Not Available"}, '
             'Street: ${selectedLocation['streetAddress'] ?? "Not Available"}, '
             'Latitude: ${selectedLocation['latitude']}, '
             'Longitude: ${selectedLocation['longitude']}'; // Set location text
       });
     }
+    print('selectedLocation: $selectedLocation');
   }
 
   @override
@@ -254,6 +273,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 10),
                 TextField(
+                  textCapitalization: TextCapitalization.words,
                   controller: establishmentNameController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(
@@ -364,7 +384,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: TableCalendar(
-              firstDay: DateTime.utc(2000, 1, 1),
+              firstDay: DateTime.utc(2024, 1, 1),
               lastDay: DateTime.utc(2030, 1, 1),
               focusedDay: _focusedDay,
               calendarFormat: _calendarFormat,
@@ -480,7 +500,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     suffixIcon: IconButton(
                       icon: const Icon(
-                        Icons.location_on,
+                        Icons.location_searching,
                         color: Color(0xFFA03E06),
                       ),
                       onPressed: navigateToPinAddress,
@@ -555,6 +575,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 20),
                 TextField(
+                  textCapitalization: TextCapitalization.words,
                   controller: barangayController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(
@@ -579,6 +600,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 20),
                 TextField(
+                  textCapitalization: TextCapitalization.words,
                   controller: cityController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(
@@ -588,6 +610,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
               ],
             ),
           ),

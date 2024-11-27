@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> appointment;
@@ -223,8 +224,38 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               buildDetailSection('Address:',
                   '${widget.appointment['appointment_address'] ?? ''}'),
             ],
-            buildDetailSection('Contact Number:',
-                '${widget.appointment['pet_owner_phone_number'] ?? ''}'),
+            Row(
+              children: [
+                const Text(
+                  "Contact Number:",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(), // Add spacing between text and the contact number
+                GestureDetector(
+                  onTap: () async {
+                    final phoneNumber =
+                        widget.appointment['pet_owner_phone_number'] ?? '';
+                    if (phoneNumber.isNotEmpty) {
+                      final uri = Uri.parse('tel:$phoneNumber');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      } else {
+                        throw 'Could not launch $phoneNumber';
+                      }
+                    }
+                  },
+                  child: Text(
+                    widget.appointment['pet_owner_phone_number'] ?? 'N/A',
+                    style: const TextStyle(
+                      color: Colors.blue, // Makes it look clickable
+                      decoration: TextDecoration.underline,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
             const Divider(),
             const SizedBox(height: 10),
             const Text(

@@ -21,6 +21,7 @@ class PinAddressState extends State<PinAddress>
   LatLng? pinnedLocation;
   String? city;
   String? province;
+  String? barangay;
   String? streetAddress;
   late AnimationController animationController;
   late Animation<double> animation;
@@ -85,8 +86,9 @@ class PinAddressState extends State<PinAddress>
           city = placemarks[0].locality;
           province = placemarks[0].administrativeArea;
           streetAddress = placemarks[0].street;
+          barangay = placemarks[0].subLocality;
         });
-      }
+      } 
     } catch (e) {
       ("Error retrieving address: $e");
     }
@@ -106,6 +108,7 @@ class PinAddressState extends State<PinAddress>
         'longitude': pinnedLocation!.longitude,
         'city': city,
         'province': province,
+        'barangay': barangay,
         'streetAddress': streetAddress,
       });
     }

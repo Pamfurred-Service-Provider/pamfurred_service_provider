@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase package
+import 'package:service_provider/Widgets/error_dialog.dart';
 
 class AppointmentTimeSlotScreen extends StatefulWidget {
   final DateTime selectedDate;
@@ -18,15 +19,69 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
 
   // Initially selected time slots and availability status
-  List<String> timeSlots = ["09:00", "11:00", "01:00", "03:00"];
+  List<String> timeSlots = [];
   bool isLoading = false; // Loading state for save operation
+  bool isFullyBooked = false; // Tracks if the day is fully booked
 
   final DateFormat dateFormat = DateFormat('MMMM d, y'); // Format for month e
 
-  // Method to add a new time slot
-  void addTimeSlot() {
+  @override
+  void initState() {
+    super.initState();
+    _loadTimeSlots();
+  }
+
+  Future<void> _loadTimeSlots() async {
     setState(() {
-      timeSlots.add("8:30");
+      isLoading = true;
+    });
+
+    final selectedDateString =
+        DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+
+    try {
+      final response = await supabase
+          .from('service_provider_availability')
+          .select('timeslots')
+          .eq('sp_id', widget.spId)
+          .eq('availability_date', selectedDateString)
+          .maybeSingle();
+
+      if (response != null) {
+        setState(() {
+          final fetchedSlots = List<String>.from(response['timeslots']);
+          if (fetchedSlots.contains('FULLY_BOOKED')) {
+            isFullyBooked = true;
+            timeSlots = []; // No specific slots if fully booked
+          } else {
+            isFullyBooked = false;
+            timeSlots = fetchedSlots;
+          }
+        });
+      } else {
+        setState(() {
+          isFullyBooked = false;
+          timeSlots = [];
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading time slots: $e')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // Method to toggle "Fully Booked" state
+  void _toggleFullyBooked() {
+    setState(() {
+      isFullyBooked = !isFullyBooked;
+      if (isFullyBooked) {
+        timeSlots = []; // Clear time slots when fully booked
+      }
     });
   }
 
@@ -45,7 +100,14 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
       (index) => "${index.toString().padLeft(2, '0')}:00",
     );
 
-    final List<int> intervalOptions = [15, 30, 45, 60]; // Intervals in minutes
+    final List<int> intervalOptions = [
+      15,
+      30,
+      45,
+      60,
+      75,
+      90
+    ]; // Intervals in minutes
 
     String? selectedStartTime = timeOptions.first; // Default to "00:00"
     String? selectedEndTime = timeOptions.last; // Default to "23:00"
@@ -165,6 +227,12 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
 
   // Method to save data to Supabase
   Future<void> _saveToSupabase() async {
+    if (!isFullyBooked && timeSlots.isEmpty) {
+      // Use the provided showErrorDialog function
+      showErrorDialog(
+          context, "You must add at least one time slot before saving.");
+      return; // Exit the method early
+    }
     final selectedDateString =
         DateFormat('yyyy-MM-dd').format(widget.selectedDate);
 
@@ -235,58 +303,77 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              dateFormat.format(widget.selectedDate),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  dateFormat.format(widget.selectedDate),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton(
+                  onPressed: _toggleFullyBooked,
+                  child: Text(isFullyBooked
+                      ? "Unmark Fully Booked"
+                      : "Mark as Fully Booked"),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: timeSlots.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final pickedTime = await showTimePicker(
-                                context: context,
-                                initialTime: TimeOfDay.fromDateTime(
-                                  DateFormat.jm().parse(timeSlots[index]),
+            if (isFullyBooked)
+              const Text(
+                "This day is fully booked.",
+                style: TextStyle(fontSize: 16, color: Colors.red),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: timeSlots.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final pickedTime = await showTimePicker(
+                                  context: context,
+                                  initialTime: TimeOfDay.fromDateTime(
+                                    DateFormat.jm().parse(timeSlots[index]),
+                                  ),
+                                );
+                                if (pickedTime != null) {
+                                  setState(() {
+                                    timeSlots[index] =
+                                        pickedTime.format(context);
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(16.0),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(8.0),
                                 ),
-                              );
-                              if (pickedTime != null) {
-                                setState(() {
-                                  timeSlots[index] = pickedTime.format(context);
-                                });
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(16.0),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey),
-                                borderRadius: BorderRadius.circular(8.0),
+                                child: Text(timeSlots[index]),
                               ),
-                              child: Text(timeSlots[index]),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _removeTimeSlot(index);
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                          const SizedBox(width: 10),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              _removeTimeSlot(index);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
             ElevatedButton.icon(
               onPressed: _showBulkAddDialog,
               icon: const Icon(Icons.schedule),

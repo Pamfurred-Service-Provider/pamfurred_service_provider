@@ -213,6 +213,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           TextField(
+            textCapitalization: TextCapitalization.words,
             controller: nameController,
             decoration: const InputDecoration(
               hintText: "Enter service name",

@@ -241,6 +241,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
             style: TextStyle(fontSize: 16),
           ),
           TextField(
+            textCapitalization: TextCapitalization.words,
             controller: nameController,
             decoration: const InputDecoration(
               hintText: "Enter package name",
