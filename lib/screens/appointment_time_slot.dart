@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase package
 import 'package:service_provider/Widgets/error_dialog.dart';
+import 'package:service_provider/Widgets/confirmation_dialog.dart';
 
 class AppointmentTimeSlotScreen extends StatefulWidget {
   final DateTime selectedDate;
@@ -69,7 +71,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     }
   }
 
-  void _toggleFullyBooked() async {
+  Future<void> _toggleFullyBooked() async {
     // Ensure at least one time slot is added before marking as fully booked
     if (timeSlots.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,44 +86,37 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     final selectedDateString =
         DateFormat('yyyy-MM-dd').format(widget.selectedDate);
 
-    try {
-      // Attempt to fetch the existing availability record
-      final availabilityResponse = await supabase
-          .from('service_provider_availability')
-          .select('availability_id, is_fully_booked')
-          .eq('sp_id', widget.spId)
-          .eq('availability_date', selectedDateString)
-          .maybeSingle();
+    // Attempt to fetch the existing availability record
+    final availabilityResponse = await supabase
+        .from('service_provider_availability')
+        .select('availability_id, is_fully_booked')
+        .eq('sp_id', widget.spId)
+        .eq('availability_date', selectedDateString)
+        .maybeSingle();
 
-      if (availabilityResponse == null) {
-        // No availability exists for this date, so create a new record
-        await supabase.from('service_provider_availability').insert({
-          'sp_id': widget.spId,
-          'availability_date': selectedDateString,
-          'timeslots': timeSlots,
-          'is_fully_booked': false, // Set initial as not fully booked
-        });
+    if (availabilityResponse == null) {
+      // No availability exists for this date, so create a new record
+      await supabase.from('service_provider_availability').insert({
+        'sp_id': widget.spId,
+        'availability_date': selectedDateString,
+        'timeslots': timeSlots,
+        'is_fully_booked': false, // Set initial as not fully booked
+      });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Marked as fully booked! Please click save.')),
-        );
-      }
-
-      // Update the 'is_fully_booked' status after ensuring the record exists
-      final newFullyBookedStatus = !isFullyBooked;
-      // ignore: unused_local_variable
-      final response = await supabase
-          .from('service_provider_availability')
-          .update({'is_fully_booked': newFullyBookedStatus})
-          .eq('sp_id', widget.spId)
-          .eq('availability_date', selectedDateString)
-          .execute();
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        const SnackBar(
+            content: Text('Marked as fully booked! Please click save.')),
       );
     }
+
+    // Update the 'is_fully_booked' status after ensuring the record exists
+    final newFullyBookedStatus = !isFullyBooked;
+    final response = await supabase
+        .from('service_provider_availability')
+        .update({'is_fully_booked': newFullyBookedStatus})
+        .eq('sp_id', widget.spId)
+        .eq('availability_date', selectedDateString)
+        .execute();
   }
 
   void _removeTimeSlot(int index) {
@@ -240,7 +235,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                   Navigator.pop(context);
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Invalid input: $e')),
+                    SnackBar(content: Text('Invalid input')),
                   );
                 }
               },
@@ -255,7 +250,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   Future<void> _saveToSupabase() async {
     if (!isFullyBooked && timeSlots.isEmpty) {
       showErrorDialog(
-          context, "You must add at least one time slot before saving.");
+          context, "You must add at least one(1) time slot before saving.");
       return;
     }
 
@@ -306,7 +301,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('Error')),
       );
     } finally {
       setState(() {
@@ -343,10 +338,21 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                   ElevatedButton(
                     onPressed: timeSlots.isEmpty
                         ? null
-                        : _toggleFullyBooked, // Disable if no slots added
-                    child: Text(isFullyBooked
-                        ? "Unmark Fully Booked"
-                        : "Mark as Fully Booked"),
+                        : () async {
+                            // Show confirmation dialog
+                            bool? confirmed = await ConfirmationDialog.show(
+                              context,
+                              title: 'Mark as Fully Booked',
+                              content:
+                                  'Are you sure you want to mark this day as fully booked?',
+                            );
+
+                            // If the user confirmed, toggle the fully booked status
+                            if (confirmed == true) {
+                              await _toggleFullyBooked(); // Mark as fully booked
+                            }
+                          },
+                    child: const Text("Mark as Fully Booked"),
                   ),
               ],
             ),
@@ -413,19 +419,20 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
               ),
               const SizedBox(height: 20),
               Center(
-                child: isLoading
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: _saveToSupabase,
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.check, size: 16),
-                            SizedBox(width: 15),
-                            Text("Save"),
-                          ],
-                        ),
-                      ),
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await _saveToSupabase();
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white),
+                  child: isLoading
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
+                      : const Text('Save',
+                          style: TextStyle(color: Colors.white)),
+                ),
               ),
             ],
           ],
