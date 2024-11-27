@@ -157,7 +157,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               serviceProviderResponse.data['time_open'] ?? '');
           timeCloseController.text = convertTo12HourFormat(
               serviceProviderResponse.data['time_close'] ?? '');
-
           dropdownValue =
               serviceProviderResponse.data['number_of_pets'].toString();
         });
@@ -176,7 +175,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           streetController.text = addressData['street'] ?? '';
           cityController.text = addressData['city'] ?? '';
           barangayController.text = addressData['barangay'] ?? '';
-
           // For exactAddressController, format the address as needed
           exactAddressController.text =
               '${addressData['city'] ?? "Not Found"}, '
@@ -661,7 +659,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   onChanged: (String? value) {
                     setState(() {
                       barangay = value;
-                      value ?? ''; // Update controller
+                      // value ?? ''; // Update controller
+                      barangayController.text = value ?? '';
                     });
                   },
                 ),

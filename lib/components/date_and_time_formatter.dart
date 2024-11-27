@@ -78,6 +78,10 @@ String formatDateToShort(String date) {
 
 String formatTimeToAMPM(String time) {
   if (time.isEmpty) return '';
+  time = time.trim(); // remove whitespace
+  if (time.contains(' ')) {
+    time = time.split(' ')[0]; // remove suffix
+  }
   final parts = time.split(':');
   if (parts.length >= 2) {
     int hour = int.parse(parts[0]);
