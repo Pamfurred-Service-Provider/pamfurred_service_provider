@@ -18,12 +18,11 @@ class AppointmentTimeSlotScreen extends StatefulWidget {
 class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Initially selected time slots and availability status
   List<String> timeSlots = [];
-  bool isLoading = false; // Loading state for save operation
-  bool isFullyBooked = false; // Tracks if the day is fully booked
+  bool isLoading = false;
+  bool isFullyBooked = false;
 
-  final DateFormat dateFormat = DateFormat('MMMM d, y'); // Format for month e
+  final DateFormat dateFormat = DateFormat('MMMM d, y');
 
   @override
   void initState() {
@@ -42,7 +41,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     try {
       final response = await supabase
           .from('service_provider_availability')
-          .select('timeslots')
+          .select('timeslots, is_fully_booked')
           .eq('sp_id', widget.spId)
           .eq('availability_date', selectedDateString)
           .maybeSingle();
@@ -50,13 +49,8 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
       if (response != null) {
         setState(() {
           final fetchedSlots = List<String>.from(response['timeslots']);
-          if (fetchedSlots.contains('FULLY_BOOKED')) {
-            isFullyBooked = true;
-            timeSlots = []; // No specific slots if fully booked
-          } else {
-            isFullyBooked = false;
-            timeSlots = fetchedSlots;
-          }
+          isFullyBooked = response['is_fully_booked'];
+          timeSlots = fetchedSlots;
         });
       } else {
         setState(() {
@@ -76,74 +70,77 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   }
 
   void _toggleFullyBooked() async {
-    // Toggle the "Fully Booked" state in the UI
-    setState(() {
-      isFullyBooked = !isFullyBooked;
-    });
+    // Ensure at least one time slot is added before marking as fully booked
+    if (timeSlots.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'You must add at least one time slot before marking as fully booked.')),
+      );
+      return;
+    }
 
-    // Format the selected date to 'yyyy-MM-dd' format
-    String selectedDateString =
+    // Ensure that the availability record exists before updating 'is_fully_booked'
+    final selectedDateString =
         DateFormat('yyyy-MM-dd').format(widget.selectedDate);
 
     try {
-      // Update the `is_fully_booked` column in Supabase
+      // Attempt to fetch the existing availability record
+      final availabilityResponse = await supabase
+          .from('service_provider_availability')
+          .select('availability_id, is_fully_booked')
+          .eq('sp_id', widget.spId)
+          .eq('availability_date', selectedDateString)
+          .maybeSingle();
+
+      if (availabilityResponse == null) {
+        // No availability exists for this date, so create a new record
+        await supabase.from('service_provider_availability').insert({
+          'sp_id': widget.spId,
+          'availability_date': selectedDateString,
+          'timeslots': timeSlots,
+          'is_fully_booked': false, // Set initial as not fully booked
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Marked as fully booked! Please click save.')),
+        );
+      }
+
+      // Update the 'is_fully_booked' status after ensuring the record exists
+      final newFullyBookedStatus = !isFullyBooked;
+      // ignore: unused_local_variable
       final response = await supabase
           .from('service_provider_availability')
-          .update({'is_fully_booked': isFullyBooked}) // Update the field
-          .eq('sp_id', widget.spId) // Filter by service provider ID
-          .eq('availability_date',
-              selectedDateString) // Filter by the selected date
+          .update({'is_fully_booked': newFullyBookedStatus})
+          .eq('sp_id', widget.spId)
+          .eq('availability_date', selectedDateString)
           .execute();
-
-      if (response != null) {
-        // Show an error if the update fails
-      } else {
-        // Optionally, show a success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(isFullyBooked
-                  ? 'Marked as fully booked'
-                  : 'Unmarked as fully booked')),
-        );
-
-        // Reload the time slots from the database to reflect the change
-        _loadTimeSlots(); // Re-fetch the availability from Supabase
-      }
     } catch (e) {
-      // Handle any errors that might occur during the update
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     }
   }
 
-  // Method to remove a time slot
   void _removeTimeSlot(int index) {
     setState(() {
       timeSlots.removeAt(index);
     });
   }
 
-  // Method to show bulk add dialog
   void _showBulkAddDialog() {
-    // Time options in 24-hour format (HH:mm)
     final List<String> timeOptions = List.generate(
       24,
       (index) => "${index.toString().padLeft(2, '0')}:00",
     );
 
-    final List<int> intervalOptions = [
-      15,
-      30,
-      45,
-      60,
-      75,
-      90
-    ]; // Intervals in minutes
+    final List<int> intervalOptions = [15, 30, 45, 60, 75, 90];
 
-    String? selectedStartTime = timeOptions.first; // Default to "00:00"
-    String? selectedEndTime = timeOptions.last; // Default to "23:00"
-    int? selectedInterval = intervalOptions.first; // Default to 15 minutes
+    String? selectedStartTime = timeOptions.first;
+    String? selectedEndTime = timeOptions.last;
+    int? selectedInterval = intervalOptions.first;
 
     showDialog(
       context: context,
@@ -222,14 +219,12 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                   var currentHour = startTime.hour;
                   var currentMinute = startTime.minute;
 
-                  // Generate time slots in 24-hour format
                   while (currentHour * 60 + currentMinute <=
                       endTime.hour * 60 + endTime.minute) {
                     final slot =
                         "${currentHour.toString().padLeft(2, '0')}:${currentMinute.toString().padLeft(2, '0')}";
                     newSlots.add(slot);
 
-                    // Increment by interval
                     currentMinute += selectedInterval!;
                     if (currentMinute >= 60) {
                       currentMinute -= 60;
@@ -257,14 +252,13 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     );
   }
 
-  // Method to save data to Supabase
   Future<void> _saveToSupabase() async {
     if (!isFullyBooked && timeSlots.isEmpty) {
-      // Use the provided showErrorDialog function
       showErrorDialog(
           context, "You must add at least one time slot before saving.");
-      return; // Exit the method early
+      return;
     }
+
     final selectedDateString =
         DateFormat('yyyy-MM-dd').format(widget.selectedDate);
 
@@ -280,6 +274,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     });
 
     try {
+      // Check if the record already exists
       final availabilityResponse = await supabase
           .from('service_provider_availability')
           .select('availability_id')
@@ -288,6 +283,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
           .maybeSingle();
 
       if (availabilityResponse == null) {
+        // Insert new availability record
         await supabase.from('service_provider_availability').insert({
           'sp_id': widget.spId,
           'availability_date': selectedDateString,
@@ -296,8 +292,8 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Availability saved successfully')),
         );
-        Navigator.pop(context);
       } else {
+        // If availability exists, update the timeslots
         final availabilityId = availabilityResponse['availability_id'];
         await supabase.from('service_provider_availability').update({
           'timeslots': timeSlots,
@@ -305,8 +301,9 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Availability updated successfully')),
         );
-        Navigator.pop(context);
       }
+
+      Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
@@ -340,60 +337,56 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
               children: [
                 Text(
                   dateFormat.format(widget.selectedDate),
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 18),
                 ),
-                ElevatedButton(
-                  onPressed: _toggleFullyBooked,
-                  child: Text(isFullyBooked
-                      ? "Unmark Fully Booked"
-                      : "Mark as Fully Booked"),
-                ),
+                if (!isFullyBooked)
+                  ElevatedButton(
+                    onPressed: timeSlots.isEmpty
+                        ? null
+                        : _toggleFullyBooked, // Disable if no slots added
+                    child: Text(isFullyBooked
+                        ? "Unmark Fully Booked"
+                        : "Mark as Fully Booked"),
+                  ),
               ],
             ),
             const SizedBox(height: 20),
-            if (isFullyBooked)
-              const Text(
-                "This day is fully booked.",
-                style: TextStyle(fontSize: 16, color: Colors.red),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: timeSlots.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () async {
-                                final pickedTime = await showTimePicker(
-                                  context: context,
-                                  initialTime: TimeOfDay.fromDateTime(
-                                    DateFormat.jm().parse(timeSlots[index]),
-                                  ),
-                                );
-                                if (pickedTime != null) {
-                                  setState(() {
-                                    timeSlots[index] =
-                                        pickedTime.format(context);
-                                  });
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(16.0),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey),
-                                  borderRadius: BorderRadius.circular(8.0),
+            Expanded(
+              child: ListView.builder(
+                itemCount: timeSlots.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final pickedTime = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(
+                                  DateFormat.jm().parse(timeSlots[index]),
                                 ),
-                                child: Text(timeSlots[index]),
+                              );
+                              if (pickedTime != null) {
+                                setState(() {
+                                  timeSlots[index] = pickedTime.format(context);
+                                });
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(8.0),
                               ),
+                              child: Text(timeSlots[index]),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                        ),
+                        const SizedBox(width: 10),
+                        if (!isFullyBooked) ...[
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
@@ -401,37 +394,40 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                             },
                           ),
                         ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ElevatedButton.icon(
-              onPressed: _showBulkAddDialog,
-              icon: const Icon(Icons.schedule),
-              label: const Text("Add Multiple Slots"),
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _saveToSupabase,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check, size: 16),
-                          SizedBox(width: 15),
-                          Text("Save"),
-                        ],
-                      ),
+                      ],
                     ),
+                  );
+                },
+              ),
             ),
+            if (!isFullyBooked) ...[
+              ElevatedButton.icon(
+                onPressed: _showBulkAddDialog,
+                icon: const Icon(Icons.schedule),
+                label: const Text("Add Multiple Slots"),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: _saveToSupabase,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check, size: 16),
+                            SizedBox(width: 15),
+                            Text("Save"),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
           ],
         ),
       ),
