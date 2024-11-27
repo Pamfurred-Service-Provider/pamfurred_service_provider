@@ -480,7 +480,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                "Tap on Edit Category to start adding services or packages.",
+                                "Tap on 'Edit Category' to start adding services or packages.",
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,

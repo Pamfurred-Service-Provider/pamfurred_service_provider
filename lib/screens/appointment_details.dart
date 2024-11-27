@@ -36,32 +36,17 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         .update({'appointment_status': status}).eq(
             'appointment_id', widget.appointment['appointment_id']);
 
+    await supabase.from('notification').insert({
+      'appointment_id': widget.appointment['appointment_id'],
+      'appointment_notif_type': status, // Or any type based on your logic
+      'created_at':
+          DateTime.now().toUtc().toIso8601String(), // Current timestamp in UTC
+    });
+
     if (response != null) {
       print('Error updating appointment status: ${response.message}');
     } else {
       widget.updateStatus(status);
-    }
-  }
-
-// Insert a notification into the 'notification' table
-  Future<void> insertNotification(String status) async {
-    try {
-      // Insert a notification for the appointment
-      final response = await supabase
-          .from('notification') // Replace with your actual notification table
-          .insert({
-        'appointment_id': widget.appointment[
-            'appointment_id'], // Replace with actual appointment ID
-        'appointment_notif_type': '$status', // Notification type
-        'created_at': DateTime.now().toIso8601String(), // Current timestamp
-      }).execute();
-
-      // Check if the insert was successful
-      if (response.status == 200) {
-        print('Notification inserted for status change: $status');
-      }
-    } catch (e) {
-      print('Error inserting notification: $e');
     }
   }
 
@@ -79,7 +64,6 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         dropdownValue = newStatus;
       });
       await updateAppointmentStatus(newStatus);
-      await insertNotification(newStatus);
     }
   }
 
