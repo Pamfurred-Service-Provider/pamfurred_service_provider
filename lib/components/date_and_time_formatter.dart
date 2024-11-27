@@ -81,10 +81,11 @@ String formatTimeToAMPM(String time) {
   final parts = time.split(':');
   if (parts.length >= 2) {
     int hour = int.parse(parts[0]);
+    int minute = int.parse(parts[1]);
     String ampm = hour >= 12 ? 'PM' : 'AM';
     hour = hour % 12;
     hour = hour == 0 ? 12 : hour;
-    return '${hour.toString().padLeft(2, '0')}:${parts[1]} $ampm';
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $ampm';
   }
   return time;
 }
@@ -96,4 +97,16 @@ String convertTo24HourFormat(String time) {
     return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
   }
   return time;
+}
+
+String convertTo12HourFormat(String time) {
+  if (time.isEmpty) return '';
+  final timeParts = time.split(':');
+  final hour = int.parse(timeParts[0]);
+  final minute = int.parse(timeParts[1]);
+
+  final period = hour >= 12 ? 'PM' : 'AM';
+  final adjustedHour = hour % 12 == 0 ? 12 : hour % 12;
+
+  return '${adjustedHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
 }

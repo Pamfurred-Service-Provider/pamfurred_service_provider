@@ -53,15 +53,17 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _selectTime(
       BuildContext context, TextEditingController controller) async {
+    final initialTime = TimeOfDay(hour: 9, minute: 0);
+
     TimeOfDay? pickedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: initialTime,
     );
+
     if (pickedTime != null) {
-      // Format the picked time as 24-hour (HH:mm)
-      final formattedTime =
+      final time24Hour =
           "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
-      controller.text = formattedTime; // Update the text field
+      controller.text = time24Hour; // Store in 24-hour format
     }
   }
 
@@ -85,7 +87,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
 
     // Retrieve the user ID from the Supabase session
     final serviceSession = supabase.auth.currentSession;
-    userId = serviceSession?.user?.id ?? '';
+    userId = serviceSession?.user.id ?? '';
     print('User ID: $userId');
 
     // Fetch the user's service provider data from Supabase
@@ -119,11 +121,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           // Prefill the service provider data
           establishmentNameController.text =
               serviceProviderResponse.data['name'] ?? '';
-          // Convert time_open to 24-hour format (HH:mm)
-          timeOpenController.text = convertTo24HourFormat(
+          // Convert time_open to 12-hour format (HH:mm) AM/PM
+          timeOpenController.text = convertTo12HourFormat(
               serviceProviderResponse.data['time_open'] ?? '');
-          timeCloseController.text = convertTo24HourFormat(
+          timeCloseController.text = convertTo12HourFormat(
               serviceProviderResponse.data['time_close'] ?? '');
+
           dropdownValue =
               serviceProviderResponse.data['number_of_pets'].toString();
         });
