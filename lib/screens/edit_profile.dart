@@ -70,7 +70,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   final CalendarFormat _calendarFormat = CalendarFormat.month;
-  final DateTime _focusedDay = DateTime.now();
 
   Future<bool> _isDayAvailable(DateTime day) async {
     // Format the selected day into the 'yyyy-MM-dd' format to match the `availability_date` format in your table

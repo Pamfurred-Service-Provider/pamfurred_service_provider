@@ -75,14 +75,46 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     }
   }
 
-  // Method to toggle "Fully Booked" state
-  void _toggleFullyBooked() {
+  void _toggleFullyBooked() async {
+    // Toggle the "Fully Booked" state in the UI
     setState(() {
       isFullyBooked = !isFullyBooked;
-      if (isFullyBooked) {
-        // timeSlots = []; // Clear time slots when fully booked
-      }
     });
+
+    // Format the selected date to 'yyyy-MM-dd' format
+    String selectedDateString =
+        DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+
+    try {
+      // Update the `is_fully_booked` column in Supabase
+      final response = await supabase
+          .from('service_provider_availability')
+          .update({'is_fully_booked': isFullyBooked}) // Update the field
+          .eq('sp_id', widget.spId) // Filter by service provider ID
+          .eq('availability_date',
+              selectedDateString) // Filter by the selected date
+          .execute();
+
+      if (response != null) {
+        // Show an error if the update fails
+      } else {
+        // Optionally, show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(isFullyBooked
+                  ? 'Marked as fully booked'
+                  : 'Unmarked as fully booked')),
+        );
+
+        // Reload the time slots from the database to reflect the change
+        _loadTimeSlots(); // Re-fetch the availability from Supabase
+      }
+    } catch (e) {
+      // Handle any errors that might occur during the update
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   // Method to remove a time slot
