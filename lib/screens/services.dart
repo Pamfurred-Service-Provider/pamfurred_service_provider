@@ -447,33 +447,76 @@ class ServicesScreenState extends State<ServicesScreen> {
     return Scaffold(
       body: isLoading
           ? const Center(
-              child:
-                  CircularProgressIndicator()) // Show loading indicator when loading is true
+              child: CircularProgressIndicator(),
+            ) // Show loading indicator when loading is true
           : ListView(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        selectedCategory ?? 'pet grooming', // Dynamic text
-                        style: const TextStyle(
-                          fontSize: 20,
-                          color: Color.fromRGBO(160, 62, 6, 1),
-                          fontWeight: FontWeight.bold,
+                      // Modern styled instruction box
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: Color.fromRGBO(160, 62, 6, 1),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Tap on Edit Category to start adding services or packages.",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const Spacer(),
-                      const SizedBox(width: 15),
-                      GestureDetector(
-                        onTap: () => _showCategoryModal(context),
-                        child: const Text(
-                          "• Edit Category",
-                          style: TextStyle(
-                            fontSize: 14,
-                            decoration: TextDecoration.underline,
+                      const SizedBox(
+                          height:
+                              16), // Spacer between instruction and category
+                      Row(
+                        children: [
+                          Text(
+                            selectedCategory ?? 'pet grooming', // Dynamic text
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Color.fromRGBO(160, 62, 6, 1),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                          const Spacer(),
+                          const SizedBox(width: 15),
+                          GestureDetector(
+                            onTap: () => _showCategoryModal(context),
+                            child: const Text(
+                              "• Edit Category",
+                              style: TextStyle(
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -526,27 +569,16 @@ class ServicesScreenState extends State<ServicesScreen> {
                                         _navigateToServiceDetails(
                                             context, service);
                                       },
-
-                                      //   // If service was edited, update the list
-                                      //   if (updatedService != null) {
-                                      //     setState(() {
-                                      //       int index = services.indexWhere((service) =>
-                                      //           service['id'] == updatedService['id']);
-                                      //       if (index != -1) {
-                                      //         services[index] = updatedService;
-                                      //       } // Update with edited service
-                                      //     });
-                                      //   }
-                                      // },
                                     ),
                                   ),
                                 ),
                                 // The trash icon outside the card
                                 IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
-                                    onPressed: () => _showDeleteDialog(
-                                        context, service, true)),
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () =>
+                                      _showDeleteDialog(context, service, true),
+                                ),
                               ],
                             ),
                           );
@@ -561,7 +593,6 @@ class ServicesScreenState extends State<ServicesScreen> {
                       child: const Text('Add a service'),
                     ),
                   ),
-
                 const SizedBox(height: 10),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -613,10 +644,11 @@ class ServicesScreenState extends State<ServicesScreen> {
                                 ),
                                 // The trash icon outside the card
                                 IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red),
-                                    onPressed: () => _showDeleteDialog(
-                                        context, package, false)),
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () => _showDeleteDialog(
+                                      context, package, false),
+                                ),
                               ],
                             ),
                           );

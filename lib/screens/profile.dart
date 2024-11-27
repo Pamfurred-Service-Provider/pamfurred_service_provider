@@ -189,11 +189,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:
-          // isLoading
-          //     ? Center(child: CircularProgressIndicator()) // Show loading spinner
-          //     :
-          ListView(
+      body: ListView(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -204,9 +200,9 @@ class ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   profileData?['name'] ?? '',
                   style: const TextStyle(
-                    fontSize: 20,
-                    color: Color.fromRGBO(160, 62, 6, 1),
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
+                    color: Color.fromRGBO(160, 62, 6, 1),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -245,19 +241,19 @@ class ProfileScreenState extends State<ProfileScreen> {
                                   profileData!['image'],
                                   width: 200,
                                   height: 200,
-                                  fit: BoxFit.fill,
+                                  fit: BoxFit.cover,
                                 )
                               : Image.asset(
                                   'assets/pamfurred_secondarylogo.png',
                                   width: 200,
                                   height: 200,
-                                  fit: BoxFit.fill,
+                                  fit: BoxFit.cover,
                                 ))
                           : Image.file(
                               image!,
                               width: 200,
                               height: 200,
-                              fit: BoxFit.fill,
+                              fit: BoxFit.cover,
                             ),
                     ),
                     Positioned(
@@ -265,6 +261,13 @@ class ProfileScreenState extends State<ProfileScreen> {
                       right: 10,
                       child: ElevatedButton(
                         onPressed: changeImage,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Color.fromRGBO(160, 62, 6, 1),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
                         child: const Row(
                           children: [
                             Icon(Icons.camera_alt_rounded, size: 16),
@@ -277,20 +280,24 @@ class ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const Divider(indent: 16.0, endIndent: 16.0),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Details: ",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Details:",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       TextButton(
                         onPressed: _navigateToEditProfile,
                         child: const Row(
                           children: [
-                            Icon(Icons.edit, size: 16),
+                            Icon(Icons.edit, size: 18),
                             SizedBox(width: 5),
                             Text("Edit Details"),
                           ],
@@ -322,12 +329,13 @@ class ProfileScreenState extends State<ProfileScreen> {
                       const Divider(),
                       const SizedBox(height: 20),
                       _buildDetailRow(
-                          'Address:',
-                          "${profileData?['address']?['floor_unit_room'] ?? ''} "
-                              "${profileData?['address']?['street'] ?? ''} "
-                              "${profileData?['address']?['barangay'] ?? ''} \n"
-                              "${profileData?['address']?['city'] ?? ''}",
-                          isAddress: true),
+                        'Address:',
+                        "${profileData?['address']?['floor_unit_room'] ?? ''} "
+                            "${profileData?['address']?['street'] ?? ''} "
+                            "${profileData?['address']?['barangay'] ?? ''} \n"
+                            "${profileData?['address']?['city'] ?? ''}",
+                        isAddress: true,
+                      ),
                       const SizedBox(height: 10),
                     ],
                   ),
@@ -354,6 +362,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
         ),
@@ -361,7 +370,10 @@ class ProfileScreenState extends State<ProfileScreen> {
           flex: 1,
           child: Text(
             value ?? '',
-            style: const TextStyle(fontSize: 16, color: Colors.black54),
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black54,
+            ),
             textAlign: TextAlign.right,
           ),
         ),
