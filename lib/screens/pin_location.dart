@@ -49,8 +49,10 @@ class PinAddressState extends State<PinAddress>
       setState(() {
         latitude = position.latitude;
         longitude = position.longitude;
+        pinnedLocation = LatLng(latitude!, longitude!); // Set default pin
         isLoading = false;
       });
+      await fetchAddress(pinnedLocation!); // Fetch address for current location
     } else {
       setState(() {
         locationMessage = status.isDenied
@@ -88,9 +90,9 @@ class PinAddressState extends State<PinAddress>
           streetAddress = placemarks[0].street;
           barangay = placemarks[0].subLocality;
         });
-      } 
+      }
     } catch (e) {
-      ("Error retrieving address: $e");
+      ("Error retrieving address");
     }
   }
 
@@ -133,7 +135,7 @@ class PinAddressState extends State<PinAddress>
           : latitude != null && longitude != null
               ? FlutterMap(
                   options: MapOptions(
-                    initialCenter: LatLng(latitude!, longitude!),
+                    initialCenter: pinnedLocation ?? LatLng(0, 0),
                     initialZoom: 13.0,
                     minZoom: 5.0,
                     maxZoom: 18.0,

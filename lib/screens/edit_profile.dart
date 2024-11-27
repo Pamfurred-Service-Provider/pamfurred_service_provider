@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/Widgets/dropdown_decoration.dart';
 import 'package:service_provider/screens/appointment_time_slot.dart';
 import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
 import 'package:philippines_rpcmb/philippines_rpcmb.dart';
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, this.profileData});
@@ -115,7 +117,11 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     final serviceSession = supabase.auth.currentSession;
     userId = serviceSession?.user.id ?? '';
     print('User ID: $userId');
-
+    // Set default municipality
+    municipality = predefinedProvince.municipalities.firstWhere(
+      (mun) => mun.name == 'CAGAYAN DE ORO CITY', // Example municipality
+      orElse: () => predefinedProvince.municipalities.first,
+    );
     // Fetch the user's service provider data from Supabase
     _fetchServiceProviderData();
   }
@@ -649,20 +655,44 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   style: TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-                TextField(
-                  textCapitalization: TextCapitalization.words,
-                  controller: barangayController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(12.0),
-                      ),
-                    ),
-                  ),
+                CustomDropdown<String>.search(
+                  decoration: getDropdownDecoration(),
+                  hintText: 'Select Barangay', // Label as a hint
+                  items: municipality?.barangays ?? [],
+                  onChanged: (String? value) {
+                    setState(() {
+                      barangay = value;
+                      value ?? ''; // Update controller
+                    });
+                  },
                 ),
+                // DropdownButtonFormField<String>(
+                //   value: barangay, // Currently selected barangay
+                //   decoration: const InputDecoration(
+                //     border: OutlineInputBorder(
+                //       borderRadius: BorderRadius.all(
+                //         Radius.circular(12.0),
+                //       ),
+                //     ),
+                //   ),
+                //   items: municipality?.barangays
+                //       .map<DropdownMenuItem<String>>((barangay) {
+                //     return DropdownMenuItem<String>(
+                //       value: barangay,
+                //       child: Text(barangay),
+                //     );
+                //   }).toList(),
+                //   onChanged: (String? newBarangay) {
+                //     setState(() {
+                //       barangay = newBarangay;
+                //       barangayController.text = newBarangay ?? '';
+                //     });
+                //   },
+                // ),
               ],
             ),
           ),
+
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
