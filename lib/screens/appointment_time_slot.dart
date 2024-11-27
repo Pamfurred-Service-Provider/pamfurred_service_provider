@@ -66,7 +66,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading time slots: $e')),
+        SnackBar(content: Text('Error loading time slots')),
       );
     } finally {
       setState(() {
@@ -80,7 +80,7 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
     setState(() {
       isFullyBooked = !isFullyBooked;
       if (isFullyBooked) {
-        timeSlots = []; // Clear time slots when fully booked
+        // timeSlots = []; // Clear time slots when fully booked
       }
     });
   }
