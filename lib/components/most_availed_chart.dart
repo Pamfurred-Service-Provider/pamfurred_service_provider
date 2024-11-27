@@ -6,9 +6,7 @@ class MostAvailedChart extends StatefulWidget {
 
   const MostAvailedChart({
     Key? key,
-    required this.fetchData,
-    required List<String> labels,
-    required List<Map<String, dynamic>> data,
+    required this.fetchData, required List<Map<String, dynamic>> data, required List<String> labels,
   }) : super(key: key);
 
   @override
@@ -19,6 +17,7 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   final Map<String, Color> serviceColors = {};
   List<Map<String, dynamic>> chartData = [];
   bool isLoading = true;
+  bool noDataForYear = false;
 
   @override
   void initState() {
@@ -28,43 +27,30 @@ class MostAvailedChartState extends State<MostAvailedChart> {
 
   Future<void> fetchChartData() async {
     try {
-      // Fetch data once
       final data = await widget.fetchData();
 
-      debugPrint('Fetched data: $data'); // Log fetched data for debugging
-
-      // Check if data is valid
       if (data == null || data.isEmpty) {
-        debugPrint('No valid data fetched');
         setState(() {
           isLoading = false;
+          noDataForYear = true; // No data found
         });
         return;
       }
 
-      // Initialize map to store service counts for each month
       Map<String, List<int>> serviceCountsMap = {};
-
       for (var record in data) {
-        // Use correct field names and normalize the service name
         final serviceName = (record['service_name'] as String?)?.trim().toLowerCase();
         final month = record['month'] as int?;
         final count = record['count'] as int?;
 
-        debugPrint('Processing record: service=$serviceName, month=$month, count=$count');
-
         if (serviceName != null && month != null && count != null) {
-          serviceCountsMap.putIfAbsent(
-              serviceName, () => List<int>.filled(12, 0));
+          serviceCountsMap.putIfAbsent(serviceName, () => List<int>.filled(12, 0));
           if (month >= 1 && month <= 12) {
             serviceCountsMap[serviceName]![month - 1] += count;
           }
-        } else {
-          debugPrint('Skipping invalid record: $record');
         }
       }
 
-      // Convert the map to a list of services with their monthly counts
       List<Map<String, dynamic>> processedData = serviceCountsMap.entries.map((entry) {
         return {
           'service': entry.key,
@@ -72,18 +58,17 @@ class MostAvailedChartState extends State<MostAvailedChart> {
         };
       }).toList();
 
-      debugPrint('Processed data: $processedData'); // Log the processed data
-
-      // Update state with the processed data
       setState(() {
         chartData = processedData;
         isLoading = false;
+        noDataForYear = processedData.isEmpty;
         initializeServiceColors();
       });
     } catch (e) {
       debugPrint('Error fetching or processing data: $e');
       setState(() {
         isLoading = false;
+        noDataForYear = true;
       });
     }
   }
@@ -99,7 +84,6 @@ class MostAvailedChartState extends State<MostAvailedChart> {
     int colorIndex = 0;
     for (var service in chartData) {
       final serviceName = service['service'] as String?;
-      // Ensure serviceName is not null and is a valid string
       if (serviceName != null && !serviceColors.containsKey(serviceName)) {
         serviceColors[serviceName] = colors[colorIndex % colors.length];
         colorIndex++;
@@ -163,23 +147,17 @@ class MostAvailedChartState extends State<MostAvailedChart> {
       List<BarChartRodStackItem> stackItems = [];
       double cumulativeHeight = 0.0;
 
-      // Iterate over each service in the processed chart data
       for (var service in chartData) {
         final serviceName = service['service'] as String?;
-        if (serviceName == null) {
-          continue; // Skip if serviceName is null
-        }
+        if (serviceName == null) continue;
 
         final counts = service['counts'] as List<dynamic>? ?? [];
-        // Ensure counts is not null and check if monthIndex is within bounds
         final count = (counts.isNotEmpty && monthIndex < counts.length)
             ? counts[monthIndex] ?? 0
             : 0;
 
-        // Get the color for the service
         final serviceColor = serviceColors[serviceName] ?? Colors.black.withOpacity(0.7);
 
-        // Add stack item for the current service
         stackItems.add(
           BarChartRodStackItem(
             cumulativeHeight,
@@ -212,8 +190,13 @@ class MostAvailedChartState extends State<MostAvailedChart> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (chartData.isEmpty) {
-      return const Center(child: Text('No data available'));
+    if (noDataForYear) {
+      return const Center(
+        child: Text(
+          'No available data for this year',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      );
     }
 
     return Column(
@@ -248,10 +231,10 @@ class MostAvailedChartState extends State<MostAvailedChart> {
                 ),
                 gridData: FlGridData(
                   show: true,
-                  checkToShowHorizontalLine: (value) => value % 2 == 0, // Show horizontal lines at multiples of 5
+                  checkToShowHorizontalLine: (value) => value % 2 == 0,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: Colors.grey.withOpacity(0.3),  // Light gray color for horizontal lines
-                    strokeWidth: 1,  // Set line thickness
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
                   ),
                   drawVerticalLine: false,
                 ),
