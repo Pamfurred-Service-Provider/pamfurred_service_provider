@@ -70,8 +70,34 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   final CalendarFormat _calendarFormat = CalendarFormat.month;
   final DateTime _focusedDay = DateTime.now();
 
-  bool _isDayAvailable(DateTime day) {
-    return _availability[DateTime.utc(day.year, day.month, day.day)] ?? true;
+  Future<bool> _isDayAvailable(DateTime day) async {
+    // Format the selected day into the 'yyyy-MM-dd' format to match the `availability_date` format in your table
+    String formattedDate =
+        "${day.toLocal().year.toString().padLeft(4, '0')}-${day.toLocal().month.toString().padLeft(2, '0')}-${day.toLocal().day.toString().padLeft(2, '0')}";
+
+    try {
+      // Query the Supabase table to check availability for the given day
+      final response = await Supabase.instance.client
+          .from('service_provider_availability') // Your table name
+          .select('is_fully_booked') // Select the availability status
+          .eq('availability_date', formattedDate) // Match the date
+          .eq('sp_id',
+              userId) // Ensure you're checking for the current service provider's availability
+          .maybeSingle(); // Use maybeSingle to handle null if no match is found
+
+      if (response == null) {
+        // If no record is found, assume the day is available
+        return true;
+      }
+
+      // Return true if not fully booked, false otherwise
+      return response['is_fully_booked'] == false;
+    } catch (error) {
+      // Log error for debugging
+      print('Error fetching day availability: $error');
+      // Handle errors gracefully (optional: mark as available by default)
+      return true;
+    }
   }
 
 // Function to update the availability of a specific date
@@ -389,13 +415,15 @@ class EditProfileScreenState extends State<EditProfileScreen> {
             child: TableCalendar(
               firstDay: DateTime.utc(2024, 1, 1),
               lastDay: DateTime.utc(2030, 1, 1),
-              focusedDay: _focusedDay,
+              focusedDay:
+                  DateTime.now(), // Set this to today's date for initialization
               calendarFormat: _calendarFormat,
               availableCalendarFormats: const {
                 CalendarFormat.month: 'Month',
               },
               selectedDayPredicate: (day) {
-                return false; // No pre-selection logic, so this can be kept as is
+                // No pre-selection logic, keep it disabled
+                return false;
               },
               onDaySelected: (selectedDay, focusedDay) {
                 // Only navigate if the selected day is not in the past
@@ -414,55 +442,99 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               },
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, day, focusedDay) {
-                  bool isAvailable = _isDayAvailable(day);
                   bool isPast =
                       day.isBefore(DateTime.now().subtract(Duration(days: 1)));
+                  bool isToday = day.isAtSameMomentAs(DateTime.now());
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: isPast
-                          ? Colors.grey // Gray color for past days
-                          : (isAvailable ? Colors.green : Colors.red),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    margin: const EdgeInsets.all(4.0),
-                    child: Center(
-                      child: Text(
-                        '${day.day}',
-                        style: TextStyle(
-                          color: isPast
-                              ? Colors.black
-                              : Colors.white, // Black text for past days
+                  // Handle past days
+                  if (isPast) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey, // Gray color for past days
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      margin: const EdgeInsets.all(4.0),
+                      child: Center(
+                        child: Text(
+                          '${day.day}',
+                          style: TextStyle(
+                              color: Colors.black), // Black text for past days
                         ),
                       ),
-                    ),
-                  );
-                },
-                todayBuilder: (context, day, focusedDay) {
-                  bool isAvailable = _isDayAvailable(day);
-                  bool isPast =
-                      day.isBefore(DateTime.now().subtract(Duration(days: 1)));
+                    );
+                  }
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: isPast
-                          ? Colors.grey // Gray color for past days
-                          : (isAvailable ? Colors.green : Colors.red),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    margin: const EdgeInsets.all(4.0),
-                    child: Center(
-                      child: Text(
-                        '${day.day}',
-                        style: TextStyle(
-                          color: isPast
-                              ? Colors.black
-                              : Colors.white, // Black text for past days
-                        ),
-                      ),
-                    ),
+                  // Use FutureBuilder for non-past days, including today
+                  return FutureBuilder<bool>(
+                    future: _isDayAvailable(
+                        day), // Fetch the availability asynchronously
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isToday
+                                ? Colors.green
+                                : Colors
+                                    .blueGrey, // Green for today during loading
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          margin: const EdgeInsets.all(4.0),
+                          child: Center(
+                            child:
+                                CircularProgressIndicator(), // Show loading indicator
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        print('Error fetching data: ${snapshot.error}');
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red, // Show error color
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          margin: const EdgeInsets.all(4.0),
+                          child: Center(
+                            child: Icon(Icons.error, color: Colors.white),
+                          ),
+                        );
+                      } else {
+                        bool isAvailable =
+                            snapshot.data ?? true; // Default to true if no data
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isAvailable
+                                ? Colors.green
+                                : Colors.red, // Green if available, red if not
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          margin: const EdgeInsets.all(4.0),
+                          child: Center(
+                            child: Text(
+                              '${day.day}',
+                              style: TextStyle(
+                                  color: Colors
+                                      .white), // White text for non-past days
+                            ),
+                          ),
+                        );
+                      }
+                    },
                   );
                 },
+              ),
+              calendarStyle: CalendarStyle(
+                selectedDecoration: BoxDecoration(
+                  color: Colors
+                      .transparent, // No special styling for the focused day
+                ),
+                todayDecoration: BoxDecoration(
+                  color: Colors.green, // Green background for today
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: TextStyle(
+                  color: Colors.white, // White text for today
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
