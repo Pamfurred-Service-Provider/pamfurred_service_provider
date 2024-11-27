@@ -432,9 +432,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                 return false;
               },
               onDaySelected: (selectedDay, focusedDay) {
-                // Only navigate if the selected day is not in the past
-                if (selectedDay
-                    .isAfter(DateTime.now().subtract(Duration(days: 1)))) {
+                // Allow selection only for today or future dates
+                if (!selectedDay.isBefore(DateTime(
+                  DateTime.now().year,
+                  DateTime.now().month,
+                  DateTime.now().day,
+                ))) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -446,17 +449,21 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   );
                 }
               },
+
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, day, focusedDay) {
-                  bool isPast =
-                      day.isBefore(DateTime.now().subtract(Duration(days: 1)));
-                  bool isToday = day.isAtSameMomentAs(DateTime.now());
+                  // Strip time component for proper day comparison
+                  bool isPast = day.isBefore(DateTime(
+                    DateTime.now().year,
+                    DateTime.now().month,
+                    DateTime.now().day,
+                  ));
 
                   // Handle past days
                   if (isPast) {
                     return Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey, // Gray color for past days
+                        color: Colors.grey, // Always gray for past days
                         borderRadius: BorderRadius.circular(8.0),
                       ),
                       margin: const EdgeInsets.all(4.0),
@@ -464,13 +471,14 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                         child: Text(
                           '${day.day}',
                           style: TextStyle(
-                              color: Colors.black), // Black text for past days
+                            color: Colors.black, // Black text for past days
+                          ),
                         ),
                       ),
                     );
                   }
 
-                  // Use FutureBuilder for non-past days, including today
+                  // FutureBuilder for non-past days
                   return FutureBuilder<bool>(
                     future: _isDayAvailable(
                         day), // Fetch the availability asynchronously
@@ -478,16 +486,15 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Container(
                           decoration: BoxDecoration(
-                            color: isToday
-                                ? Colors.green
-                                : Colors
-                                    .blueGrey, // Green for today during loading
+                            color: Colors.green, // Assume available (green)
                             borderRadius: BorderRadius.circular(8.0),
                           ),
                           margin: const EdgeInsets.all(4.0),
                           child: Center(
-                            child:
-                                CircularProgressIndicator(), // Show loading indicator
+                            child: Text(
+                              '${day.day}',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         );
                       } else if (snapshot.hasError) {
@@ -517,9 +524,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                           child: Center(
                             child: Text(
                               '${day.day}',
-                              style: TextStyle(
-                                  color: Colors
-                                      .white), // White text for non-past days
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         );
