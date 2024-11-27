@@ -174,7 +174,10 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           floorNoController.text = addressData['floor_unit_room'] ?? '';
           streetController.text = addressData['street'] ?? '';
           cityController.text = addressData['city'] ?? '';
-          barangayController.text = addressData['barangay'] ?? '';
+          // Set the barangay value for the dropdown instead of directly setting the controller text
+          barangay = addressData['barangay'] ?? '';
+          // If needed, set the value in the dropdown
+          barangayController.text = barangay ?? '';
           // For exactAddressController, format the address as needed
           exactAddressController.text =
               '${addressData['city'] ?? "Not Found"}, '
@@ -652,18 +655,21 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   style: TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-                CustomDropdown<String>.search(
+                CustomDropdown<String>(
+                  initialItem:
+                      barangay, // Set the initially selected barangay value
                   decoration: getDropdownDecoration(),
-                  hintText: 'Select Barangay', // Label as a hint
+                  hintText: 'Select Barangay', // Hint text for the dropdown
                   items: municipality?.barangays ?? [],
                   onChanged: (String? value) {
                     setState(() {
-                      barangay = value;
-                      // value ?? ''; // Update controller
-                      barangayController.text = value ?? '';
+                      barangay = value; // Update the barangay value
+                      barangayController.text = value ??
+                          ''; // Update the controller with the selected barangay
                     });
                   },
                 ),
+
                 // DropdownButtonFormField<String>(
                 //   value: barangay, // Currently selected barangay
                 //   decoration: const InputDecoration(
