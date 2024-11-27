@@ -182,7 +182,7 @@ class ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         profileData = result;
       });
-      // _fetchUserData(); // Re-fetch user data after edit to get updated address
+      _fetchUserData(); // Re-fetch user data after edit to get updated address
     }
   }
 
