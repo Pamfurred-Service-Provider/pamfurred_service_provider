@@ -8,7 +8,6 @@ import 'package:service_provider/components/satisfaction_rating_chart.dart';
 import 'package:service_provider/screens/appointments.dart';
 import 'package:service_provider/screens/feedbacks.dart';
 import 'package:service_provider/screens/main_screen.dart';
-import 'package:service_provider/screens/services.dart';
 import 'package:service_provider/components/year_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -25,7 +24,8 @@ class HomeScreenState extends State<HomeScreen> {
   String serviceProviderName = '';
   int selectedYear = years.first;
   int selectedIndex = 0;
-  List<double> annualAppointmentData = List.filled(12, 0.0); // Changed to List<double>
+  List<double> annualAppointmentData =
+      List.filled(12, 0.0); // Changed to List<double>
 
   final List<Map<String, dynamic>> satisfactionData = [
     {
@@ -51,7 +51,8 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  List<Map<String, dynamic>> mostAvailedData = []; // Initialize as an empty list 
+  List<Map<String, dynamic>> mostAvailedData =
+      []; // Initialize as an empty list
 
   final List<Map<String, dynamic>> revenueData = [
     {'month': 'Jan', 'value': 2500.00},
@@ -123,26 +124,15 @@ class HomeScreenState extends State<HomeScreen> {
       // Call the `get_monthly_service_counts` RPC
       final response = await Supabase.instance.client
           .rpc('get_monthly_service_counts', params: {
-            'provider_id': userId,
-            'year': selectedYear,
-          })
-          .execute();
-
-      if (response.error != null) {
-        throw response.error!;
-      }
+        'provider_id': userId,
+        'year': selectedYear,
+      }).execute();
 
       final List<dynamic> services = response.data ?? [];
 
-      if (services.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No data available for this year')),
-        );
-        return [];
-      }
-
       // Convert response to a list of maps
-      final List<Map<String, dynamic>> processedServices = services.map((service) {
+      final List<Map<String, dynamic>> processedServices =
+          services.map((service) {
         return {
           'service_name': service['service_name'],
           'month': service['month'],
@@ -160,7 +150,6 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
   Future<void> _fetchFeedbackData() async {
     try {
       final userSession = Supabase.instance.client.auth.currentSession;
@@ -172,10 +161,6 @@ class HomeScreenState extends State<HomeScreen> {
           .select('compound_score')
           .eq('sp_id', userId)
           .execute();
-
-      if (response.error != null) {
-        throw response.error!;
-      }
 
       final List<dynamic> feedbacks = response.data ?? [];
       int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
@@ -209,43 +194,44 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-Future<void> _fetchAnnualAppointments() async {
-  try {
-    final userSession = Supabase.instance.client.auth.currentSession;
-    if (userSession == null) throw Exception("User not logged in");
+  Future<void> _fetchAnnualAppointments() async {
+    try {
+      final userSession = Supabase.instance.client.auth.currentSession;
+      if (userSession == null) throw Exception("User not logged in");
 
-    final userId = userSession.user.id;
+      final userId = userSession.user.id;
 
-    final response = await Supabase.instance.client
-        .from('appointment')
-        .select('appointment_date')
-        .eq('sp_id', userId)
-        .gte('appointment_date', DateTime(selectedYear, 1, 1).toIso8601String())
-        .lt('appointment_date', DateTime(selectedYear + 1, 1, 1).toIso8601String())
-        .execute();
+      final response = await Supabase.instance.client
+          .from('appointment')
+          .select('appointment_date')
+          .eq('sp_id', userId)
+          .gte('appointment_date',
+              DateTime(selectedYear, 1, 1).toIso8601String())
+          .lt('appointment_date',
+              DateTime(selectedYear + 1, 1, 1).toIso8601String())
+          .execute();
 
-    if (response.error != null) throw response.error!;
+      final List<dynamic> appointments = response.data ?? [];
+      final monthlyCounts = List<int>.filled(12, 0);
 
-    final List<dynamic> appointments = response.data ?? [];
-    final monthlyCounts = List<int>.filled(12, 0);
+      for (var appointment in appointments) {
+        final date = DateTime.parse(appointment['appointment_date']);
+        monthlyCounts[date.month - 1]++;
+      }
 
-    for (var appointment in appointments) {
-      final date = DateTime.parse(appointment['appointment_date']);
-      monthlyCounts[date.month - 1]++;
-    }
-
-    setState(() {
-      annualAppointmentData = monthlyCounts.map((e) => e.toDouble()).toList();
-    });
-  } catch (e) {
-    print("Error fetching appointment data: $e");
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load annual appointments data')),
-      );
+      setState(() {
+        annualAppointmentData = monthlyCounts.map((e) => e.toDouble()).toList();
+      });
+    } catch (e) {
+      print("Error fetching appointment data: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to load annual appointments data')),
+        );
+      }
     }
   }
-}
 
   void updateDataForYear(int year) {
     setState(() {
@@ -398,8 +384,14 @@ Future<void> _fetchAnnualAppointments() async {
                   MostAvailedChart(
                     fetchData: _fetchMostAvailedServices,
                     data: mostAvailedData.isEmpty
-                    ? [{'service_name': 'No data available', 'month': '', 'count': 0}]
-                    : mostAvailedData,
+                        ? [
+                            {
+                              'service_name': 'No data available',
+                              'month': '',
+                              'count': 0
+                            }
+                          ]
+                        : mostAvailedData,
                     labels: mostAvailedData.isEmpty ? [''] : labels,
                   ),
                 ],
@@ -554,8 +546,4 @@ Future<void> _fetchAnnualAppointments() async {
       ),
     );
   }
-}
-
-extension on PostgrestResponse {
-  get error => null;
 }

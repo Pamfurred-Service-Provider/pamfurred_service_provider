@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/notification_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,10 +12,16 @@ class NotificationScreen extends StatefulWidget {
 
 class NotificationScreenState extends State<NotificationScreen> {
   String? serviceProviderId;
+  List<Map<String, dynamic>> notifications = [];
+  late List<bool> isTapped; // Track the tapped state for each card
+  bool isLoading = true; // Loading state for data fetching
+
   @override
   void initState() {
     super.initState();
     _initializeSession();
+    isTapped = [];
+    _fetchNotifications();
   }
 
   Future<void> _initializeSession() async {
@@ -41,177 +48,284 @@ class NotificationScreenState extends State<NotificationScreen> {
     });
   }
 
-  Future<List<Map<String, dynamic>>> fetchAppointmentDetails() async {
+// Function to fetch notifications (simulate fetching from an API or database)
+  Future<void> _fetchNotifications() async {
     final supabase = Supabase.instance.client;
-
     final response = await supabase.rpc(
-      'get_appointment_details_by_sp_id',
+      'fetch_notification_details_by_sp_id',
       params: {'sp_id_param': serviceProviderId},
     );
+    // Simulate a delay
+    await Future.delayed(const Duration(seconds: 2));
+    // Dummy notifications data
+    final fetchedNotifications = List<Map<String, dynamic>>.from(response);
 
-    final dataList = List<Map<String, dynamic>>.from(response);
-    // Group the data by appointment ID
-    final groupedData = groupAppointmentData(dataList);
-
-    return groupedData;
+    setState(() {
+      notifications = fetchedNotifications;
+      isTapped = List<bool>.filled(notifications.length, false);
+      isLoading = false;
+    });
   }
 
-  List<Map<String, dynamic>> groupAppointmentData(
-      List<Map<String, dynamic>> dataList) {
-    final groupedData = <String, Map<String, dynamic>>{};
+  // Function to check if the date is today
+  bool isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
 
-    for (var item in dataList) {
-      final appointmentId = item['appointment_id'];
-      if (!groupedData.containsKey(appointmentId)) {
-        groupedData[appointmentId] = {
-          ...item,
-          'services': [],
-          'packages': [],
-        };
-      }
+  // Function to check if the date is yesterday
+  bool isYesterday(DateTime date) {
+    final now = DateTime.now();
+    final yesterday = now.subtract(const Duration(days: 1));
+    return date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
+  }
 
-      if (item['service_name'] != null) {
-        groupedData[appointmentId]!['services'].add({
-          'name': item['service_name'],
-          'price': item['service_price'],
-        });
-      }
+  // Function to compute time elapsed since the notification was created
+  String timeElapsed(DateTime notificationArrival) {
+    final now = DateTime.now();
+    final difference = now.difference(notificationArrival);
 
-      if (item['package_name'] != null) {
-        groupedData[appointmentId]!['packages'].add({
-          'name': item['package_name'],
-          'price': item['package_price'],
-          'inclusions': item['package_inclusions'],
-        });
-      }
-    }
-
-    return groupedData.values.toList();
+    if (difference.inMinutes < 1) return "Just now";
+    if (difference.inMinutes < 60) return "${difference.inMinutes} minutes ago";
+    if (difference.inHours < 24) return "${difference.inHours} hours ago";
+    if (difference.inDays < 7) return "${difference.inDays} days ago";
+    if (difference.inDays < 30)
+      return "${(difference.inDays / 7).floor()} weeks ago";
+    if (difference.inDays < 365)
+      return "${(difference.inDays / 30).floor()} months ago";
+    return "${(difference.inDays / 365).floor()} years ago";
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> todayAppointments = [
-      {
-        'id': '1445547gg5fg1',
-        'date': 'January 2, 2024',
-        'name': 'Bob Niño Golosinda',
-        'time': '09:00 AM - 11:00 AM',
-        'status': 'Pending',
-        'phone': '09945876258',
-        'category': 'Dog',
-        'type': 'Pet Salon',
-        'total': '350.00',
-        'services': [
-          {'service': 'Nail Clipping', 'price': '100.00'},
-          {'service': 'Haircut', 'price': '250.00'},
-        ],
-      },
-      {
-        'name': 'Lynie Rose Gaa',
-        'date': 'January 2, 2024',
-        'time': '11:00 AM',
-        'status': 'Pending',
-        'phone': '09945876258',
-        'category': 'Dog',
-        'type': 'Pet Salon',
-        'availed': 'Nail Clipping',
-        'price': '100.00'
-      },
-    ];
+    // Separate notifications into "Today," "Yesterday," and "Older"
+    List todayNotifications = notifications.where((notification) {
+      final createdAt = notification['created_at'];
+      return createdAt != null && isToday(DateTime.parse(createdAt));
+    }).toList();
 
-    final List<Map<String, String>> earlierAppointments = [
-      {'name': 'Aillen Gonzaga', 'date': 'January 1, 2024', 'time': '01:00 PM'},
-      {'name': 'Arny Ucab', 'date': 'December 31, 2023', 'time': '03:00 PM'},
-    ];
+    List yesterdayNotifications = notifications.where((notification) {
+      final createdAt = notification['created_at'];
+      return createdAt != null && isYesterday(DateTime.parse(createdAt));
+    }).toList();
 
-    return Scaffold(
-      body: ListView(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              "Today",
-              style: TextStyle(
-                fontSize: 20,
-                color: Color.fromRGBO(160, 62, 6, 1),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ...todayAppointments
-              .map((appointment) => buildAppointmentCard(appointment)),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              "Earlier",
-              style: TextStyle(
-                fontSize: 20,
-                color: Color.fromRGBO(160, 62, 6, 1),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ...earlierAppointments
-              .map((appointment) => buildAppointmentCard(appointment))
-        ],
+    List olderNotifications = notifications.where((notification) {
+      final createdAt = notification['created_at'];
+      return createdAt != null &&
+          !isToday(DateTime.parse(createdAt)) &&
+          !isYesterday(DateTime.parse(createdAt));
+    }).toList();
+
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : notifications.isEmpty
+                ? const Center(
+                    child: Text(
+                      "No notifications",
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(10),
+                    children: [
+                      // "Today" notifications
+                      if (todayNotifications.isNotEmpty) ...[
+                        _buildSectionHeader("Today"),
+                        ...todayNotifications.map((notification) {
+                          final index = notifications.indexOf(notification);
+                          return _buildNotificationCard(index, notification);
+                        }),
+                      ],
+                      const SizedBox(height: 16),
+                      // "Yesterday" notifications
+                      if (yesterdayNotifications.isNotEmpty) ...[
+                        _buildSectionHeader("Yesterday"),
+                        ...yesterdayNotifications.map((notification) {
+                          final index = notifications.indexOf(notification);
+                          return _buildNotificationCard(index, notification);
+                        }),
+                      ],
+                      const SizedBox(height: 16),
+                      // "Earlier" notifications
+                      if (olderNotifications.isNotEmpty) ...[
+                        _buildSectionHeader("Earlier"),
+                        ...olderNotifications.map((notification) {
+                          final index = notifications.indexOf(notification);
+                          return _buildNotificationCard(index, notification);
+                        }),
+                      ],
+                    ],
+                  ),
       ),
     );
   }
 
-  Widget buildAppointmentCard(Map<String, dynamic> appointment) {
+  // Section header widget
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Color.fromRGBO(160, 62, 6, 1),
+        ),
+      ),
+    );
+  }
+
+  // Notification card widget
+  Widget _buildNotificationCard(int index, Map<String, dynamic> notification) {
     return GestureDetector(
       onTap: () {
-        // Navigate to the NotificationDetailsScreen with the selected appointment
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                NotificationDetailsScreen(appointment: appointment),
-          ),
-        );
+        setState(() {
+          isTapped[index] = !isTapped[index];
+        });
       },
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8), // Adds padding on all sides
-            child: Card(
-              color: Colors.white,
-              elevation: 10,
-              child: Padding(
-                padding: const EdgeInsets.all(15),
-                child: Row(
+      child: Card(
+        color: isTapped[index]
+            ? Colors.white
+            : Colors.grey[200], // Change color on tap
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Notification Title
+              Row(
+                children: [
+                  if (notification['appointment_notif_type'] == 'Upcoming') ...[
+                    Text(
+                      notification['name'] ?? 'Appointment',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                  if (notification['appointment_notif_type'] != 'Upcoming') ...[
+                    Text(
+                      notification['Appointment'] ?? 'Appointment',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                  Text(
+                    notification['appointment_notif_type'] == "Done"
+                        ? " completed"
+                        : " ${notification['appointment_notif_type']}",
+                    style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: primarySizedBox),
+
+              // Notification Body
+              RichText(
+                text: TextSpan(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            appointment['date']!,
-                          ),
-                          Text(
-                            appointment['time']!,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            appointment['name']!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
+                    // Leading text
+                    TextSpan(
+                      text: notification['appointment_notif_type'] == 'Upcoming'
+                          ? 'You have an'
+                          : 'Your appointment with',
+                      style: const TextStyle(
+                        fontSize: regularText,
+                        color: Colors.black,
+                      ),
+                    ),
+                    if (notification['appointment_notif_type'] ==
+                        'Upcoming') ...[
+                      const TextSpan(
+                        text: ' upcoming ',
+                        style: TextStyle(
+                          fontSize: regularText,
+                          color: primaryColor,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: 'appointment with',
+                        style: TextStyle(
+                          fontSize: regularText,
+                          color: Colors.black,
+                        ),
+                      ),
+                      TextSpan(
+                        text:
+                            ' ${notification['establishment_name'] ?? "unknown"}',
+                        style: const TextStyle(
+                          fontSize: regularText,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
+                    if (notification['appointment_notif_type'] !=
+                        'Upcoming') ...[
+                      TextSpan(
+                        text:
+                            ' ${notification['establishment_name'] ?? "unknown"}',
+                        style: const TextStyle(
+                          fontSize: regularText,
+                          color: primaryColor,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' has been ',
+                        style: TextStyle(
+                          fontSize: regularText,
+                          color: Colors.black,
+                        ),
+                      ),
+                      TextSpan(
+                        text: notification['appointment_notif_type'] == 'Done'
+                            ? 'completed'
+                            : (notification['appointment_notif_type'] ?? ''),
+                        style: const TextStyle(
+                          fontSize: regularText,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
+                    const TextSpan(
+                      text: ".",
+                      style: TextStyle(
+                        fontSize: regularText,
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(height: primarySizedBox),
+
+              // Time Elapsed
+              Text(
+                timeElapsed(
+                  DateTime.parse(
+                    notification['created_at'] ?? DateTime.now().toString(),
+                  ),
+                ),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black,
+                ),
+              ),
+            ],
           ),
-          const Divider(
-            indent: 16.0,
-            endIndent: 16.0,
-          ),
-        ],
+        ),
       ),
     );
   }
