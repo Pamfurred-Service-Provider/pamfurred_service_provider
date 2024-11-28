@@ -24,17 +24,14 @@ class RealtimeService {
         .listen(
           (changes) async {
             for (final change in changes) {
-              final spId = change['sp_id'];
               final appointmentId = change['appointment_id'];
               final appointmentStatus = change['appointment_status'];
 
-              if (spId != loggedInServiceProviderId || appointmentId == null) {
-                continue;
-              }
+              if (appointmentId == null) continue;
 
-              // Process only 'Upcoming' status
+              // Process 'Upcoming' status
               if (appointmentStatus == 'Upcoming') {
-                sendNotification(change);
+                await _createNotification(appointmentId, 'Upcoming');
               }
             }
           },
@@ -44,69 +41,93 @@ class RealtimeService {
         );
   }
 
-  void sendNotification(Map<String, dynamic> appointment) async {
-    final appointmentId = appointment['appointment_id'];
-    final userId = appointment['pet_owner_id'];
-
-    if (userId != null && appointmentId != null) {
-      // Check if a notification already exists for this appointment
-      final existingNotification = await _client
+  Future<void> _createNotification(
+      String appointmentId, String notificationType) async {
+    try {
+      // Check if a notification already exists for this appointment and type
+      await _client
           .from('notification')
           .select('notification_id')
           .eq('appointment_id', appointmentId)
-          .limit(1)
+          .eq('appointment_notif_type',
+              notificationType) // Corrected column name
+          .maybeSingle();
+
+      // Create a new notification in the 'notification' table
+      await _client.from('notification').insert({
+        'appointment_id': appointmentId,
+        'appointment_notif_type': notificationType, // Corrected column name
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Fetch the appointment details first
+      final appointment = await _client
+          .from('appointment')
+          .select('pet_owner_id')
+          .eq('appointment_id',
+              appointmentId) // Use the correct appointmentId to filter
           .single();
 
-      if (existingNotification != null) {
-        print('Notification already exists for appointment ID $appointmentId');
+      if (appointment == null) {
+        print('Appointment details not found.');
         return;
       }
 
-      try {
-        final response = await Supabase.instance.client
-            .from('pet_owner')
-            .select('username')
-            .eq('pet_owner_id', userId)
-            .single();
+      // Fetch related pet owner details using pet_owner_id to query the 'user' table
+      final petOwnerDetails = await _client
+          .from('user') // Assuming the table is called 'user'
+          .select('first_name, last_name')
+          .eq(
+              'user_id',
+              appointment[
+                  'pet_owner_id']) // Match the pet_owner_id with user_id
+          .single(); // Ensures only one row is returned
 
-        if (response != null && response.isNotEmpty) {
-          final username = response['username'] ?? 'Unknown User';
-
-          // Create the notification in the 'notification' table
-          await _client.from('notification').insert({
-            'appointment_id': appointmentId,
-            'appointment_notif_type': 'Upcoming', // Assuming notification type
-            'created_at': DateTime.now().toIso8601String(),
-          });
-
-          const AndroidNotificationDetails androidDetails =
-              AndroidNotificationDetails(
-            'appointment_channel',
-            'Appointment Notifications',
-            channelDescription: 'Notifications for upcoming appointments',
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: 'pamfurred',
-          );
-
-          final uniqueNotificationId =
-              (DateTime.now().millisecondsSinceEpoch % 2147483647).abs();
-
-          const NotificationDetails details =
-              NotificationDetails(android: androidDetails);
-
-          await flutterLocalNotificationsPlugin.show(
-            uniqueNotificationId,
-            'Upcoming Appointment',
-            'You have an upcoming appointment with $username.',
-            details,
-          );
-
-          print('Notification sent for appointment ID $appointmentId');
-        }
-      } catch (e) {
-        print('Error sending notification: $e');
+      if (petOwnerDetails == null) {
+        print('Pet owner details not found.');
+        return;
       }
+
+      final petOwnerFullname =
+          petOwnerDetails['first_name'] + ' ' + petOwnerDetails['last_name'] ??
+              'Unknown User';
+
+      // Prepare notification content
+      String title = '';
+      String body = '';
+
+      if (notificationType == 'Upcoming') {
+        title = 'Upcoming Appointment';
+        body = 'You have an upcoming appointment with $petOwnerFullname.';
+      }
+
+      // Display the notification
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+        'appointment_channel',
+        'Appointment Notifications',
+        channelDescription: 'Notifications for upcoming appointments',
+        importance: Importance.high,
+        priority: Priority.max,
+        icon: 'pamfurred',
+      );
+
+      const NotificationDetails details =
+          NotificationDetails(android: androidDetails);
+
+      final uniqueNotificationId =
+          (DateTime.now().millisecondsSinceEpoch % 2147483647).abs();
+
+      await flutterLocalNotificationsPlugin.show(
+        uniqueNotificationId,
+        title,
+        body,
+        details,
+      );
+
+      print('Notification sent for appointment ID $appointmentId');
+    } catch (e) {
+      print('Skipped because it exist');
     }
   }
 }
