@@ -25,8 +25,8 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
       final userSession = supabaseClient.auth.currentSession;
       final userId = userSession?.user.id;
 
-      final response = await supabaseClient.rpc(
-          'get_feedback_by_sp_id', params: {'sp_id_param': userId});
+      final response = await supabaseClient
+          .rpc('get_feedback_by_sp_id', params: {'sp_id_param': userId});
 
       if (response.isEmpty) {
         setState(() {
@@ -53,7 +53,8 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
 
   double calculateAverageRating() {
     if (reviews.isEmpty) return 0.0;
-    double totalRating = reviews.fold(0.0, (sum, review) => sum + review['rating']);
+    double totalRating = reviews.fold(
+        0.0, (sum, review) => sum + (review['rating']?.toDouble() ?? 0.0));
     return totalRating / reviews.length;
   }
 
@@ -95,29 +96,50 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          ...List.generate(5, (index) {
-                            if (averageRating >= index + 1) {
-                              return const Icon(
-                                Icons.star,
-                                color: Color.fromRGBO(209, 76, 1, 1),
-                              );
-                            } else if (averageRating <= index + 0.5) {
-                              return const Icon(
-                                Icons.star_half,
-                                color: Color.fromRGBO(209, 76, 1, 1),
-                              );
-                            } else {
+                          if (reviews.isEmpty) ...[
+                            ...List.generate(5, (index) {
                               return const Icon(
                                 Icons.star_border,
                                 color: Colors.grey,
                               );
-                            }
-                          }),
-                          const SizedBox(width: 5),
-                          Text(
-                            "(${averageRating.toStringAsFixed(1)})",
-                            style: const TextStyle(fontSize: 17),
-                          ),
+                            }),
+                            const SizedBox(width: 5),
+                            const Text(
+                              "(0.0)",
+                              style: TextStyle(fontSize: 17),
+                            ),
+                          ]
+                          // Otherwise display filled, half-filled, or empty stars based on average rating
+                          else ...[
+                            ...List.generate(5, (index) {
+                              if (index + 1 <= averageRating.floor()) {
+                                // Fully filled star for every whole number in the averageRating
+                                return const Icon(
+                                  Icons.star,
+                                  color: Color.fromRGBO(209, 76, 1, 1),
+                                );
+                              } else if (index < averageRating &&
+                                  averageRating - index >= 0.5 &&
+                                  averageRating <= index + 0.5 &&
+                                  averageRating - index < 1) {
+                                // Half-filled star only if fractional part >= 0.5
+                                return const Icon(
+                                  Icons.star_half,
+                                  color: Color.fromRGBO(209, 76, 1, 1),
+                                );
+                              } else {
+                                return const Icon(
+                                  Icons.star_border,
+                                  color: Colors.grey,
+                                );
+                              }
+                            }),
+                            const SizedBox(width: 5),
+                            Text(
+                              "(${averageRating.toStringAsFixed(1)})",
+                              style: const TextStyle(fontSize: 17),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -139,7 +161,8 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
                       const SizedBox(height: 10),
                       ...reviews.map((review) {
                         return ReviewCard(
-                          name: maskName(review['pet_owner_first_name'], review['pet_owner_last_name']),
+                          name: maskName(review['pet_owner_first_name'],
+                              review['pet_owner_last_name']),
                           reviewText: review['review'] ?? '',
                           rating: review['rating']?.toDouble() ?? 0.0,
                           reviewDate: review['review_date'].toString(),

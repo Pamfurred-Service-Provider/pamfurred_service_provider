@@ -64,8 +64,6 @@ class ServicesScreenState extends State<ServicesScreen> {
             'service_id, service(service_name, price, service_image, service_type, pet_type, size, min_weight, max_weight, availability_status)')
         .eq('sp_id', serviceProviderId);
 
-    print("Supabase response: $response"); // Debugging line to inspect the data
-
     // Check if the response contains data
     if (response is List && response.isNotEmpty) {
       setState(() {

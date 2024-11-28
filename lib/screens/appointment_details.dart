@@ -191,7 +191,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             Center(
               child: buildDetailSection(
                 '',
-                '${widget.appointment['appointment_id'] ?? 'N/A'}',
+                '${widget.appointment['appointment_id'] ?? ''}',
               ),
             ),
             // Pet and Owner Details

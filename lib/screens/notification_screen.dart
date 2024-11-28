@@ -21,7 +21,6 @@ class NotificationScreenState extends State<NotificationScreen> {
     super.initState();
     _initializeSession();
     isTapped = [];
-    _fetchNotifications();
   }
 
   Future<void> _initializeSession() async {
@@ -46,25 +45,32 @@ class NotificationScreenState extends State<NotificationScreen> {
     setState(() {
       serviceProviderId = spResponse['sp_id'];
     });
+
+    _fetchNotifications();
   }
 
-// Function to fetch notifications (simulate fetching from an API or database)
   Future<void> _fetchNotifications() async {
-    final supabase = Supabase.instance.client;
-    final response = await supabase.rpc(
-      'fetch_notification_details_by_sp_id',
-      params: {'sp_id_param': serviceProviderId},
-    );
-    // Simulate a delay
-    await Future.delayed(const Duration(seconds: 2));
-    // Dummy notifications data
-    final fetchedNotifications = List<Map<String, dynamic>>.from(response);
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase.rpc(
+        'fetch_notification_details_by_sp_id',
+        params: {'sp_id_param': serviceProviderId},
+      );
 
-    setState(() {
-      notifications = fetchedNotifications;
-      isTapped = List<bool>.filled(notifications.length, false);
-      isLoading = false;
-    });
+      final fetchedNotifications = List<Map<String, dynamic>>.from(response);
+      print('Numrber of notifications: ${fetchedNotifications.length}');
+
+      setState(() {
+        notifications = fetchedNotifications;
+        isTapped = List<bool>.filled(notifications.length, false);
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching notifications: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   // Function to check if the date is today
@@ -89,35 +95,63 @@ class NotificationScreenState extends State<NotificationScreen> {
     final now = DateTime.now();
     final difference = now.difference(notificationArrival);
 
-    if (difference.inMinutes < 1) return "Just now";
-    if (difference.inMinutes < 60) return "${difference.inMinutes} minutes ago";
-    if (difference.inHours < 24) return "${difference.inHours} hours ago";
-    if (difference.inDays < 7) return "${difference.inDays} days ago";
-    if (difference.inDays < 30)
-      return "${(difference.inDays / 7).floor()} weeks ago";
-    if (difference.inDays < 365)
-      return "${(difference.inDays / 30).floor()} months ago";
-    return "${(difference.inDays / 365).floor()} years ago";
+    final minutes = difference.inMinutes;
+    final hours = difference.inHours;
+    final days = difference.inDays;
+    final weeks = (days / 7).floor();
+    final months = (days / 30).floor();
+    final years = (days / 365).floor();
+
+    String result;
+
+    if (minutes < 1) {
+      result = "Just now";
+    } else if (minutes < 60) {
+      result = "$minutes minute${minutes == 1 ? '' : 's'} ago";
+    } else if (hours < 24) {
+      result = "$hours hour${hours == 1 ? '' : 's'} ago";
+    } else if (days < 7) {
+      result = "$days day${days == 1 ? '' : 's'} ago";
+    } else if (days < 30) {
+      result = "$weeks week${weeks == 1 ? '' : 's'} ago";
+    } else if (days < 365) {
+      result = "$months month${months == 1 ? '' : 's'} ago";
+    } else {
+      result = "$years year${years == 1 ? '' : 's'} ago";
+    }
+
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
+    // Sort the notifications by notification arrival in descending order
+    notifications.sort((a, b) => b['created_at'].compareTo(a['created_at']));
     // Separate notifications into "Today," "Yesterday," and "Older"
     List todayNotifications = notifications.where((notification) {
       final createdAt = notification['created_at'];
-      return createdAt != null && isToday(DateTime.parse(createdAt));
+      if (createdAt != null) {
+        final parsedDate = DateTime.parse(createdAt);
+        return isToday(parsedDate);
+      }
+      return false; // Return false if created_at is null
     }).toList();
 
     List yesterdayNotifications = notifications.where((notification) {
       final createdAt = notification['created_at'];
-      return createdAt != null && isYesterday(DateTime.parse(createdAt));
+      if (createdAt != null) {
+        final parsedDate = DateTime.parse(createdAt);
+        return isYesterday(parsedDate);
+      }
+      return false; // Return false if created_at is null
     }).toList();
-
     List olderNotifications = notifications.where((notification) {
       final createdAt = notification['created_at'];
-      return createdAt != null &&
-          !isToday(DateTime.parse(createdAt)) &&
-          !isYesterday(DateTime.parse(createdAt));
+      if (createdAt != null) {
+        final parsedDate = DateTime.parse(createdAt);
+        return !isToday(parsedDate) && !isYesterday(parsedDate);
+      }
+      return false; // Return false if created_at is null
     }).toList();
 
     return SafeArea(
@@ -174,7 +208,7 @@ class NotificationScreenState extends State<NotificationScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 20,
+          fontSize: 25,
           fontWeight: FontWeight.bold,
           color: Color.fromRGBO(160, 62, 6, 1),
         ),
@@ -232,29 +266,30 @@ class NotificationScreenState extends State<NotificationScreen> {
                 ],
               ),
               const SizedBox(height: primarySizedBox),
-
               // Notification Body
               RichText(
                 text: TextSpan(
                   children: [
-                    // Leading text
+                    // Determine the initial message based on appointment status
                     TextSpan(
-                      text: notification['appointment_notif_type'] == 'Upcoming'
-                          ? 'You have an'
-                          : 'Your appointment with',
+                      text: (() {
+                        if (notification['appointment_notif_type'] ==
+                            'Upcoming') {
+                          return 'You have an';
+                        } else {
+                          return 'Your appointment with';
+                        }
+                      })(),
                       style: const TextStyle(
-                        fontSize: regularText,
-                        color: Colors.black,
-                      ),
+                          fontSize: regularText, color: Colors.black),
                     ),
                     if (notification['appointment_notif_type'] ==
                         'Upcoming') ...[
                       const TextSpan(
-                        text: ' upcoming ',
+                        text:
+                            ' upcoming ', // Null check for 'establishment_name'
                         style: TextStyle(
-                          fontSize: regularText,
-                          color: primaryColor,
-                        ),
+                            fontSize: regularText, color: primaryColor),
                       ),
                       const TextSpan(
                         text: 'appointment with',
@@ -264,8 +299,7 @@ class NotificationScreenState extends State<NotificationScreen> {
                         ),
                       ),
                       TextSpan(
-                        text:
-                            ' ${notification['establishment_name'] ?? "unknown"}',
+                        text: ' ${notification['pet_owner_name'] ?? "unknown"}',
                         style: const TextStyle(
                           fontSize: regularText,
                           color: primaryColor,
@@ -275,8 +309,7 @@ class NotificationScreenState extends State<NotificationScreen> {
                     if (notification['appointment_notif_type'] !=
                         'Upcoming') ...[
                       TextSpan(
-                        text:
-                            ' ${notification['establishment_name'] ?? "unknown"}',
+                        text: ' ${notification['pet_owner_name'] ?? "unknown"}',
                         style: const TextStyle(
                           fontSize: regularText,
                           color: primaryColor,
