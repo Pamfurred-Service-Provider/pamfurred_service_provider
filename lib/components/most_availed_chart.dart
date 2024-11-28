@@ -32,7 +32,7 @@ class MostAvailedChartState extends State<MostAvailedChart> {
       if (data == null || data.isEmpty) {
         setState(() {
           isLoading = false;
-          noDataForYear = true; // No data found
+          noDataForYear = true; // No data for the selected year
         });
         return;
       }
@@ -231,7 +231,7 @@ class MostAvailedChartState extends State<MostAvailedChart> {
                 ),
                 gridData: FlGridData(
                   show: true,
-                  checkToShowHorizontalLine: (value) => value % 2 == 0,
+                  checkToShowHorizontalLine: (value) => value % 5 == 0,
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: Colors.grey.withOpacity(0.3),
                     strokeWidth: 1,
