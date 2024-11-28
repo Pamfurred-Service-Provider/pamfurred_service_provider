@@ -101,18 +101,22 @@ class RealtimeService {
         body = 'You have an upcoming appointment with $petOwnerFullname.';
       }
 
-      // Display the notification
-      const AndroidNotificationDetails androidDetails =
+// Display the notification with expanded text support
+      final AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
         'appointment_channel',
         'Appointment Notifications',
         channelDescription: 'Notifications for upcoming appointments',
         importance: Importance.high,
         priority: Priority.max,
+        styleInformation: BigTextStyleInformation(
+          body, // Full text for expanded view
+          contentTitle: title, // Title shown in expanded view
+        ),
         icon: 'pamfurred',
       );
 
-      const NotificationDetails details =
+      final NotificationDetails details =
           NotificationDetails(android: androidDetails);
 
       final uniqueNotificationId =
