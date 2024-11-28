@@ -3,25 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RevenueChart extends StatefulWidget {
-  final List<double> data;
-  final List<String> labels;
   final int year;
 
-  const RevenueChart(
-      {super.key,
-      required this.data,
-      required this.labels,
-      required this.year});
+  const RevenueChart({Key? key, required this.year, required List data, required List labels}) : super(key: key);
 
   @override
   RevenueChartState createState() => RevenueChartState();
 }
 
 class RevenueChartState extends State<RevenueChart> {
-  final Color normalColor = const Color(0xFFD14C01).withOpacity(0.7);
+  final Color barColor = const Color(0xFFD14C01).withOpacity(0.7);
   bool isLoading = true;
-  List<double> data = [];
-  List<String> labels = [];
+  List<double> data = List.filled(12, 0.0);
+  List<String> labels = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -36,58 +33,28 @@ class RevenueChartState extends State<RevenueChart> {
       }
 
       final userId = userSession.user.id;
-      print('Fetching revenue data for user: $userId');
+      final response = await Supabase.instance.client.rpc(
+        'get_monthly_revenue1',
+        params: {'user_sp_id': userId},
+      );
 
-      // Fetch the monthly revenue data for the logged-in user and selected year
-      final response = await Supabase.instance.client
-          .rpc('get_monthly_revenue', params: {'user_sp_id': userId});
-      print('Raw response from get_monthly_revenue: $response');
-
-      // if (response != null) {
-      //   throw Exception('Error fetching revenue data: ');
-      // }
-      // if (response == null || !(response is List)) {
-      //   throw Exception('Invalid response data');
-      // }
-      // final revenueData = List<Map<String, dynamic>>.from(response);
-      if (response == null) {
-        throw Exception('No response from get_monthly_revenue RPC');
+      if (response == null || response is! List) {
+        throw Exception('Invalid response data');
       }
 
       final revenueData = List<Map<String, dynamic>>.from(response);
 
-      print('Revenue data: $revenueData');
-      // Filter the data by the selected year and prepare it for display
-      final filteredData = revenueData
-          .where((data) => data['revenue_year'] == year.toString())
-          .toList();
-      print('Filtered data for year $year: $filteredData'); // Log filtered data
-
-      // final revenueList = filteredData.map((data) {
-      //   return {
-      //     'month': data['revenue_month'] as String,
-      //     'value': data['total_revenue'] as double
-      //   };
-      // }).toList();
-      if (filteredData.isEmpty) {
-        setState(() {
-          data = [];
-          labels = [];
-          isLoading = false;
-        });
-        return;
+      // Preparing data based on the month number
+      final chartData = List<double>.filled(12, 0.0);
+      for (var item in revenueData) {
+        final monthNumber = (item['month_number'] as int) - 1;
+        if (item['revenue_year'] == year.toString() && monthNumber >= 0 && monthNumber < 12) {
+          chartData[monthNumber] = (item['total_revenue'] as num).toDouble();
+        }
       }
-
-      // Prepare data for the chart
-      final chartData = filteredData
-          .map((e) => (e['total_revenue'] as num).toDouble())
-          .toList();
-      final chartLabels =
-          filteredData.map((e) => e['revenue_month'] as String).toList();
 
       setState(() {
         data = chartData;
-        labels = chartLabels;
         isLoading = false;
       });
     } catch (e) {
@@ -99,15 +66,14 @@ class RevenueChartState extends State<RevenueChart> {
       }
       setState(() {
         isLoading = false;
-        data = [];
-        labels = [];
       });
     }
   }
 
   Widget _bottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontSize: 10);
-    String text = widget.labels[value.toInt() % widget.labels.length];
+    final index = value.toInt();
+    String text = index >= 0 && index < labels.length ? labels[index] : '';
     return SideTitleWidget(
       axisSide: meta.axisSide,
       child: Text(text, style: style),
@@ -123,21 +89,15 @@ class RevenueChartState extends State<RevenueChart> {
   }
 
   List<BarChartGroupData> _getData() {
-    double barsWidth = 17.0;
-    double barsSpace = 5.0;
-
-    return widget.data.asMap().entries.map((entry) {
-      int index = entry.key;
-      double value = entry.value;
-
+    return data.asMap().entries.map((entry) {
       return BarChartGroupData(
-        x: index,
-        barsSpace: barsSpace,
+        x: entry.key,
+        barsSpace: 4,
         barRods: [
           BarChartRodData(
-            toY: value,
-            color: normalColor,
-            width: barsWidth,
+            toY: entry.value,
+            color: barColor,
+            width: 16,
             borderRadius: BorderRadius.circular(0),
           ),
         ],
@@ -147,48 +107,53 @@ class RevenueChartState extends State<RevenueChart> {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1.66,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 16),
-        child: BarChart(
-          BarChartData(
-            alignment: BarChartAlignment.center,
-            barTouchData: BarTouchData(enabled: false),
-            titlesData: FlTitlesData(
-              show: true,
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 28,
-                    getTitlesWidget: _bottomTitles),
-              ),
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 40,
-                  getTitlesWidget: _leftTitles,
-                  interval: 1000,
+    return isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : AspectRatio(
+            aspectRatio: 1.66,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.center,
+                  barTouchData: BarTouchData(enabled: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        getTitlesWidget: _bottomTitles,
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: _leftTitles,
+                        interval: 1000,
+                      ),
+                    ),
+                    topTitles:
+                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    checkToShowHorizontalLine: (value) => value % 10 == 0,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Colors.grey.withOpacity(0.1),
+                      strokeWidth: 2,
+                    ),
+                    drawVerticalLine: false,
+                  ),
+                  borderData: FlBorderData(show: false),
+                  groupsSpace: 15,
+                  barGroups: _getData(),
                 ),
               ),
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-            gridData: FlGridData(
-              show: true,
-              checkToShowHorizontalLine: (value) => value % 10 == 0,
-              getDrawingHorizontalLine: (value) =>
-                  FlLine(color: Colors.grey.withOpacity(0.1), strokeWidth: 2),
-              drawVerticalLine: false,
-            ),
-            borderData: FlBorderData(show: false),
-            groupsSpace: 15,
-            barGroups: _getData(),
-          ),
-        ),
-      ),
-    );
+          );
   }
 }
