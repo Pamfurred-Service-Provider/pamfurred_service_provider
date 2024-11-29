@@ -65,22 +65,29 @@ class ServicesScreenState extends State<ServicesScreen> {
         .eq('sp_id', serviceProviderId);
 
     // Check if the response contains data
+    print("Supabase response: $response"); // Debugging line to inspect the data
+
     if (response is List && response.isNotEmpty) {
       setState(() {
         services = List<Map<String, dynamic>>.from(response.map((item) {
           final service = item['service'];
           return {
             'id': item['service_id'],
-            'name': item['service']['service_name'] ?? 'Unknown',
-            'price': item['service']['price'] ?? 0,
-            'image': item['service']['service_image'] ??
-                'assets/images/default_image.png', // Default image path
-            'type': (service['service_type'] as List).join(', '),
-            'pets': (service['pet_type'] as List).join(', '),
-            'size': item['service']['size'] ?? 'Unknown',
-            'minWeight': item['service']['min_weight'] ?? 0,
-            'maxWeight': item['service']['max_weight'] ?? 0,
-            'availability': (service['availability_status'] is bool)
+            'name': service['service_name'] ?? 'Unknown',
+            'price': service['price'] ?? 0,
+            'image':
+                service['service_image'] ?? 'assets/images/default_image.png',
+            'type': service['service_type'] != null &&
+                    service['service_type'] is List
+                ? (service['service_type'] as List).join(', ')
+                : service['service_type'] ?? 'Unknown',
+            'pets': service['pet_type'] != null && service['pet_type'] is List
+                ? (service['pet_type'] as List).join(', ')
+                : service['pet_type'] ?? 'Unknown',
+            'size': service['size'] ?? 'Unknown',
+            'minWeight': service['min_weight'] ?? 0,
+            'maxWeight': service['max_weight'] ?? 0,
+            'availability': service['availability_status'] is bool
                 ? (service['availability_status'] ? 'Available' : 'Unavailable')
                 : service['availability_status'] ?? 'Unknown',
           };
