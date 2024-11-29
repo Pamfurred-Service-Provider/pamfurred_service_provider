@@ -138,20 +138,40 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         minWeight: minWeight,
         maxWeight: maxWeight,
         petsToCater: petsList,
-        serviceProviderId: widget.serviceProviderId, // petsToCater:
+        serviceProviderId: widget.serviceProviderId,
         serviceType: serviceType ?? '',
         availability: availability == 'Available',
         imageUrl: imageUrl,
-        serviceCategory: widget.serviceCategory, // Pass service category here
+        serviceCategory: widget.serviceCategory,
       );
 
       if (serviceId != null) {
-        Navigator.pop(context, 'Service Added');
+        // Create a Map<String, dynamic> with service details to pass back
+        final newService = {
+          'service_id': serviceId,
+          'name': nameController.text,
+          'price': price,
+          'size': sizes,
+          'minWeight': minWeight,
+          'maxWeight': maxWeight,
+          'petsToCater': petsList,
+          'serviceType': serviceType,
+          'availability': availability,
+          'imageUrl': imageUrl,
+          'serviceCategory': widget.serviceCategory,
+        };
+
+        Navigator.pop(context, newService); // Pass back the Map
       } else {
-        throw Exception('Failed to add service, please try again');
+        throw Exception('Failed to add service, please try again.');
       }
+    } catch (e) {
+      // Handle errors and show a Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
     } finally {
-      setState(() => _isLoading = false);
+      setState(() => _isLoading = false); // Stop loading
     }
   }
 
