@@ -49,11 +49,10 @@ class RealtimeService {
           .from('notification')
           .select('notification_id')
           .eq('appointment_id', appointmentId)
-          .eq('appointment_notif_type',
-              notificationType) // Corrected column name
+          .eq('appointment_notif_type', notificationType)
           .maybeSingle();
 
-      // Create a new notification in the 'notification' table
+// Create a new notification in the 'notification' table
       await _client.from('notification').insert({
         'appointment_id': appointmentId,
         'appointment_notif_type': notificationType, // Corrected column name
@@ -64,9 +63,8 @@ class RealtimeService {
       final appointment = await _client
           .from('appointment')
           .select('pet_owner_id')
-          .eq('appointment_id',
-              appointmentId) // Use the correct appointmentId to filter
-          .single();
+          .eq('appointment_id', appointmentId)
+          .maybeSingle();
 
       if (appointment == null) {
         print('Appointment details not found.');
@@ -89,8 +87,7 @@ class RealtimeService {
       }
 
       final petOwnerFullname =
-          petOwnerDetails['first_name'] + ' ' + petOwnerDetails['last_name'] ??
-              'Unknown User';
+          '${petOwnerDetails['first_name']} ${petOwnerDetails['last_name']}'; // Use string interpolation for clarity
 
       // Prepare notification content
       String title = '';
@@ -101,7 +98,7 @@ class RealtimeService {
         body = 'You have an upcoming appointment with $petOwnerFullname.';
       }
 
-// Display the notification with expanded text support
+      // Display the notification with expanded text support
       final AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
         'appointment_channel',
@@ -131,7 +128,7 @@ class RealtimeService {
 
       print('Notification sent for appointment ID $appointmentId');
     } catch (e) {
-      print('Skipped because it exist');
+      print('Error creating notification: $e');
     }
   }
 }
