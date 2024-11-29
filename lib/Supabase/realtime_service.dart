@@ -23,12 +23,13 @@ class RealtimeService {
           .select()
           .eq('appointment_id', appointmentId)
           .single();
+      print("it exists: $response");
 
       if (response != null) {
-        return false; // Consider it as not existing if there's an error
+        return true; // Consider it as not existing if there's an error
       }
 
-      return response != null; // Return true if data is found
+      return response != null;
     }
 
     // Listen to real-time updates in the 'appointment' table
@@ -48,8 +49,7 @@ class RealtimeService {
               bool exists = await doesAppointmentExist(appointmentId);
 
               if (exists) {
-                return;
-              } else {
+                // if true
                 // Process 'Upcoming' status
                 if (appointmentStatus == 'Upcoming') {
                   await _createNotification(appointmentId, 'Upcoming');
@@ -86,9 +86,6 @@ class RealtimeService {
       await supabase.from('notification').insert({
         'appointment_id': appointmentId,
         'appointment_notif_type': 'Upcoming', // Or any type based on your logic
-        'created_at': DateTime.now()
-            .toUtc()
-            .toIso8601String(), // Current timestamp in UTC
       });
 
       // Fetch the appointment details first
