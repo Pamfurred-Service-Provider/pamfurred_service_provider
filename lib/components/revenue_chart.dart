@@ -5,7 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class RevenueChart extends StatefulWidget {
   final int year;
 
-  const RevenueChart({Key? key, required this.year, required List data, required List labels}) : super(key: key);
+  const RevenueChart(
+      {Key? key, required this.year, required List data, required List labels})
+      : super(key: key);
 
   @override
   RevenueChartState createState() => RevenueChartState();
@@ -16,7 +18,18 @@ class RevenueChartState extends State<RevenueChart> {
   bool isLoading = true;
   List<double> data = List.filled(12, 0.0);
   List<String> labels = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
   ];
 
   @override
@@ -48,7 +61,9 @@ class RevenueChartState extends State<RevenueChart> {
       final chartData = List<double>.filled(12, 0.0);
       for (var item in revenueData) {
         final monthNumber = (item['month_number'] as int) - 1;
-        if (item['revenue_year'] == year.toString() && monthNumber >= 0 && monthNumber < 12) {
+        if (item['revenue_year'] == year.toString() &&
+            monthNumber >= 0 &&
+            monthNumber < 12) {
           chartData[monthNumber] = (item['total_revenue'] as num).toDouble();
         }
       }
@@ -134,10 +149,10 @@ class RevenueChartState extends State<RevenueChart> {
                         interval: 1000,
                       ),
                     ),
-                    topTitles:
-                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles:
-                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
                   gridData: FlGridData(
                     show: true,

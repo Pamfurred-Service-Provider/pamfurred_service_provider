@@ -34,7 +34,10 @@ class SatisfactionRatingChartState extends State<SatisfactionRatingChart> {
 
   Widget buildLegend() {
     double total = widget.data.fold(0, (sum, value) => sum + value['value']);
-
+    if (total == 0) {
+      // Avoid division by zero and show 0% if total is 0
+      total = 1; // This ensures no division by zero
+    }
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: 10.0,

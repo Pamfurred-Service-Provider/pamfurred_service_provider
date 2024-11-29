@@ -71,6 +71,16 @@ class NotificationScreenState extends State<NotificationScreen> {
         isLoading = false;
       });
     }
+    // print(
+    //     "Today's notifications: ${notifications.where((notification) => isToday(DateTime.parse(notification['created_at']))).toList()}");
+    // print(
+    //     "Yesterday's notifications: ${notifications.where((notification) => isYesterday(DateTime.parse(notification['created_at']))).toList()}");
+    // print(
+    //     "Earlier notifications: ${notifications.where((notification) => !isToday(DateTime.parse(notification['created_at'])) && !isYesterday(DateTime.parse(notification['created_at']))).toList()}");
+    // // print('Notifications: $notifications');
+    // // print('Created at: ${notifications[0]['created_at']}');
+    // // print(
+    // //     'Time elapsed: ${timeElapsed(DateTime.parse(notifications[0]['created_at']))}');
   }
 
   // Function to check if the date is today
@@ -93,7 +103,8 @@ class NotificationScreenState extends State<NotificationScreen> {
   // Function to compute time elapsed since the notification was created
   String timeElapsed(DateTime notificationArrival) {
     final now = DateTime.now();
-    final difference = now.difference(notificationArrival);
+    final notificationTime = notificationArrival.toLocal(); // Ensure it's local
+    final difference = now.difference(notificationTime);
 
     final minutes = difference.inMinutes;
     final hours = difference.inHours;
@@ -102,25 +113,13 @@ class NotificationScreenState extends State<NotificationScreen> {
     final months = (days / 30).floor();
     final years = (days / 365).floor();
 
-    String result;
-
-    if (minutes < 1) {
-      result = "Just now";
-    } else if (minutes < 60) {
-      result = "$minutes minute${minutes == 1 ? '' : 's'} ago";
-    } else if (hours < 24) {
-      result = "$hours hour${hours == 1 ? '' : 's'} ago";
-    } else if (days < 7) {
-      result = "$days day${days == 1 ? '' : 's'} ago";
-    } else if (days < 30) {
-      result = "$weeks week${weeks == 1 ? '' : 's'} ago";
-    } else if (days < 365) {
-      result = "$months month${months == 1 ? '' : 's'} ago";
-    } else {
-      result = "$years year${years == 1 ? '' : 's'} ago";
-    }
-
-    return result;
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return "$minutes minute${minutes == 1 ? '' : 's'} ago";
+    if (hours < 24) return "$hours hour${hours == 1 ? '' : 's'} ago";
+    if (days < 7) return "$days day${days == 1 ? '' : 's'} ago";
+    if (days < 30) return "$weeks week${weeks == 1 ? '' : 's'} ago";
+    if (days < 365) return "$months month${months == 1 ? '' : 's'} ago";
+    return "$years year${years == 1 ? '' : 's'} ago";
   }
 
   @override
@@ -136,6 +135,10 @@ class NotificationScreenState extends State<NotificationScreen> {
       }
       return false; // Return false if created_at is null
     }).toList();
+    print("Rendering Today Section: ${todayNotifications.length}");
+    for (var notif in todayNotifications) {
+      print("Rendering Today's Notification: ${notif['notification_id']}");
+    }
 
     List yesterdayNotifications = notifications.where((notification) {
       final createdAt = notification['created_at'];
@@ -145,6 +148,7 @@ class NotificationScreenState extends State<NotificationScreen> {
       }
       return false; // Return false if created_at is null
     }).toList();
+    print("Rendering Yesterday Section: ${yesterdayNotifications.length}");
     List olderNotifications = notifications.where((notification) {
       final createdAt = notification['created_at'];
       if (createdAt != null) {
@@ -153,7 +157,7 @@ class NotificationScreenState extends State<NotificationScreen> {
       }
       return false; // Return false if created_at is null
     }).toList();
-
+    print("Rendering Older Section: ${olderNotifications.length}");
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -220,9 +224,15 @@ class NotificationScreenState extends State<NotificationScreen> {
   Widget _buildNotificationCard(int index, Map<String, dynamic> notification) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          isTapped[index] = !isTapped[index];
-        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NotificationDetailsScreen(
+              notification: notification,
+              appointment: notification, // Pass the notification data
+            ),
+          ),
+        );
       },
       child: Card(
         color: isTapped[index]
