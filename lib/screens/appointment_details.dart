@@ -36,13 +36,6 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         .update({'appointment_status': status}).eq(
             'appointment_id', widget.appointment['appointment_id']);
 
-    await supabase.from('notification').insert({
-      'appointment_id': widget.appointment['appointment_id'],
-      'appointment_notif_type': status, // Or any type based on your logic
-      'created_at':
-          DateTime.now().toUtc().toIso8601String(), // Current timestamp in UTC
-    });
-
     if (response != null) {
       print('Error updating appointment status: ${response.message}');
     } else {

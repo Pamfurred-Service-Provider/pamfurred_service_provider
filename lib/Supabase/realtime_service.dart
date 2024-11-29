@@ -16,6 +16,21 @@ class RealtimeService {
 
     final loggedInServiceProviderId = currentUser.id;
 
+    // Function to check if an appointment exists in the database
+    Future<bool> doesAppointmentExist(String appointmentId) async {
+      final response = await _client
+          .from('appointment')
+          .select()
+          .eq('appointment_id', appointmentId)
+          .single();
+
+      if (response != null) {
+        return false; // Consider it as not existing if there's an error
+      }
+
+      return response != null; // Return true if data is found
+    }
+
     // Listen to real-time updates in the 'appointment' table
     _client
         .from('appointment')
@@ -29,9 +44,16 @@ class RealtimeService {
 
               if (appointmentId == null) continue;
 
-              // Process 'Upcoming' status
-              if (appointmentStatus == 'Upcoming') {
-                await _createNotification(appointmentId, 'Upcoming');
+              // Check if the appointment ID exists in the database
+              bool exists = await doesAppointmentExist(appointmentId);
+
+              if (exists) {
+                return;
+              } else {
+                // Process 'Upcoming' status
+                if (appointmentStatus == 'Upcoming') {
+                  await _createNotification(appointmentId, 'Upcoming');
+                }
               }
             }
           },
@@ -45,12 +67,29 @@ class RealtimeService {
       String appointmentId, String notificationType) async {
     try {
       // Check if a notification already exists for this appointment and type
-      await _client
+      final existingNotification = await _client
           .from('notification')
           .select('notification_id')
           .eq('appointment_id', appointmentId)
           .eq('appointment_notif_type', notificationType)
-          .single();
+          .maybeSingle(); // maybeSingle returns null if no row is found
+
+      // If a notification already exists, skip sending it
+      if (existingNotification != null) {
+        print(
+            'Notification already exists for appointment ID $appointmentId and type $notificationType');
+        return;
+      }
+
+      final supabase = Supabase.instance.client;
+
+      await supabase.from('notification').insert({
+        'appointment_id': appointmentId,
+        'appointment_notif_type': 'Upcoming', // Or any type based on your logic
+        'created_at': DateTime.now()
+            .toUtc()
+            .toIso8601String(), // Current timestamp in UTC
+      });
 
       // Fetch the appointment details first
       final appointment = await _client
@@ -72,7 +111,7 @@ class RealtimeService {
               'user_id',
               appointment[
                   'pet_owner_id']) // Match the pet_owner_id with user_id
-          .single(); // Ensures only one row is returned
+          .single();
 
       if (petOwnerDetails == null) {
         print('Pet owner details not found.');
@@ -80,7 +119,7 @@ class RealtimeService {
       }
 
       final petOwnerFullname =
-          '${petOwnerDetails['first_name']} ${petOwnerDetails['last_name']}'; // Use string interpolation for clarity
+          '${petOwnerDetails['first_name']} ${petOwnerDetails['last_name']}';
 
       // Prepare notification content
       String title = '';
