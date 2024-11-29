@@ -3,8 +3,13 @@ import 'package:service_provider/screens/update_service.dart';
 
 class ServiceDetails extends StatefulWidget {
   final Map<String, dynamic> serviceData;
+  final String serviceProviderId; // Added required serviceProviderId
 
-  const ServiceDetails({super.key, required this.serviceData});
+  const ServiceDetails({
+    super.key,
+    required this.serviceData,
+    required this.serviceProviderId,
+  });
 
   @override
   ServiceDetailsState createState() => ServiceDetailsState();
@@ -23,49 +28,62 @@ class ServiceDetailsState extends State<ServiceDetails> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(serviceData['name']),
+        title: Text(serviceData['name'] ?? 'Service Details'),
         actions: [
           TextButton(
             onPressed: () async {
-              // Navigate to UpdateServiceScreen for editing
-              final updatedService = await Navigator.push<Map<String, dynamic>>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => UpdateServiceScreen(
-                    serviceData: serviceData,
-                    serviceProviderId: widget.serviceData['serviceProviderId'],
+              print("Navigating to UpdateServiceScreen with serviceData: ${widget.serviceData}");
+              print("Navigating to UpdateServiceScreen with serviceProviderId: ${widget.serviceProviderId}");
+
+              // Extract required parameters from widget and serviceData
+              final String serviceProviderId = widget.serviceProviderId; // Directly from widget
+              final String serviceId = serviceData['id'] ?? '';
+              final String serviceCategory = serviceData['category'] ?? '';
+
+              // Validate serviceProviderId and serviceId before navigating
+              if (serviceProviderId.isEmpty) {
+                print("Error: Service Provider ID is null or empty");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Service Provider ID is missing. Unable to proceed.")),
+                );
+                return;
+              }
+              if (serviceId.isEmpty) {
+                print("Error: Service ID is null or empty");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Service ID is missing. Unable to proceed.")),
+                );
+                return;
+              }
+
+              try {
+                // Navigate to UpdateServiceScreen with required parameters
+                final updatedService = await Navigator.push<Map<String, dynamic>>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UpdateServiceScreen(
+                      serviceProviderId: serviceProviderId, // Pass serviceProviderId
+                      serviceId: serviceId, // Pass serviceId
+                      serviceCategory: serviceCategory, // Pass serviceCategory
+                      serviceData: widget.serviceData, // Pass serviceData
+                    ),
                   ),
-                ),
-              );
-              print("Updated Service: $updatedService"); // Debug print
-              // Update the UI with the edited data
-              if (updatedService != null) {
-                setState(() {
-                  serviceData = {
-                    'name': updatedService['name'] ?? serviceData['name'] ?? '',
-                    'image':
-                        updatedService['image'] ?? serviceData['image'] ?? '',
-                    'pets': updatedService['pets'] ?? serviceData['pets'] ?? '',
-                    'availability': updatedService['availability'] ??
-                        serviceData['availability'] ??
-                        '',
-                    'size': updatedService['size'] ?? serviceData['size'] ?? '',
-                    'minWeight': updatedService['minWeight']?.toString() ??
-                        serviceData['minWeight']?.toString() ??
-                        'N/A',
-                    'maxWeight': updatedService['maxWeight']?.toString() ??
-                        serviceData['maxWeight']?.toString() ??
-                        'N/A',
-                    'price': updatedService['price']?.toString() ??
-                        serviceData['price']?.toString() ??
-                        'N/A',
-                    'type': updatedService['type'] ??
-                        serviceData['type'] ??
-                        'No Service Type Info',
-                    // Add any other fields that are part of your service data
-                  };
-                });
-                print("Updated Service Data: $serviceData"); // Debug print
+                );
+
+                // Check if updatedService is not null and update serviceData
+                if (updatedService != null) {
+                  print("Updated Service: $updatedService");
+                  setState(() {
+                    serviceData = updatedService; // Update the service data with the new values
+                  });
+                } else {
+                  print("No updates made to the service.");
+                }
+              } catch (e) {
+                print("Error navigating to UpdateServiceScreen: $e");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed to navigate: $e")),
+                );
               }
             },
             child: const Text(
@@ -85,9 +103,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
                       serviceData['image'] is String &&
                       serviceData['image'] != '' &&
                       Uri.tryParse(serviceData['image']) != null &&
-                      Uri.tryParse(serviceData['image']) != null &&
-                      Uri.tryParse(serviceData['image'])?.hasAbsolutePath ==
-                          true
+                      Uri.tryParse(serviceData['image'])!.hasAbsolutePath
                   ? Image.network(
                       serviceData['image'],
                       width: 200,
@@ -102,7 +118,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              (serviceData['pets'] ?? 'No Specified Pet Type'),
+              serviceData['pets'] ?? 'No Specified Pet Type',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -111,7 +127,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['availability'] ?? '',
+              serviceData['availability'] ?? 'Unknown',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -120,7 +136,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['size'] ?? '',
+              serviceData['size'] ?? 'Unknown',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -138,7 +154,7 @@ class ServiceDetailsState extends State<ServiceDetails> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Text(
-              serviceData['price']?.toString() ?? '',
+              serviceData['price']?.toString() ?? 'Unknown',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 10),
