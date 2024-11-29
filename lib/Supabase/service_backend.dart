@@ -70,42 +70,27 @@ class ServiceBackend {
     return publicUrl;
   }
 
-  Future<void> updateService({
-    required String serviceId,
-    required Map<String, dynamic> updatedData,
-  }) async {
-    if (updatedData['size'] != null) {
+Future<void> updateService({
+  required String serviceId,
+  required Map<String, dynamic> updatedData,
+}) async {
+  try {
+    // Add size validation if provided in updated data
+    if (updatedData.containsKey('size')) {
       const allowedSizes = ['S', 'M', 'L', 'XL', 'N/A'];
       if (!allowedSizes.contains(updatedData['size'])) {
-        throw Exception(
-            "Invalid size value: ${updatedData['size']}. Allowed values are $allowedSizes");
+        throw Exception("Invalid size value.");
       }
     }
 
-    try {
-      await _supabase.from('service').update({
-        if (updatedData.containsKey('name'))
-          'service_name': updatedData['name'],
-        if (updatedData.containsKey('price')) 'price': updatedData['price'],
-        if (updatedData.containsKey('size')) 'size': updatedData['size'],
-        if (updatedData.containsKey('minWeight'))
-          'min_weight': updatedData['minWeight'],
-        if (updatedData.containsKey('maxWeight'))
-          'max_weight': updatedData['maxWeight'],
-        if (updatedData.containsKey('pets')) 'pet_type': updatedData['pets'],
-        if (updatedData.containsKey('type'))
-          'service_type': updatedData['type'],
-        if (updatedData.containsKey('availability'))
-          'availability_status': updatedData['availability'],
-        if (updatedData.containsKey('image'))
-          'service_image': updatedData['image'],
-        if (updatedData.containsKey('serviceCategory'))
-          'service_category': updatedData['serviceCategory'],
-      }).eq('service_id', serviceId);
-    } catch (error) {
-      throw Exception("Failed to update service: $error");
-    }
+    await _supabase
+        .from('service')
+        .update(updatedData)
+        .eq('service_id', serviceId);
+  } catch (error) {
+    throw Exception("Failed to update service: $error");
   }
+}
 
   Future<List<dynamic>> getServiceProviderServices({
     required String serviceProviderId,

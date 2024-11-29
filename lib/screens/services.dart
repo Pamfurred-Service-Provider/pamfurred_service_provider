@@ -142,16 +142,23 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-  void _navigateToServiceDetails(
-      BuildContext context, Map<String, dynamic> serviceData) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ServiceDetails(
-            serviceData: serviceData), // Passing the service data
-      ),
-    );
+void _navigateToServiceDetails(
+    BuildContext context, Map<String, dynamic> serviceData) {
+  if (serviceProviderId == null) {
+    print("Error: Service Provider ID is null. Unable to navigate.");
+    return; // Prevent navigation if the ID is missing
   }
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ServiceDetails(
+        serviceProviderId: serviceProviderId!, // Safely pass the non-null value
+        serviceData: serviceData, // Passing the service data
+      ),
+    ),
+  );
+}
 // Delete service from Supabase
 
   Future<void> _deleteService(Map<String, dynamic> service) async {
