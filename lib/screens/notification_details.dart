@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 class NotificationDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> appointment;
 
-  const NotificationDetailsScreen({super.key, required this.appointment});
+  const NotificationDetailsScreen(
+      {super.key,
+      required this.appointment,
+      required Map<String, dynamic> notification});
 
   @override
   Widget build(BuildContext context) {
+    print("Appointment details: $appointment");
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointment Details"),
@@ -17,7 +21,7 @@ class NotificationDetailsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(18.0),
             child: Center(
               child: Text(
-                "Appointment ID: " '${appointment['id']}',
+                "Appointment ID: " '${appointment['appointment_id']}',
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
@@ -33,7 +37,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['status']}',
+                  '${appointment['appointment_notif_type']}',
                   style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -45,7 +49,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['date']}',
+                  '${appointment['appointment_date']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -54,7 +58,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['time']}',
+                  '${appointment['appointment_time']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -63,7 +67,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${appointment['name']}',
+                  '${appointment['pet_owner_name']}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 10),
@@ -140,7 +144,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '₱ ${appointment['total']}',
+                      '₱ ${appointment['total_amount']}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
