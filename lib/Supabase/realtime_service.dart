@@ -50,14 +50,14 @@ class RealtimeService {
           .select('notification_id')
           .eq('appointment_id', appointmentId)
           .eq('appointment_notif_type', notificationType)
-          .maybeSingle();
+          .single();
 
       // Fetch the appointment details first
       final appointment = await _client
           .from('appointment')
           .select('pet_owner_id')
           .eq('appointment_id', appointmentId)
-          .maybeSingle();
+          .single();
 
       if (appointment == null) {
         print('Appointment details not found.');
