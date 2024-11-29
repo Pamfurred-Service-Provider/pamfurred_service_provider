@@ -52,13 +52,6 @@ class RealtimeService {
           .eq('appointment_notif_type', notificationType)
           .maybeSingle();
 
-// Create a new notification in the 'notification' table
-      await _client.from('notification').insert({
-        'appointment_id': appointmentId,
-        'appointment_notif_type': notificationType, // Corrected column name
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
       // Fetch the appointment details first
       final appointment = await _client
           .from('appointment')
