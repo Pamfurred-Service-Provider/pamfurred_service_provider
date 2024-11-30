@@ -74,6 +74,27 @@ class SatisfactionRatingChartState extends State<SatisfactionRatingChart> {
 
   @override
   Widget build(BuildContext context) {
+    // Check if all values in the data are zero
+    bool allValuesZero = widget.data.every((item) => item['value'] == 0.0);
+
+    if (allValuesZero) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              vertical: 20.0), // Adjust the padding as needed
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Oops! No satisfaction rating to share yet!",
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
         AspectRatio(
