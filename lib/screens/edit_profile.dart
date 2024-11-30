@@ -102,7 +102,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   }
 
 // Function to update the availability of a specific date
-  void _updateAvailability(DateTime date, bool isFullyBooked) {
+  void updateAvailability(DateTime date, bool isFullyBooked) {
     setState(() {
       _availability[date] = isFullyBooked;
     });
@@ -442,9 +442,13 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => AppointmentTimeSlotScreen(
-                        selectedDate: selectedDay,
-                        spId: userId,
-                      ),
+                          selectedDate: selectedDay,
+                          spId: userId,
+                          onFullyBookedChanged: (isFullyBooked) {
+                            setState(() {
+                              _availability[selectedDay] = isFullyBooked;
+                            });
+                          }),
                     ),
                   );
                 }

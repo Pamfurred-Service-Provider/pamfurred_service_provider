@@ -8,10 +8,14 @@ import 'package:service_provider/Widgets/confirmation_dialog.dart';
 class AppointmentTimeSlotScreen extends StatefulWidget {
   final DateTime selectedDate;
   final String spId; // Service Provider ID to identify the user in Supabase
+  final onFullyBookedChanged;
 
-  const AppointmentTimeSlotScreen(
-      {super.key, required this.selectedDate, required this.spId});
-
+  const AppointmentTimeSlotScreen({
+    super.key,
+    required this.selectedDate,
+    required this.spId,
+    required this.onFullyBookedChanged,
+  });
   @override
   State<AppointmentTimeSlotScreen> createState() =>
       AppointmentTimeSlotScreenState();
@@ -72,6 +76,9 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   }
 
   Future<void> _toggleFullyBooked() async {
+    setState(() {
+      isLoading = true;
+    });
     // Ensure at least one time slot is added before marking as fully booked
     if (timeSlots.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -95,6 +102,9 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
         .maybeSingle();
 
     if (availabilityResponse == null) {
+      setState(() {
+        isFullyBooked = true;
+      });
       // No availability exists for this date, so create a new record
       await supabase.from('service_provider_availability').insert({
         'sp_id': widget.spId,
@@ -349,7 +359,10 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
 
                             // If the user confirmed, toggle the fully booked status
                             if (confirmed == true) {
-                              await _toggleFullyBooked(); // Mark as fully booked
+                              await _toggleFullyBooked();
+                              widget.onFullyBookedChanged(
+                                  true); // Mark as fully booked
+                              Navigator.pop(context);
                             }
                           },
                     child: const Text("Mark as Fully Booked"),
