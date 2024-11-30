@@ -23,7 +23,6 @@ class RealtimeService {
           .select()
           .eq('appointment_id', appointmentId)
           .single();
-      print("it exists: $response");
 
       if (response != null) {
         return true; // Consider it as not existing if there's an error
@@ -76,8 +75,8 @@ class RealtimeService {
 
       // If a notification already exists, skip sending it
       if (existingNotification != null) {
-        print(
-            'Notification already exists for appointment ID $appointmentId and type $notificationType');
+        // print(
+        //     'Notification already exists for appointment ID $appointmentId and type $notificationType');
         return;
       }
 
@@ -156,7 +155,7 @@ class RealtimeService {
         details,
       );
 
-      print('Notification sent for appointment ID $appointmentId');
+      // print('Notification sent for appointment ID $appointmentId');
     } catch (e) {
       print('Error creating notification: $e');
     }
