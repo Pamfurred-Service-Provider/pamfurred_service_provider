@@ -190,7 +190,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
         'pets_to_cater': petsList,
         'package_provider_id': widget.packageProviderId,
         'package_type': packageType ?? '',
-        'availability': availability == 'Available',
+        'availability': availability,
         'inclusion_list': inclusions,
         'image_url': imageUrl,
         'package_category': widget.packageCategory,
