@@ -219,7 +219,7 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     final response = await supabase
         .from('serviceprovider_package')
-        .select('*, package!inner(package_name, price, package_image)')
+        .select('*, package!inner(package_name, price, package_image, size, availability_status, inclusions, pet_type, min_weight, max_weight, package_type)')
         .eq('sp_id', serviceProviderId)
         .filter('package.package_category', 'cs', '["$category"]');
 
@@ -227,12 +227,22 @@ class ServicesScreenState extends State<ServicesScreen> {
     if (response is List && response.isNotEmpty) {
       setState(() {
         packages = List<Map<String, dynamic>>.from(response.map((item) {
+          final package = item['package'];
           return {
-            'id': item['package_id'],
+            'id': item['package_id'], // Ensure you fetch the id
             'name': item['package']['package_name'] ?? 'Unknown',
             'price': item['package']['price'] ?? 0,
             'image': item['package']['package_image'] ??
-                'assets/images/default_image.png', // Default image path
+                'assets/images/default_image.png',
+            'sizes': item['package']['size'] ?? 0,
+            'availability': (package['availability_status'] is bool)
+                ? (package['availability_status'] ? 'Available' : 'Unavailable')
+                : package['availability_status'] ?? 'Unknown',
+            'inclusions': (package['inclusions'] as List).join(', '),
+            'pets': (package['pet_type'] as List).join(', '),
+            'minWeight': item['package']['min_weight'] ?? 0,
+            'maxWeight': item['package']['max_weight'] ?? 0,
+            'type': (package['package_type'] as List).join(', '),
           };
         }));
       });
@@ -260,7 +270,7 @@ class ServicesScreenState extends State<ServicesScreen> {
     });
   }
 
-  void _navigateToAddPackage() async {
+  void _navigateToAddPackage(BuildContext context) async {
     if (serviceProviderId != null) {
       // Check if it's non-null
       final newPackage = await Navigator.push(
@@ -442,19 +452,33 @@ class ServicesScreenState extends State<ServicesScreen> {
     final response = await supabase
         .from('serviceprovider_service')
         .select(
-            '*, service!inner(service_name, price, service_image, service_category)')
+            '*, service!inner(service_name, price, service_image, service_category, service_type, pet_type, size, min_weight, max_weight, availability_status)')
         .eq('sp_id', serviceProviderId)
         .filter('service.service_category', 'cs', '["$category"]');
 
     if (response is List && response.isNotEmpty) {
       setState(() {
         services = List<Map<String, dynamic>>.from(response.map((item) {
+          final service = item['service'];
           return {
             'id': item['service_id'],
-            'name': item['service']['service_name'] ?? 'Unknown',
-            'price': item['service']['price'] ?? 0,
-            'image': item['service']['service_image'] ??
-                'assets/images/default_image.png', // Default image path
+            'name': service['service_name'] ?? 'Unknown',
+            'price': service['price'] ?? 0,
+            'image':
+                service['service_image'] ?? 'assets/images/default_image.png',
+            'type': service['service_type'] != null &&
+                    service['service_type'] is List
+                ? (service['service_type'] as List).join(', ')
+                : service['service_type'] ?? 'Unknown',
+            'pets': service['pet_type'] != null && service['pet_type'] is List
+                ? (service['pet_type'] as List).join(', ')
+                : service['pet_type'] ?? 'Unknown',
+            'size': service['size'] ?? 'Unknown',
+            'minWeight': service['min_weight'] ?? 0,
+            'maxWeight': service['max_weight'] ?? 0,
+            'availability': service['availability_status'] is bool
+                ? (service['availability_status'] ? 'Available' : 'Unavailable')
+                : service['availability_status'] ?? 'Unknown',
           };
         }));
       });
@@ -682,7 +706,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                 if (selectedCategory != 'All services')
                   Center(
                     child: ElevatedButton(
-                      onPressed: () => _navigateToAddPackage(),
+                      onPressed: () => _navigateToAddPackage(context),
                       child: const Text('Add a package'),
                     ),
                   ),
