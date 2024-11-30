@@ -229,7 +229,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                     image: DecorationImage(
                       image: _image == null
                           ? const AssetImage(
-                              'assets/assets/pamfurred_secondarylogo.png')
+                              'assets/pamfurred_secondarylogo.png')
                           : FileImage(_image!) as ImageProvider,
                       fit: BoxFit.cover, // Cover the container
                     ),

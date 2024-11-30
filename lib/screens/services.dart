@@ -260,7 +260,7 @@ class ServicesScreenState extends State<ServicesScreen> {
     });
   }
 
-  void _navigateToAddPackage(BuildContext context) async {
+  void _navigateToAddPackage() async {
     if (serviceProviderId != null) {
       // Check if it's non-null
       final newPackage = await Navigator.push(
@@ -682,7 +682,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                 if (selectedCategory != 'All services')
                   Center(
                     child: ElevatedButton(
-                      onPressed: () => _navigateToAddPackage(context),
+                      onPressed: () => _navigateToAddPackage(),
                       child: const Text('Add a package'),
                     ),
                   ),
