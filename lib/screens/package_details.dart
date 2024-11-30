@@ -4,7 +4,7 @@ import 'package:service_provider/screens/add_package.dart';
 class PackageDetails extends StatefulWidget {
   final Map<String, dynamic> packageData;
 
-  const PackageDetails({super.key, required this.packageData});
+  const PackageDetails({super.key, required this.packageData, required String serviceProviderId});
 
   @override
   PackageDetailsState createState() => PackageDetailsState();

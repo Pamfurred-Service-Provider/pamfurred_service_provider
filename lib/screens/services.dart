@@ -121,44 +121,43 @@ class ServicesScreenState extends State<ServicesScreen> {
     });
   }
 
-  void _navigateToAddService(BuildContext context) async {
-    if (serviceProviderId != null) {
-      // Check if it's non-null
-      final newService = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AddServiceScreen(
-            serviceProviderId: serviceProviderId!, // Pass non-null value
-            serviceCategory: selectedCategory, serviceData: {},
-          ),
+  void _navigateToAddService() async {
+    final newService = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddServiceScreen(
+          serviceProviderId: serviceProviderId!,
+          serviceCategory: selectedCategory,
+          serviceData: {}, // Pass additional data if needed
         ),
-      );
+      ),
+    );
 
-      if (newService != null) {
-        await _createService(newService);
-      }
-    } else {
-      showErrorDialog(context, "Service Provider ID is missing.");
+    if (newService != null) {
+      setState(() {
+        services.add(newService);
+      });
     }
   }
 
-void _navigateToServiceDetails(
-    BuildContext context, Map<String, dynamic> serviceData) {
-  if (serviceProviderId == null) {
-    print("Error: Service Provider ID is null. Unable to navigate.");
-    return; // Prevent navigation if the ID is missing
-  }
+  void _navigateToServiceDetails(
+      BuildContext context, Map<String, dynamic> serviceData) {
+    if (serviceProviderId == null) {
+      print("Error: Service Provider ID is null. Unable to navigate.");
+      return; // Prevent navigation if the ID is missing
+    }
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => ServiceDetails(
-        serviceProviderId: serviceProviderId!, // Safely pass the non-null value
-        serviceData: serviceData, // Passing the service data
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ServiceDetails(
+          serviceProviderId:
+              serviceProviderId!, // Safely pass the non-null value
+          serviceData: serviceData, // Passing the service data
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 // Delete service from Supabase
 
   Future<void> _deleteService(Map<String, dynamic> service) async {
@@ -261,7 +260,7 @@ void _navigateToServiceDetails(
     });
   }
 
-  void _navigateToAddPackage(BuildContext context) async {
+  void _navigateToAddPackage() async {
     if (serviceProviderId != null) {
       // Check if it's non-null
       final newPackage = await Navigator.push(
@@ -270,12 +269,15 @@ void _navigateToServiceDetails(
           builder: (context) => AddPackageScreen(
             packageProviderId: serviceProviderId!, // Pass non-null value
             packageCategory: selectedCategory,
+            packageData: {},
           ),
         ),
       );
 
       if (newPackage != null) {
-        await _createPackage(newPackage);
+        setState(() {
+          packages.add(newPackage);
+        });
       }
     } else {
       showErrorDialog(context, "Service Provider ID is missing.");
@@ -284,17 +286,23 @@ void _navigateToServiceDetails(
 
   void _navigateToPackageDetails(
       BuildContext context, Map<String, dynamic> packageData) {
+    if (serviceProviderId == null) {
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PackageDetails(packageData: packageData),
+        builder: (context) => PackageDetails(
+            serviceProviderId: serviceProviderId!, packageData: packageData),
       ),
     );
   }
 
   Future<void> _fetchPackages() async {
     if (serviceProviderId == null) return;
-
+    setState(() {
+      isLoading = true;
+    });
     final response = await supabase
         .from('serviceprovider_package')
         .select(
@@ -327,6 +335,9 @@ void _navigateToServiceDetails(
         packages = [];
       });
     }
+    setState(() {
+      isLoading = false;
+    });
   }
 
 // Delete package from Supabase
@@ -601,7 +612,7 @@ void _navigateToServiceDetails(
                 if (selectedCategory != 'All services')
                   Center(
                     child: ElevatedButton(
-                      onPressed: () => _navigateToAddService(context),
+                      onPressed: () => _navigateToAddService(),
                       child: const Text('Add a service'),
                     ),
                   ),
@@ -671,7 +682,7 @@ void _navigateToServiceDetails(
                 if (selectedCategory != 'All services')
                   Center(
                     child: ElevatedButton(
-                      onPressed: () => _navigateToAddPackage(context),
+                      onPressed: () => _navigateToAddPackage(),
                       child: const Text('Add a package'),
                     ),
                   ),

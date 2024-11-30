@@ -9,7 +9,10 @@ class AddPackageScreen extends StatefulWidget {
   final String? packageCategory;
 
   const AddPackageScreen(
-      {super.key, required this.packageProviderId, this.packageCategory});
+      {super.key,
+      required this.packageProviderId,
+      this.packageCategory,
+      required Map packageData});
 
   @override
   State<AddPackageScreen> createState() => _AddPackageScreenState();
@@ -177,7 +180,22 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       packageCategory: widget.packageCategory, // Pass package category here
     );
     if (packageId != null) {
-      Navigator.pop(context, 'package Added');
+      final newPackage = {
+        'package_id': packageId,
+        'name': nameController.text,
+        'price': price,
+        'size': sizes ?? '',
+        'min_weight': minWeight,
+        'max_weight': maxWeight,
+        'pets_to_cater': petsList,
+        'package_provider_id': widget.packageProviderId,
+        'package_type': packageType ?? '',
+        'availability': availability,
+        'inclusion_list': inclusions,
+        'image_url': imageUrl,
+        'package_category': widget.packageCategory,
+      };
+      Navigator.pop(context, newPackage);
     } else {
       throw Exception('Failed to add package: packageId is null');
     }
@@ -211,7 +229,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                     image: DecorationImage(
                       image: _image == null
                           ? const AssetImage(
-                              'assets/assets/pamfurred_secondarylogo.png')
+                              'assets/pamfurred_secondarylogo.png')
                           : FileImage(_image!) as ImageProvider,
                       fit: BoxFit.cover, // Cover the container
                     ),

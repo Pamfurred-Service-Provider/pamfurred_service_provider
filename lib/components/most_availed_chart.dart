@@ -6,7 +6,9 @@ class MostAvailedChart extends StatefulWidget {
 
   const MostAvailedChart({
     Key? key,
-    required this.fetchData, required List<Map<String, dynamic>> data, required List<String> labels,
+    required this.fetchData,
+    required List<Map<String, dynamic>> data,
+    required List<String> labels,
   }) : super(key: key);
 
   @override
@@ -39,19 +41,22 @@ class MostAvailedChartState extends State<MostAvailedChart> {
 
       Map<String, List<int>> serviceCountsMap = {};
       for (var record in data) {
-        final serviceName = (record['service_name'] as String?)?.trim().toLowerCase();
+        final serviceName =
+            (record['service_name'] as String?)?.trim().toLowerCase();
         final month = record['month'] as int?;
         final count = record['count'] as int?;
 
         if (serviceName != null && month != null && count != null) {
-          serviceCountsMap.putIfAbsent(serviceName, () => List<int>.filled(12, 0));
+          serviceCountsMap.putIfAbsent(
+              serviceName, () => List<int>.filled(12, 0));
           if (month >= 1 && month <= 12) {
             serviceCountsMap[serviceName]![month - 1] += count;
           }
         }
       }
 
-      List<Map<String, dynamic>> processedData = serviceCountsMap.entries.map((entry) {
+      List<Map<String, dynamic>> processedData =
+          serviceCountsMap.entries.map((entry) {
         return {
           'service': entry.key,
           'counts': entry.value,
@@ -75,11 +80,22 @@ class MostAvailedChartState extends State<MostAvailedChart> {
 
   void initializeServiceColors() {
     List<Color> colors = [
-      const Color.fromRGBO(255, 87, 51, 1),
-      const Color.fromRGBO(255, 215, 0, 1),
-      const Color.fromRGBO(76, 175, 80, 1),
+      Color.fromRGBO(255, 87, 51, 1),
+      Color.fromRGBO(255, 215, 0, 1),
+      Color.fromRGBO(76, 175, 80, 1),
       Colors.indigo.withOpacity(0.7),
       Colors.purple.withOpacity(0.7),
+      Colors.orange.withOpacity(0.7),
+      Colors.blue.withOpacity(0.7),
+      Colors.grey.withOpacity(0.7),
+      Colors.green.withOpacity(0.7),
+      Colors.red.withOpacity(0.7),
+      Colors.purple.withOpacity(0.7),
+      Colors.teal.withOpacity(0.7),
+      Colors.pink.withOpacity(0.7),
+      Colors.yellow.withOpacity(0.7),
+      Colors.indigo.withOpacity(0.7),
+      Colors.brown.withOpacity(0.7),
     ];
     int colorIndex = 0;
     for (var service in chartData) {
@@ -123,7 +139,18 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   Widget _bottomTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontSize: 10);
     List<String> monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     String text = monthNames[value.toInt() % monthNames.length];
     return SideTitleWidget(
@@ -156,7 +183,8 @@ class MostAvailedChartState extends State<MostAvailedChart> {
             ? counts[monthIndex] ?? 0
             : 0;
 
-        final serviceColor = serviceColors[serviceName] ?? Colors.black.withOpacity(0.7);
+        final serviceColor =
+            serviceColors[serviceName] ?? Colors.black.withOpacity(0.7);
 
         stackItems.add(
           BarChartRodStackItem(
@@ -226,8 +254,10 @@ class MostAvailedChartState extends State<MostAvailedChart> {
                       interval: 50,
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                 ),
                 gridData: FlGridData(
                   show: true,
