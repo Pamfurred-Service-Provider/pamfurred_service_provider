@@ -86,6 +86,7 @@ class RealtimeService {
       await supabase.from('notification').insert({
         'appointment_id': appointmentId,
         'appointment_notif_type': 'Upcoming', // Or any type based on your logic
+        'created_at': DateTime.now().toUtc().toIso8601String(),
       });
 
       // Fetch the appointment details first
