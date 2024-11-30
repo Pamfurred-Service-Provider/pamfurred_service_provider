@@ -182,7 +182,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     if (packageId != null) {
       final newPackage = {
         'package_id': packageId,
-        'package_name': nameController.text,
+        'name': nameController.text,
         'price': price,
         'size': sizes ?? '',
         'min_weight': minWeight,
