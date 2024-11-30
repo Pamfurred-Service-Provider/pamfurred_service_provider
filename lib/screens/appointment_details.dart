@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:service_provider/components/date_and_time_formatter.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
+import 'package:service_provider/components/date_and_time_formatter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../main.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> appointment;
@@ -46,42 +43,6 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     }
   }
 
-  Future<void> showAppointmentNotification(
-      String petOwnerName, String appointmentId, String status) async {
-    // Prepare the full message body for expanded view
-    String expandedBody = 'Your appointment with $petOwnerName is "$status".';
-
-    // Android notification details with expandable text
-    final AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-      'pamfurred_appointment_channel', // Channel ID
-      'Pamfurred Appointment Notifications', // Channel Name
-      channelDescription: 'Notification updates for Pamfurred appointments',
-      importance: Importance.max,
-      priority: Priority.high,
-      icon: 'pamfurred',
-      showWhen: true,
-      styleInformation: BigTextStyleInformation(
-        expandedBody, // Full text for expanded view
-        contentTitle: 'Appointment $status!', // Title in expanded view
-      ),
-    );
-
-    NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-    );
-
-    // Show the notification
-    await flutterLocalNotificationsPlugin.show(
-      0, // Notification ID
-      'Appointment $status!', // Notification Title
-      'Your appointment with $petOwnerName is "$status".', // Notification Body
-      notificationDetails,
-      payload:
-          appointmentId, // Include appointment_id to handle the notification click
-    );
-  }
-
   // Show confirmation dialog before changing status
   Future<void> showConfirmationDialog(String newStatus) async {
     final confirm = await ConfirmationDialog.show(
@@ -89,17 +50,12 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       title: 'Confirm Status',
       content: 'Are you sure you want to change the status to $newStatus?',
     );
-    String fullName = widget.appointment['pet_owner_first_name'] +
-        ' ' +
-        widget.appointment['pet_owner_last_name'];
 
     // If the user confirms, update the status
     if (confirm == true) {
       setState(() {
         dropdownValue = newStatus;
       });
-      await showAppointmentNotification(
-          fullName, widget.appointment['appointment_id'], newStatus);
       await updateAppointmentStatus(newStatus);
     }
   }
