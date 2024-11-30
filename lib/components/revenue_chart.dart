@@ -146,7 +146,7 @@ class RevenueChartState extends State<RevenueChart> {
                         showTitles: true,
                         reservedSize: 40,
                         getTitlesWidget: _leftTitles,
-                        interval: 1000,
+                        // interval: 1000,
                       ),
                     ),
                     topTitles: const AxisTitles(
@@ -156,7 +156,7 @@ class RevenueChartState extends State<RevenueChart> {
                   ),
                   gridData: FlGridData(
                     show: true,
-                    checkToShowHorizontalLine: (value) => value % 10 == 0,
+                    // checkToShowHorizontalLine: (value) => value % 10 == 0,
                     getDrawingHorizontalLine: (value) => FlLine(
                       color: Colors.grey.withOpacity(0.1),
                       strokeWidth: 2,
