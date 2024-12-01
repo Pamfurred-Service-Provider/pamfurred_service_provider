@@ -238,6 +238,19 @@ class HomeScreenState extends State<HomeScreen> {
       selectedYear = year;
     });
     _fetchAnnualAppointments(); // Refresh data for the selected year
+  }
+
+  void updateMonthlyRevenueForYear(int year) {
+    setState(() {
+      selectedYear = year;
+    });
+    _fetchAnnualAppointments(); // Refresh data for the selected year
+  }
+
+  void updateMostAvailedServicesForYear(int year) {
+    setState(() {
+      selectedYear = year;
+    });
     _fetchMostAvailedServices();
   }
 
@@ -337,7 +350,7 @@ class HomeScreenState extends State<HomeScreen> {
                       YearDropdown(
                         years: years,
                         initialYear: selectedYear,
-                        onYearChanged: updateDataForYear,
+                        onYearChanged: updateMonthlyRevenueForYear,
                       ),
                     ],
                   ),
@@ -376,7 +389,7 @@ class HomeScreenState extends State<HomeScreen> {
                       YearDropdown(
                         years: years,
                         initialYear: selectedYear,
-                        onYearChanged: updateDataForYear,
+                        onYearChanged: updateMostAvailedServicesForYear,
                       ),
                     ],
                   ),
