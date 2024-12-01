@@ -28,6 +28,8 @@ class _UpdateServiceScreenState extends State<UpdateServiceScreen> {
   final TextEditingController minWeightController = TextEditingController();
   final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
+  final TextEditingController sizeController = TextEditingController();
+
 
   File? _image;
   final ImagePicker _picker = ImagePicker();
@@ -42,10 +44,11 @@ void initState() {
   print(widget.serviceData['service_name']);
   
   // Pre-fill fields with data from serviceData
-  nameController.text = widget.serviceData['service_name']?.toString() ?? '';
+  nameController.text = widget.serviceData['name']?.toString() ?? '';
   priceController.text = widget.serviceData['price']?.toString() ?? '';
-  minWeightController.text = widget.serviceData['min_weight']?.toString() ?? '';
-  maxWeightController.text = widget.serviceData['max_weight']?.toString() ?? '';
+  minWeightController.text = widget.serviceData['minWeight']?.toString() ?? '';
+  maxWeightController.text = widget.serviceData['maxWeight']?.toString() ?? '';
+  sizeController.text = widget.serviceData['size']?.toString() ?? '';
   petsList = (widget.serviceData['pets_to_cater'] as List<dynamic>?)
       ?.map((e) => e.toString())
       .toList() ?? [];
@@ -303,32 +306,26 @@ void initState() {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text("Pet Size", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          InputDecorator(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+
+
+            const SizedBox(height: 10),
+            const Text(
+              "Pet Size",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: sizes,
-                onChanged: (newValue) {
-                  setState(() {
-                    sizes = newValue;
-                  });
-                },
-                items: sizeOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+            TextField(
+              controller: sizeController,
+              decoration: const InputDecoration(
+                hintText: "Enter Pet Size",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
               ),
+              textCapitalization: TextCapitalization.words, // Capitalizes user input
             ),
-          ),
+
+
           const SizedBox(height: 20),
           const Text("Price", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           TextField(
