@@ -25,7 +25,7 @@ class HomeScreenState extends State<HomeScreen> {
       GlobalKey<MostAvailedChartState>();
 
   String serviceProviderName = '';
-  int selectedYear = years.first;
+  int selectedYear = DateTime.now().year;
   int selectedIndex = 0;
   List<double> annualAppointmentData =
       List.filled(12, 0.0); // Changed to List<double>
@@ -248,7 +248,6 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       selectedYear = year;
     });
-    // _fetchAnnualAppointments(); // Refresh data for the selected year
   }
 
   void updateMostAvailedServicesForYear(int year) {
