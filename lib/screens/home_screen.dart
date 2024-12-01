@@ -139,14 +139,15 @@ class HomeScreenState extends State<HomeScreen> {
           'count': service['count'],
         };
       }).toList();
+      print("Go: $processedServices");
 
-      return processedServices;
+      return processedServices; // Return the processed services list
     } catch (e) {
       print("Error fetching most availed services: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load most availed services')),
       );
-      return [];
+      return []; // Return an empty list in case of error
     }
   }
 
@@ -244,14 +245,20 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       selectedYear = year;
     });
-    _fetchAnnualAppointments(); // Refresh data for the selected year
+    // _fetchAnnualAppointments(); // Refresh data for the selected year
   }
 
   void updateMostAvailedServicesForYear(int year) {
     setState(() {
       selectedYear = year;
     });
-    _fetchMostAvailedServices();
+    // Make sure to call _fetchMostAvailedServices and set the fetched data
+    _fetchMostAvailedServices().then((services) {
+      setState(() {
+        mostAvailedData =
+            services; // Update mostAvailedData with fetched services
+      });
+    });
   }
 
   void navigateToScreen(String title) {
