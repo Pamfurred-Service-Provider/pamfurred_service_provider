@@ -11,7 +11,7 @@ import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/components/year_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final List<int> years = [2024, 2025];
+final List<int> years = [2024, 2025, 2026, 2027, 2028];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required Null Function() onCardTap});
@@ -21,6 +21,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<MostAvailedChartState> mostAvailedChartKey =
+      GlobalKey<MostAvailedChartState>();
+
   String serviceProviderName = '';
   int selectedYear = years.first;
   int selectedIndex = 0;
@@ -252,13 +255,10 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       selectedYear = year;
     });
-    // Make sure to call _fetchMostAvailedServices and set the fetched data
-    _fetchMostAvailedServices().then((services) {
-      setState(() {
-        mostAvailedData =
-            services; // Update mostAvailedData with fetched services
-      });
-    });
+
+    // Call refreshData on the MostAvailedChartState
+    mostAvailedChartKey.currentState
+        ?.refreshData(); // Use the key to access the state
   }
 
   void navigateToScreen(String title) {
@@ -402,17 +402,8 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
                   MostAvailedChart(
+                    key: mostAvailedChartKey,
                     fetchData: _fetchMostAvailedServices,
-                    data: mostAvailedData.isEmpty
-                        ? [
-                            {
-                              'service_name': 'No data available',
-                              'month': '',
-                              'count': 0
-                            }
-                          ]
-                        : mostAvailedData,
-                    labels: mostAvailedData.isEmpty ? [''] : labels,
                   ),
                 ],
               ),
