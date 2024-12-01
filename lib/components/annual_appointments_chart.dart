@@ -73,11 +73,13 @@ class AnnualAppointmentsChartState extends State<AnnualAppointmentsChart> {
                   showTitles: true,
                   reservedSize: 40,
                   getTitlesWidget: _leftTitles,
-                  interval: 50, // Y-axis labels at increments of 50
+                  // interval: 50, // Y-axis labels at increments of 50
                 ),
               ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             gridData: FlGridData(
               show: true,
