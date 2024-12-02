@@ -300,14 +300,13 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<double> data =
-        revenueData.map((e) => e['value'] as double).toList();
-    final List<String> labels =
-        revenueData.map((e) => e['month'] as String).toList();
+    revenueData.map((e) => e['value'] as double).toList();
+    revenueData.map((e) => e['month'] as String).toList();
 
     return Scaffold(
       appBar: HomeAppBar(context),
       body: ListView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(16.0),
         children: [
           Column(
