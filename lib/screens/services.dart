@@ -80,7 +80,7 @@ class ServicesScreenState extends State<ServicesScreen> {
               ''')
           .eq('sp_id', serviceProviderId);
 
-      print("Supabase response: $response"); // Debugging response
+      print("Supabase response FOR FETCHSERVICES: $response"); // Debugging response
 
       if (response is List && response.isNotEmpty) {
         setState(() {
@@ -251,44 +251,45 @@ class ServicesScreenState extends State<ServicesScreen> {
 Future<void> _fetchPackagesByCategory(String category) async {
   if (serviceProviderId == null) return;
 
-  // Fetch packages from the service_package_with_category view
+  setState(() {
+    packages = []; // Reset packages to avoid stale data
+    isLoading = true;
+  });
+
   final response = await supabase
       .from('service_package_with_category')
       .select('*')
-      .eq('sp_id', serviceProviderId) // Filter by service provider ID
-      .eq('category_name', category); // Filter by category name
+      .eq('sp_id', serviceProviderId)
+      .eq('category_name', category);
 
-  // Debug output to check the response
   print("Response from service_package_with_category: $response");
 
-  // Check if the response is valid and contains data
   if (response is List && response.isNotEmpty) {
-    print("Fetched packages: ${response.length} packages found.");
     setState(() {
       packages = List<Map<String, dynamic>>.from(response.map((item) {
+        print("Fetched Packages: ${response.length} services found.");
         return {
           'id': item['serviceprovider_package_id'],
           'name': item['package_name'] ?? 'Unknown',
           'price': item['price'] ?? 0,
-          'image': item['package_image'] ??
-              'assets/images/default_image.png',
+          'image': item['package_image'] ?? 'assets/images/default_image.png',
           'sizes': item['size'] ?? 'Unknown',
-          'availability': (item['availability_status'] is bool)
-              ? (item['availability_status'] ? 'Available' : 'Unavailable')
-              : item['availability_status'] ?? 'Unknown',
-          'inclusions': (item['inclusions'] as List).join(', '),
-          'pets': (item['pet_type'] as List).join(', '),
+          'availability': item['availability_status'] == true
+              ? 'Available'
+              : 'Unavailable',
+          'pets': (item['pet_type'] as List?)?.join(', ') ?? 'Unknown',
           'minWeight': item['min_weight'] ?? 0,
           'maxWeight': item['max_weight'] ?? 0,
-          'type': (item['package_type'] as List).join(', '),
+          'type': (item['package_type'] as List?)?.join(', ') ?? 'Unknown',
           'category': item['category_name'] ?? 'Unknown',
         };
       }));
+      isLoading = false;
     });
   } else {
-    print("No packages found or the response is empty.");
     setState(() {
       packages = [];
+      isLoading = false;
     });
   }
 }
@@ -370,7 +371,6 @@ Future<void> _fetchPackages() async {
               package_name,
               package_image,
               availability_status,
-              package_category,
               package_type,
               pet_type
             ),
@@ -380,7 +380,7 @@ Future<void> _fetchPackages() async {
             ''')
         .eq('sp_id', serviceProviderId);
 
-    print("Supabase response: $response"); // Debugging output
+    print("Supabase response for fetchPackages: $response"); // Debugging output
 
     if (response is List && response.isNotEmpty) {
       setState(() {
@@ -734,6 +734,7 @@ Future<void> _fetchPackages() async {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
+
                 const SizedBox(height: 20),
                 // Display added packages in card form
                 packages.isEmpty
@@ -775,6 +776,7 @@ Future<void> _fetchPackages() async {
                                     ),
                                   ),
                                 ),
+                                
                                 // The trash icon outside the card
                                 IconButton(
                                   icon: const Icon(Icons.delete,
