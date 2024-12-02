@@ -1,6 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/screens/appointments.dart';
+
 // 1) appBar
 // Primarily for homescreen
+// Custom AppBar for other screens
+AppBar HomeAppBar(BuildContext context) {
+  return AppBar(
+    shape: const Border.symmetric(horizontal: BorderSide(width: 0.1)),
+    backgroundColor: Colors.white,
+    toolbarHeight: 85, // Adjusted height
+    leadingWidth: 190, // Increased leading width
+    leading: Padding(
+      padding: const EdgeInsets.fromLTRB(15, 35, 0, 10),
+      child: Image.asset(
+        'assets/pamfurred_logo.png', // Replace with your logo asset
+        fit: BoxFit.fill,
+      ),
+    ),
+    actions: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(10, 35, 15, 10),
+        child: IconButton(
+          icon: const Icon(Icons.calendar_month, size: 30),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      const AppointmentsScreen(initialTabIndex: 0)),
+            );
+          },
+        ),
+      ),
+    ],
+  );
+}
 
 // 2) customAppBar
 // This is for other screens but homescreen
