@@ -29,6 +29,9 @@ class _UpdateServiceScreenState extends State<UpdateServiceScreen> {
   final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
   final TextEditingController sizeController = TextEditingController();
+  final TextEditingController availabilityController = TextEditingController();
+  final TextEditingController serviceTypeController = TextEditingController();
+
 
 
   File? _image;
@@ -49,7 +52,9 @@ void initState() {
   minWeightController.text = widget.serviceData['minWeight']?.toString() ?? '';
   maxWeightController.text = widget.serviceData['maxWeight']?.toString() ?? '';
   sizeController.text = widget.serviceData['size']?.toString() ?? '';
-  petsList = (widget.serviceData['pets_to_cater'] as List<dynamic>?)
+  availabilityController.text = widget.serviceData['availability']?.toString() ?? '';
+  serviceTypeController.text= widget.serviceData['type']?.toString() ?? '';
+  petsList = (widget.serviceData['pet_type'] as List<dynamic>?)
       ?.map((e) => e.toString())
       .toList() ?? [];
 
@@ -141,7 +146,7 @@ void initState() {
         updatedData: {
           'service_name': nameController.text,
           'price': price,
-          'size': sizes,
+          'size': sizeController.text,
           'min_weight': minWeight,
           'max_weight': maxWeight,
           'pet_type': petsList,
@@ -280,8 +285,12 @@ void initState() {
             icon: const Icon(Icons.add),
             label: const Text("Add More"),
           ),
+
           const SizedBox(height: 10),
-          const Text("Availability", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            "Availability",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           InputDecorator(
             decoration: const InputDecoration(
               border: OutlineInputBorder(
@@ -291,10 +300,13 @@ void initState() {
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: availability,
+                value: availabilityController.text.isNotEmpty ? availabilityController.text : null,
                 onChanged: (newValue) {
                   setState(() {
-                    availability = newValue;
+                    if (newValue != null) {
+                      availabilityController.text = newValue; // Update the controller
+                      availability = newValue; // Update availability state
+                    }
                   });
                 },
                 items: ['Available', 'Unavailable'].map((String value) {
@@ -303,6 +315,7 @@ void initState() {
                     child: Text(value),
                   );
                 }).toList(),
+                hint: const Text("Select Availability"),
               ),
             ),
           ),
@@ -313,40 +326,62 @@ void initState() {
               "Pet Size",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            TextField(
-              controller: sizeController,
+            InputDecorator(
               decoration: const InputDecoration(
-                hintText: "Enter Pet Size",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(12.0)),
                 ),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
               ),
-              textCapitalization: TextCapitalization.words, // Capitalizes user input
-            ),
-
-
-          const SizedBox(height: 20),
-          const Text("Price", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          TextField(
-            controller: priceController,
-            decoration: const InputDecoration(
-              hintText: "Enter price",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: sizeController.text.isNotEmpty ? sizeController.text : null,
+                  onChanged: (newValue) {
+                    setState(() {
+                      if (newValue != null) {
+                        sizeController.text = newValue; // Update the controller
+                        sizes = newValue; // Update sizes
+                      }
+                    });
+                  },
+                  items: sizeOptions.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  hint: const Text("Select Pet Size"),
+                ),
               ),
             ),
-            keyboardType: TextInputType.number,
-          ),
+
+
+            const SizedBox(height: 20),
+            const Text("Price (PHP)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*')), // Allows only non-negative integers
+              ],
+              decoration: const InputDecoration(
+                prefixText: '₱ ',
+                hintText: "Enter price",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                ),
+              ),
+            ),
+          
           const SizedBox(height: 10),
-          const Text("Weight Range", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text("Weight (in Kilograms)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: minWeightController,
                   decoration: const InputDecoration(
-                    hintText: "Min weight",
+                    hintText: "Minimum weight",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     ),
@@ -359,7 +394,7 @@ void initState() {
                 child: TextField(
                   controller: maxWeightController,
                   decoration: const InputDecoration(
-                    hintText: "Max weight",
+                    hintText: "Maximum weight",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     ),
@@ -369,8 +404,12 @@ void initState() {
               ),
             ],
           ),
+
           const SizedBox(height: 20),
-          const Text("Service Type", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            "Service Type",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           InputDecorator(
             decoration: const InputDecoration(
               border: OutlineInputBorder(
@@ -380,10 +419,12 @@ void initState() {
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: serviceType,
+                value: serviceTypeController.text.isNotEmpty ? serviceTypeController.text : null,
                 onChanged: (newValue) {
                   setState(() {
-                    serviceType = newValue;
+                    if (newValue != null) {
+                      serviceTypeController.text = newValue; // Update the controller
+                    }
                   });
                 },
                 items: ['In-clinic', 'Home Service'].map((String value) {
@@ -392,9 +433,12 @@ void initState() {
                     child: Text(value),
                   );
                 }).toList(),
+                hint: const Text("Select Service Type"),
               ),
             ),
           ),
+
+
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _isLoading ? null : _updateService,
@@ -405,5 +449,6 @@ void initState() {
         ],
       ),
     );
+    
   }
 }

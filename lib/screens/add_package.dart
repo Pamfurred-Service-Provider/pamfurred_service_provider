@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/package_backend.dart';
+import 'package:service_provider/screens/services.dart';
 
 class AddPackageScreen extends StatefulWidget {
   final String packageProviderId;
@@ -140,66 +141,69 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     );
   }
 
-  void addPackage() async {
-    final backend = PackageBackend();
-    setState(() {
-      isLoading = true; // Start loading
-    });
+void addPackage() async {
+  final backend = PackageBackend();
+  setState(() {
+    isLoading = true; // Start loading
+  });
 
-    if (nameController.text.isEmpty ||
-        priceController.text.isEmpty ||
-        sizes == null ||
-        minWeightController.text.isEmpty ||
-        packageType == null ||
-        availability == null) {
-      throw Exception('Please fill all fields');
-    }
-    String imageUrl = '';
-    if (_image != null) {
-      imageUrl = await backend
-          .uploadImage(_image!); // Get the image URL after uploading
-      print("Uploaded image URL: $imageUrl"); // Debug print
-      print("Inclusions: $inclusionList");
-    }
-    int price = int.parse(priceController.text);
-    int minWeight = int.parse(minWeightController.text);
-    int maxWeight = int.parse(maxWeightController.text);
-
-    final packageId = await backend.addPackage(
-      packageName: nameController.text,
-      price: price,
-      size: sizes ?? '',
-      minWeight: minWeight,
-      maxWeight: maxWeight,
-      petsToCater: petsList,
-      packageProviderId: widget.packageProviderId, // petsToCater:
-      packageType: packageType ?? '',
-      availability: availability == 'Available',
-      inclusionList: inclusions,
-      imageUrl: imageUrl,
-      packageCategory: widget.packageCategory, // Pass package category here
-    );
-    if (packageId != null) {
-      final newPackage = {
-        'package_id': packageId,
-        'name': nameController.text,
-        'price': price,
-        'size': sizes ?? '',
-        'min_weight': minWeight,
-        'max_weight': maxWeight,
-        'pets_to_cater': petsList,
-        'package_provider_id': widget.packageProviderId,
-        'package_type': packageType ?? '',
-        'availability': availability,
-        'inclusion_list': inclusions,
-        'image_url': imageUrl,
-        'package_category': widget.packageCategory,
-      };
-      Navigator.pop(context, newPackage);
-    } else {
-      throw Exception('Failed to add package: packageId is null');
-    }
+  if (nameController.text.isEmpty ||
+      priceController.text.isEmpty ||
+      sizes == null ||
+      minWeightController.text.isEmpty ||
+      packageType == null ||
+      availability == null) {
+    throw Exception('Please fill all fields');
   }
+  String imageUrl = '';
+  if (_image != null) {
+    imageUrl = await backend.uploadImage(_image!); // Get the image URL after uploading
+    print("Uploaded image URL: $imageUrl"); // Debug print
+    print("Inclusions: $inclusionList");
+  }
+  int price = int.parse(priceController.text);
+  int minWeight = int.parse(minWeightController.text);
+  int maxWeight = int.parse(maxWeightController.text);
+
+  final packageId = await backend.addPackage(
+    packageName: nameController.text,
+    price: price,
+    size: sizes ?? '',
+    minWeight: minWeight,
+    maxWeight: maxWeight,
+    petsToCater: petsList,
+    packageProviderId: widget.packageProviderId, // petsToCater:
+    packageType: packageType ?? '',
+    availability: availability == 'Available',
+    inclusionList: inclusions,
+    imageUrl: imageUrl,
+    packageCategory: widget.packageCategory, // Pass package category here
+  );
+  if (packageId != null) {
+    final newPackage = {
+      'package_id': packageId,
+      'name': nameController.text,
+      'price': price,
+      'size': sizes ?? '',
+      'min_weight': minWeight,
+      'max_weight': maxWeight,
+      'pets_to_cater': petsList,
+      'package_provider_id': widget.packageProviderId,
+      'package_type': packageType ?? '',
+      'availability': availability,
+      'inclusion_list': inclusions,
+      'image_url': imageUrl,
+      'package_category': widget.packageCategory,
+    };
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ServicesScreen()),
+    );
+  } else {
+    throw Exception('Failed to add package: packageId is null');
+  }
+}
 
   @override
   Widget build(BuildContext context) {

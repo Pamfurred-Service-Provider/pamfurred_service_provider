@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/service_backend.dart';
+import 'package:service_provider/screens/services.dart';
 
 class AddServiceScreen extends StatefulWidget {
   final String serviceProviderId;
@@ -90,90 +91,68 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   String? availability = 'Available';
   String? sizes = 'S';
 
-  void _addService() async {
-    final backend = ServiceBackend();
-    setState(() {
-      _isLoading = true; // Start loading
-    });
-    int price, minWeight, maxWeight;
+void _addService() async {
+  final backend = ServiceBackend();
+  setState(() {
+    _isLoading = true; // Start loading
+  });
+  int price, minWeight, maxWeight;
 
-    try {
-      price = int.parse(priceController.text);
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-    try {
-      minWeight = int.parse(minWeightController.text);
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-    try {
-      if (nameController.text.isEmpty ||
-          priceController.text.isEmpty ||
-          sizes == null ||
-          minWeightController.text.isEmpty ||
-          serviceType == null ||
-          availability == null) {
-        throw Exception('Please fill all fields');
-      }
-      String imageUrl = '';
-      if (_image != null) {
-        imageUrl = await backend
-            .uploadImage(_image!); // Get the image URL after uploading
-      }
-      int price = int.parse(priceController.text);
-      int minWeight = int.parse(minWeightController.text);
-      int maxWeight = int.parse(maxWeightController.text);
+  try {
+    // Parse and validate input fields
+    price = int.parse(priceController.text);
+    minWeight = int.parse(minWeightController.text);
+    maxWeight = int.parse(maxWeightController.text);
 
-      final serviceId = await backend.addService(
-        serviceName: nameController.text,
-        price: price,
-        size: sizes ?? '',
-        minWeight: minWeight,
-        maxWeight: maxWeight,
-        petsToCater: petsList,
-        serviceProviderId: widget.serviceProviderId,
-        serviceType: serviceType ?? '',
-        availability: availability == 'Available',
-        imageUrl: imageUrl,
-        serviceCategory: widget.serviceCategory,
+    if (nameController.text.isEmpty ||
+        priceController.text.isEmpty ||
+        sizes == null ||
+        minWeightController.text.isEmpty ||
+        serviceType == null ||
+        availability == null) {
+      throw Exception('Please fill all fields');
+    }
+
+    // Upload image if provided
+    String imageUrl = '';
+    if (_image != null) {
+      imageUrl = await backend.uploadImage(_image!);
+    }
+
+    // Add service to backend
+    final serviceId = await backend.addService(
+      serviceName: nameController.text,
+      price: price,
+      size: sizes ?? '',
+      minWeight: minWeight,
+      maxWeight: maxWeight,
+      petsToCater: petsList,
+      serviceProviderId: widget.serviceProviderId,
+      serviceType: serviceType ?? '',
+      availability: availability == 'Available',
+      imageUrl: imageUrl,
+      serviceCategory: widget.serviceCategory,
+    );
+    
+
+    if (serviceId != null) {
+      // Navigate to ServicesScreen after successful service addition
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ServicesScreen()),
       );
-
-      if (serviceId != null) {
-        // Create a Map<String, dynamic> with service details to pass back
-        final newService = {
-          'service_id': serviceId,
-          'name': nameController.text,
-          'price': price,
-          'size': sizes,
-          'minWeight': minWeight,
-          'maxWeight': maxWeight,
-          'petsToCater': petsList,
-          'serviceType': serviceType,
-          'availability': availability,
-          'imageUrl': imageUrl,
-          'serviceCategory': widget.serviceCategory,
-        };
-
-        Navigator.pop(context, newService); // Pass back the Map
-      } else {
-        throw Exception('Failed to add service, please try again.');
-      }
-    } catch (e) {
-      // Handle errors and show a Snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    } finally {
-      setState(() => _isLoading = false); // Stop loading
+    } else {
+      throw Exception('Failed to add service, please try again.');
     }
+  } catch (e) {
+    // Handle errors and show a Snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.toString())),
+    );
+  } finally {
+    setState(() => _isLoading = false); // Stop loading
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -190,6 +169,19 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+                  // Information about asterisk fields
+        const Padding(
+          padding: EdgeInsets.only(bottom: 16.0),
+          child: Text(
+            'Fields marked with an asterisk (*) are required.',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 14.0,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
           Center(
             child: Stack(
               alignment: Alignment.center, // Center the overlay text
@@ -227,10 +219,24 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ],
             ),
           ),
+
+
+
           const SizedBox(height: 20),
-          const Text(
-            "Service Name",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              children: [
+                TextSpan(
+                  text: 'Service Name ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
           ),
           TextField(
             textCapitalization: TextCapitalization.words,
@@ -242,10 +248,24 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ),
             ),
           ),
+
+          
+          
           const SizedBox(height: 10),
-          const Text(
-            "Pet Specific Service",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              children: [
+                TextSpan(
+                  text: 'Pet Specific Service ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
           ),
           ...petsList.asMap().entries.map((entry) {
             int index = entry.key;
@@ -258,8 +278,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                     child: InputDecorator(
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -272,8 +291,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                           },
                           items: petType
                               .where((petCategory) =>
-                                  !petsList.contains(petCategory) ||
-                                  petCategory == pet)
+                                  !petsList.contains(petCategory) || petCategory == pet)
                               .map((petCategory) => DropdownMenuItem<String>(
                                     value: petCategory,
                                     child: Text(petCategory),
@@ -292,6 +310,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ),
             );
           }),
+
           const SizedBox(height: 20),
           // Add more pets button
           ElevatedButton.icon(
@@ -300,10 +319,22 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             label: const Text("Add More"),
             // label: const Text("Add Pet Category"),
           ),
+
           const SizedBox(height: 10),
-          const Text(
-            "Availability",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              children: [
+                TextSpan(
+                  text: 'Availability ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
           ),
           InputDecorator(
             decoration: const InputDecoration(
@@ -320,7 +351,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                     availability = newValue;
                   });
                 },
-                hint: const Text('Select Availability'),
+                hint: const Text('Select Availability *'),
                 items: ['Available', 'Unavailable'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -330,10 +361,23 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ),
             ),
           ),
+
+
           const SizedBox(height: 10),
-          const Text(
-            "Add a Size",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              children: [
+                TextSpan(
+                  text: 'Add a Size ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
           ),
           InputDecorator(
             decoration: const InputDecoration(
@@ -360,95 +404,135 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            "Weight (in kg)",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: minWeightController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.digitsOnly
-                  ],
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12.0)),
+
+
+            const SizedBox(height: 10),
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                children: [
+                  TextSpan(
+                    text: 'Weight (in Kilograms) ', // Regular text
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                  TextSpan(
+                    text: '*', // Asterisk in red
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: minWeightController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly
+                    ],
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              const Text("to"),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: maxWeightController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.digitsOnly
-                  ],
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                const SizedBox(width: 10),
+                const Text("to"),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: maxWeightController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly
+                    ],
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Price (PHP)",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          TextField(
-            keyboardType: TextInputType.number,
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.digitsOnly
-            ],
-            controller: priceController,
-            decoration: const InputDecoration(
-              prefixText: '₱ ',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Service Type",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          InputDecorator(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+
+              const SizedBox(height: 10),
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  children: [
+                    TextSpan(
+                      text: 'Price (PHP) ', // Regular text
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    TextSpan(
+                      text: '*', // Asterisk in red
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
               ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: serviceType,
-                onChanged: (newValue) {
-                  setState(() {
-                    serviceType = newValue;
-                  });
-                },
-                hint: const Text('Select Service Type'),
-                items: ['In-clinic', 'Home service'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+
+              TextField(
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*')), // Allows only digits
+                ],
+                controller: priceController,
+                decoration: const InputDecoration(
+                  prefixText: '₱ ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                  ),
+                  hintText: "Enter price",
+                ),
               ),
-            ),
-          ),
+
+              const SizedBox(height: 10),
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  children: [
+                    TextSpan(
+                      text: 'Service Type ', // Regular text
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    TextSpan(
+                      text: '*', // Asterisk in red
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+              InputDecorator(
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: serviceType,
+                    onChanged: (newValue) {
+                      setState(() {
+                        serviceType = newValue;
+                      });
+                    },
+                    hint: const Text('Select Service Type'),
+                    items: ['In-clinic', 'Home service'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
