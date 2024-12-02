@@ -226,17 +226,8 @@ class ServicesScreenState extends State<ServicesScreen> {
         final response = await supabase.storage
             .from('service_provider_images')
             .remove([filePath]);
-        if (response != null) {
-          print("Image deleted from the bucket successfully.");
-        } else if (response == null || response.isEmpty) {
-          {
-            print(
-                'Image deletion failed: No confirmation of deletion from server.');
-          }
-        } else {
-          print('Image deleted successfully: ${response}');
-        }
-      }
+        print("Image deleted from the bucket successfully.");
+            }
 
       // First, delete from the bridge table
       await supabase

@@ -101,11 +101,13 @@ class LoginScreenState extends State<LoginScreen> {
         }
       } else {
         setState(() {
+          Supabase.instance.client.auth.signOut();
           loginErrorMessage = 'Invalid email or password';
         });
       }
     } catch (error) {
       setState(() {
+        Supabase.instance.client.auth.signOut();
         loginErrorMessage = 'Invalid login credentials';
       });
     } finally {
