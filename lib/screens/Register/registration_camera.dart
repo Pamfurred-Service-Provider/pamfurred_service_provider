@@ -13,7 +13,10 @@ class RegistrationCameraScreen extends StatefulWidget {
   final Map<String, TextEditingController>
       controllers; // Passed from previous screens
 
-  const RegistrationCameraScreen({Key? key, required this.controllers, required Null Function(dynamic imageUrl) onImageUploaded})
+  const RegistrationCameraScreen(
+      {Key? key,
+      required this.controllers,
+      required Null Function(dynamic imageUrl) onImageUploaded})
       : super(key: key);
 
   @override
@@ -79,6 +82,10 @@ class _RegistrationCameraScreenState extends State<RegistrationCameraScreen> {
       final email = widget.controllers['email']?.text ?? '';
       final phoneNumber = widget.controllers['phoneNumber']?.text ?? '';
       final password = widget.controllers['password']?.text ?? '';
+      final floorUnitRoom = widget.controllers['floorUnitRoom']?.text ?? '';
+      final street = widget.controllers['street']?.text ?? '';
+      final barangay = widget.controllers['barangay']?.text ?? '';
+      final city = widget.controllers['city']?.text ?? '';
 
       final imageUrl = await uploadImage();
 
@@ -113,6 +120,18 @@ class _RegistrationCameraScreenState extends State<RegistrationCameraScreen> {
           'sp_id': userId,
           'sp_business_permit': imageUrl,
         });
+
+        // Insert address information
+        await supabase
+            .from('address')
+            .insert({
+              'floor_unit_room': floorUnitRoom,
+              'street': street,
+              'barangay': barangay,
+              'city': city,
+            })
+            .select('address_id')
+            .single();
 
         // Navigate to OTP verification
         Navigator.pushReplacement(
