@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:service_provider/screens/add_package.dart';
 
 class PackageDetails extends StatefulWidget {
   final Map<String, dynamic> packageData;

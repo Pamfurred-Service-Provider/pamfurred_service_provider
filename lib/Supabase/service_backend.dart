@@ -58,11 +58,6 @@ class ServiceBackend {
     final response = await _supabase.storage
         .from('service_provider_images')
         .upload(filePath, image);
-
-    // Check if the upload was successful
-    if (response == null) {
-      throw Exception('Image upload failed');
-    }
 // If the upload is successful, get the public URL
     final publicUrl = _supabase.storage
         .from('service_provider_images')

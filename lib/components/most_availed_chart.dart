@@ -223,21 +223,19 @@ class MostAvailedChartState extends State<MostAvailedChart> {
 // Adding a method to retrieve the peak service name
   String _getPeakServiceName(int monthIndex) {
     final monthData = chartData[monthIndex];
-    if (monthData != null) {
-      final serviceCounts = monthData['counts'] as List<dynamic>;
-      String peakService = '';
-      int maxCount = 0;
+    final serviceCounts = monthData['counts'] as List<dynamic>;
+    String peakService = '';
+    int maxCount = 0;
 
-      for (var service in serviceCounts) {
-        final count = service['count'] as int;
-        if (count > maxCount) {
-          maxCount = count;
-          peakService = service['service'];
-        }
+    for (var service in serviceCounts) {
+      final count = service['count'] as int;
+      if (count > maxCount) {
+        maxCount = count;
+        peakService = service['service'];
       }
-      return peakService; // Return the name of the service with the highest count
     }
-    return '';
+    return peakService; // Return the name of the service with the highest count
+      return '';
   }
 
 // Custom method to display peak service name at the top
