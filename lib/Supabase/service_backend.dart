@@ -10,7 +10,7 @@ class ServiceBackend {
     required String serviceType,
     required bool availability,
     required String? imageUrl,
-    required String serviceProviderId,
+    required String serviceProviderId, String? serviceCategory, required int price, required String size, required int minWeight, required int maxWeight,
   }) async {
 
 
