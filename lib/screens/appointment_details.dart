@@ -64,7 +64,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Widget build(BuildContext context) {
     final services = widget.appointment['services'] as List<dynamic>;
     final packages = widget.appointment['packages'] as List<dynamic>;
-
+    print("Appointment details: ${widget.appointment}");
     return Scaffold(
       appBar: AppBar(
         title: const Text("Appointment Details"),
@@ -222,7 +222,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     }
                   },
                   child: Text(
-                    widget.appointment['pet_owner_phone_number'] ?? 'N/A',
+                    widget.appointment['pet_owner_phone_number'] ?? '',
                     style: const TextStyle(
                       color: Colors.blue, // Makes it look clickable
                       decoration: TextDecoration.underline,
@@ -241,9 +241,19 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             ),
             const SizedBox(height: 10),
             buildDetailSection(
-                'Pet Name:', '${widget.appointment['pet_name'] ?? 'N/A'}'),
+                'Pet Name:', '${widget.appointment['pet_name'] ?? ''}'),
             buildDetailSection(
-                'Pet Type:', '${widget.appointment['pet_type'] ?? 'N/A'}'),
+                'Pet Gender:', '${widget.appointment['pet_sex'] ?? ''}'),
+            buildDetailSection(
+                'Pet Type:', '${widget.appointment['pet_type'] ?? ''}'),
+            buildDetailSection(
+                'Pet Breed:', '${widget.appointment['pet_breed'] ?? ''}'),
+            buildDetailSection('Pet Age:',
+                calculateAge(widget.appointment['pet_date_of_birth'])),
+            buildDetailSection(
+                'Pet Weight:', '${widget.appointment['pet_weight'] ?? ''}'),
+            buildDetailSection('Pet Description:',
+                '${widget.appointment['pet_description'] ?? ''}'),
             const Divider(),
             const SizedBox(height: 10),
             const Text(
@@ -253,16 +263,15 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             const SizedBox(height: 10),
             buildDetailSection(
               'Date:',
-              formatDateToShort(
-                  widget.appointment['appointment_date'] ?? 'N/A'),
+              formatDateToShort(widget.appointment['appointment_date'] ?? ''),
             ),
             buildDetailSection(
               'Time:',
-              formatTime(widget.appointment['appointment_time'] ?? 'N/A'),
+              formatTime(widget.appointment['appointment_time'] ?? ''),
             ),
             const SizedBox(height: 10),
             buildDetailSection('Service Type',
-                '${widget.appointment['appointment_type'] ?? 'N/A'}'),
+                '${widget.appointment['appointment_type'] ?? ''}'),
             const Divider(),
             const SizedBox(height: 10),
             const Row(

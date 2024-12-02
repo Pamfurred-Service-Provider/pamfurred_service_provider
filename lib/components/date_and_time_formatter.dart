@@ -114,3 +114,34 @@ String convertTo12HourFormat(String time) {
 
   return '${adjustedHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
 }
+
+String calculateAge(String? birthDateString) {
+  if (birthDateString == null || birthDateString.isEmpty) {
+    return 'Unknown';
+  }
+
+  DateTime birthDate = DateTime.parse(birthDateString);
+  DateTime currentDate = DateTime.now();
+
+  int years = currentDate.year - birthDate.year;
+  int months = currentDate.month - birthDate.month;
+
+  // Adjust months if the day of the month is earlier
+  if (currentDate.day < birthDate.day) {
+    months--;
+  }
+
+  // Adjust years and months for negative month values
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  if (years == 0) {
+    // Less than a year old
+    return '$months ${months == 1 ? 'month' : 'months'} old';
+  } else {
+    // A year old or more
+    return '$years ${years == 1 ? 'year' : 'years'} old';
+  }
+}

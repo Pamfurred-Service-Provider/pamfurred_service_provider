@@ -42,6 +42,9 @@ dependencies:
   # Email validation
   email_validator: ^3.0.0
 
+  #Password checker
+  fancy_password_field: ^2.0.8
+
   #Phone number field
   intl_phone_field: ^3.2.0
 
@@ -69,11 +72,14 @@ dependencies:
   badges: ^3.1.2
 
   #user location
-  flutter_map: ^7.0.2
+  flutter_map: ^6.1.0
   latlong2: ^0.9.1
-  geolocator: ^13.0.1
+  geolocator: ^10.1.0
+
+  # geolocator: ^13.0.1
   geocoding: ^3.0.0
   philippines_rpcmb: ^0.0.3
+  open_street_map_search_and_pick: ^0.1.1
 
   #dropdown
   animated_custom_dropdown: ^3.1.1
@@ -85,6 +91,9 @@ dependencies:
 
   #Notifications
   flutter_local_notifications: ^18.0.1
+  
+  #Register video player
+  video_player: ^2.9.2
 
 dev_dependencies:
   flutter_test:

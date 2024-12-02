@@ -265,7 +265,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     final Map<String, dynamic>? selectedLocation = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const PinAddress(),
+        builder: (context) => const PinLocationNew(),
       ),
     );
 

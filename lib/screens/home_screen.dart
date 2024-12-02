@@ -300,7 +300,7 @@ class HomeScreenState extends State<HomeScreen> {
         revenueData.map((e) => e['month'] as String).toList();
 
     return Scaffold(
-      appBar: appBar(context),
+      appBar: customAppBar(context),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [

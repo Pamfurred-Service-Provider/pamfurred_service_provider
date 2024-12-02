@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/screens/main_screen.dart';
-import 'package:service_provider/screens/register.dart';
+import 'package:service_provider/screens/Register/intro_to_app.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../components/globals.dart';
 
@@ -337,7 +337,7 @@ class LoginScreenState extends State<LoginScreen> {
                                         Navigator.push(
                                           context,
                                           rightToLeftRoute(
-                                              const RegisterScreen()),
+                                              const StartYourJourneyScreen()),
                                         );
                                       },
                                   ),
