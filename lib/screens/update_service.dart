@@ -145,16 +145,21 @@ void initState() {
         serviceId: widget.serviceId,
         updatedData: {
           'service_name': nameController.text,
-          'price': price,
-          'size': sizeController.text,
-          'min_weight': minWeight,
-          'max_weight': maxWeight,
           'pet_type': petsList,
           'service_type': [serviceType],
           'availability_status': availability == 'Available',
           'service_image': imageUrl,
         },
       );
+
+      await backend.updateServiceProviderService(serviceId: widget.serviceId, updatedData: {
+          'service_id': widget.serviceId,
+          'sp_id': widget.serviceProviderId,
+          'price': price,
+          'size': sizeController.text,
+          'min_weight': minWeight,
+          'max_weight': maxWeight
+        },);
 
       Navigator.pushReplacement(
         context,

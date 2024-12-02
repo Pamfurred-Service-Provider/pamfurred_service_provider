@@ -6,7 +6,40 @@ class ServiceBackend {
 
   Future<String?> addService({
     required String serviceName,
-    required int price,
+    required List<String> petsToCater,
+    required String serviceType,
+    required bool availability,
+    required String? imageUrl,
+    required String serviceProviderId,
+  }) async {
+
+
+    // Insert the service and retrieve the service ID in a single operation
+    final response = await _supabase
+        .from('service')
+        .insert({
+          'service_name': serviceName,
+          'pet_type': petsToCater,
+          'service_type': [serviceType],
+          'availability_status': availability,
+          'service_image': imageUrl,
+        })
+        .select('service_id')
+        .single();
+
+    final serviceId = response['service_id'];
+
+    // Link the service to the service provider directly
+    await _supabase.from('serviceprovider_service').insert({
+      'sp_id': serviceProviderId,
+      'service_id': serviceId,
+    });
+
+    return serviceId;
+  }
+
+    Future<String?> addServiceProviderService({
+    required String serviceName,
     required String size,
     required int minWeight,
     required int maxWeight,
@@ -29,7 +62,6 @@ class ServiceBackend {
         .from('service')
         .insert({
           'service_name': serviceName,
-          'price': price,
           'size': size,
           'min_weight': minWeight,
           'max_weight': maxWeight,
@@ -53,6 +85,8 @@ class ServiceBackend {
     return serviceId;
   }
 
+
+
   Future<String> uploadImage(File image) async {
     final filePath = 'service_images/${image.uri.pathSegments.last}';
     final response = await _supabase.storage
@@ -70,6 +104,9 @@ class ServiceBackend {
     return publicUrl;
   }
 
+
+
+
 Future<void> updateService({
   required String serviceId,
   required Map<String, dynamic> updatedData,
@@ -85,6 +122,28 @@ Future<void> updateService({
 
     await _supabase
         .from('service')
+        .update(updatedData)
+        .eq('service_id', serviceId);
+  } catch (error) {
+    throw Exception("Failed to update service: $error");
+  }
+}
+
+Future<void> updateServiceProviderService({
+  required String serviceId,
+  required Map<String, dynamic> updatedData,
+}) async {
+  try {
+    // Add size validation if provided in updated data
+    if (updatedData.containsKey('size')) {
+      const allowedSizes = ['S', 'M', 'L', 'XL', 'N/A'];
+      if (!allowedSizes.contains(updatedData['size'])) {
+        throw Exception("Invalid size value.");
+      }
+    }
+
+    await _supabase
+        .from('serviceprovider_service')
         .update(updatedData)
         .eq('service_id', serviceId);
   } catch (error) {

@@ -653,31 +653,35 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
           ),
+
           const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Barangay",
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 20),
-                CustomDropdown<String>(
-                  initialItem:
-                      barangay, // Set the initially selected barangay value
-                  decoration: getDropdownDecoration(),
-                  hintText: 'Select Barangay', // Hint text for the dropdown
-                  items: municipality?.barangays ?? [],
-                  onChanged: (String? value) {
-                    setState(() {
-                      barangay = value; // Update the barangay value
-                      barangayController.text = value ??
-                          ''; // Update the controller with the selected barangay
-                    });
-                  },
-                ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Barangay",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 20),
+                          CustomDropdown<String>(
+                            initialItem: 
+                              (municipality?.barangays ?? []).contains(barangay)
+                                  ? barangay
+                                  : (municipality?.barangays.isNotEmpty ?? false) 
+                                      ? municipality!.barangays.first 
+                                      : null, // Ensure the initial item is valid
+                            decoration: getDropdownDecoration(),
+                            hintText: 'Select Barangay',
+                            items: municipality?.barangays ?? [], // Dropdown options
+                            onChanged: (String? value) {
+                              setState(() {
+                                barangay = value; // Update the selected barangay
+                                barangayController.text = value ?? ''; // Sync with the controller
+                              });
+                            },
+                          ),
 
                 // DropdownButtonFormField<String>(
                 //   value: barangay, // Currently selected barangay
