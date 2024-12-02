@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 
 class MostAvailedChart extends StatefulWidget {
   final Future<List<Map<String, dynamic>>> Function() fetchData;
-
   const MostAvailedChart({
     Key? key,
     required this.fetchData,
-    required List<Map<String, dynamic>> data,
-    required List<String> labels,
   }) : super(key: key);
 
   @override
@@ -20,6 +17,9 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   List<Map<String, dynamic>> chartData = [];
   bool isLoading = true;
   bool noDataForYear = false;
+  void refreshData() {
+    fetchChartData(); // Call to fetch new data
+  }
 
   @override
   void initState() {
@@ -30,14 +30,6 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   Future<void> fetchChartData() async {
     try {
       final data = await widget.fetchData();
-
-      if (data == null || data.isEmpty) {
-        setState(() {
-          isLoading = false;
-          noDataForYear = true; // No data for the selected year
-        });
-        return;
-      }
 
       Map<String, List<int>> serviceCountsMap = {};
       for (var record in data) {
@@ -168,12 +160,12 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   }
 
   List<BarChartGroupData> _getData() {
-    double barsWidth = 17.0;
+    double barsWidth = 17.0; // Fixed bar width
 
     return List.generate(12, (monthIndex) {
-      List<BarChartRodStackItem> stackItems = [];
-      double cumulativeHeight = 0.0;
+      List<Map<String, dynamic>> serviceCounts = [];
 
+      // Gather counts for the current month
       for (var service in chartData) {
         final serviceName = service['service'] as String?;
         if (serviceName == null) continue;
@@ -183,14 +175,31 @@ class MostAvailedChartState extends State<MostAvailedChart> {
             ? counts[monthIndex] ?? 0
             : 0;
 
-        final serviceColor =
-            serviceColors[serviceName] ?? Colors.black.withOpacity(0.7);
+        serviceCounts.add({
+          'name': serviceName,
+          'count': count,
+          'color': serviceColors[serviceName] ?? Colors.black.withOpacity(0.7),
+        });
+      }
+
+      // Sort services by count (ascending) to stack bars properly
+      serviceCounts
+          .sort((a, b) => (a['count'] as int).compareTo(b['count'] as int));
+
+      // Create the bar groups with stacked items
+      List<BarChartRodStackItem> stackItems = [];
+      double cumulativeHeight = 0.0;
+
+      // Add bars in ascending order of count to create a stacking effect
+      for (var service in serviceCounts) {
+        final count = service['count'] as int;
+        final color = service['color'] as Color;
 
         stackItems.add(
           BarChartRodStackItem(
             cumulativeHeight,
             cumulativeHeight + count.toDouble(),
-            serviceColor,
+            color,
           ),
         );
 
@@ -198,11 +207,10 @@ class MostAvailedChartState extends State<MostAvailedChart> {
       }
 
       return BarChartGroupData(
-        x: monthIndex,
+        x: monthIndex, // Fixed x position for the month
         barRods: [
           BarChartRodData(
-            toY: cumulativeHeight,
-            color: Colors.transparent,
+            toY: cumulativeHeight, // Total height of the stack
             width: barsWidth,
             rodStackItems: stackItems,
             borderRadius: BorderRadius.circular(0),
@@ -210,6 +218,37 @@ class MostAvailedChartState extends State<MostAvailedChart> {
         ],
       );
     });
+  }
+
+// Adding a method to retrieve the peak service name
+  String _getPeakServiceName(int monthIndex) {
+    final monthData = chartData[monthIndex];
+    if (monthData != null) {
+      final serviceCounts = monthData['counts'] as List<dynamic>;
+      String peakService = '';
+      int maxCount = 0;
+
+      for (var service in serviceCounts) {
+        final count = service['count'] as int;
+        if (count > maxCount) {
+          maxCount = count;
+          peakService = service['service'];
+        }
+      }
+      return peakService; // Return the name of the service with the highest count
+    }
+    return '';
+  }
+
+// Custom method to display peak service name at the top
+  Widget _topTitles(double value, TitleMeta meta) {
+    const style = TextStyle(fontSize: 10);
+    String text = _getPeakServiceName(value.toInt());
+
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      child: Text(text, style: style, textAlign: TextAlign.center),
+    );
   }
 
   @override
@@ -251,7 +290,7 @@ class MostAvailedChartState extends State<MostAvailedChart> {
                       showTitles: true,
                       reservedSize: 40,
                       getTitlesWidget: _leftTitles,
-                      interval: 50,
+                      interval: 10,
                     ),
                   ),
                   topTitles: const AxisTitles(

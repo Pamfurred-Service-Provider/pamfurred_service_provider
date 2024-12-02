@@ -16,6 +16,7 @@ class RevenueChart extends StatefulWidget {
 class RevenueChartState extends State<RevenueChart> {
   final Color barColor = const Color(0xFFD14C01).withOpacity(0.7);
   bool isLoading = true;
+  bool noDataForYear = false;
   List<double> data = List.filled(12, 0.0);
   List<String> labels = [
     "Jan",
@@ -35,7 +36,17 @@ class RevenueChartState extends State<RevenueChart> {
   @override
   void initState() {
     super.initState();
-    _fetchMonthlyRevenueData(widget.year);
+    _fetchMonthlyRevenueData(widget.year); // Fetch data for the initial year
+  }
+
+  @override
+  void didUpdateWidget(RevenueChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Check if the year has changed
+    if (widget.year != oldWidget.year) {
+      // Fetch data for the new year
+      _fetchMonthlyRevenueData(widget.year);
+    }
   }
 
   Future<void> _fetchMonthlyRevenueData(int year) async {
@@ -70,6 +81,8 @@ class RevenueChartState extends State<RevenueChart> {
 
       setState(() {
         data = chartData;
+        noDataForYear =
+            chartData.every((value) => value == 0); // Set noDataForYear
         isLoading = false;
       });
     } catch (e) {
@@ -81,6 +94,7 @@ class RevenueChartState extends State<RevenueChart> {
       }
       setState(() {
         isLoading = false;
+        noDataForYear = true; // Assume no data if there's an error
       });
     }
   }
@@ -122,53 +136,64 @@ class RevenueChartState extends State<RevenueChart> {
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : AspectRatio(
-            aspectRatio: 1.66,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.center,
-                  barTouchData: BarTouchData(enabled: false),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
-                        getTitlesWidget: _bottomTitles,
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: _leftTitles,
-                        // interval: 1000,
-                      ),
-                    ),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  gridData: FlGridData(
-                    show: true,
-                    // checkToShowHorizontalLine: (value) => value % 10 == 0,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: Colors.grey.withOpacity(0.1),
-                      strokeWidth: 2,
-                    ),
-                    drawVerticalLine: false,
-                  ),
-                  borderData: FlBorderData(show: false),
-                  groupsSpace: 15,
-                  barGroups: _getData(),
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (noDataForYear) {
+      return const Center(
+        child: Text(
+          'No available data for this year',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+
+    return AspectRatio(
+      aspectRatio: 1.66,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: BarChart(
+          BarChartData(
+            alignment: BarChartAlignment.center,
+            barTouchData: BarTouchData(enabled: false),
+            titlesData: FlTitlesData(
+              show: true,
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 28,
+                  getTitlesWidget: _bottomTitles,
                 ),
               ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: _leftTitles,
+                  // interval: 1000,
+                ),
+              ),
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-          );
+            gridData: FlGridData(
+              show: true,
+              // checkToShowHorizontalLine: (value) => value % 10 == 0,
+              getDrawingHorizontalLine: (value) => FlLine(
+                color: Colors.grey.withOpacity(0.1),
+                strokeWidth: 2,
+              ),
+              drawVerticalLine: false,
+            ),
+            borderData: FlBorderData(show: false),
+            groupsSpace: 15,
+            barGroups: _getData(),
+          ),
+        ),
+      ),
+    );
   }
 }

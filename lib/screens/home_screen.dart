@@ -11,7 +11,7 @@ import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/components/year_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final List<int> years = [2024, 2025];
+final List<int> years = [2024, 2025, 2026, 2027, 2028];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required Null Function() onCardTap});
@@ -21,8 +21,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<MostAvailedChartState> mostAvailedChartKey =
+      GlobalKey<MostAvailedChartState>();
+
   String serviceProviderName = '';
-  int selectedYear = years.first;
+  int selectedYear = DateTime.now().year;
   int selectedIndex = 0;
   List<double> annualAppointmentData =
       List.filled(12, 0.0); // Changed to List<double>
@@ -139,14 +142,15 @@ class HomeScreenState extends State<HomeScreen> {
           'count': service['count'],
         };
       }).toList();
+      print("Go: $processedServices");
 
-      return processedServices;
+      return processedServices; // Return the processed services list
     } catch (e) {
       print("Error fetching most availed services: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load most availed services')),
       );
-      return [];
+      return []; // Return an empty list in case of error
     }
   }
 
@@ -244,14 +248,16 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       selectedYear = year;
     });
-    _fetchAnnualAppointments(); // Refresh data for the selected year
   }
 
   void updateMostAvailedServicesForYear(int year) {
     setState(() {
       selectedYear = year;
     });
-    _fetchMostAvailedServices();
+
+    // Call refreshData on the MostAvailedChartState
+    mostAvailedChartKey.currentState
+        ?.refreshData(); // Use the key to access the state
   }
 
   void navigateToScreen(String title) {
@@ -395,17 +401,8 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
                   MostAvailedChart(
+                    key: mostAvailedChartKey,
                     fetchData: _fetchMostAvailedServices,
-                    data: mostAvailedData.isEmpty
-                        ? [
-                            {
-                              'service_name': 'No data available',
-                              'month': '',
-                              'count': 0
-                            }
-                          ]
-                        : mostAvailedData,
-                    labels: mostAvailedData.isEmpty ? [''] : labels,
                   ),
                 ],
               ),
