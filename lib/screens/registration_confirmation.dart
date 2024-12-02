@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/Authentication/auth_redirect.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/screens/login.dart';
 import '../components/globals.dart';

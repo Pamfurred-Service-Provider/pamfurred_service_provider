@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/header.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/components/text_field.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
+import 'package:service_provider/providers/register_provider.dart';
 import 'package:service_provider/screens/register/intro_to_app.dart';
 import 'package:service_provider/screens/register/phone_number.dart';
 
-class PersonalInformationScreen extends StatefulWidget {
+class PersonalInformationScreen extends ConsumerStatefulWidget {
   final Map<String, TextEditingController> controllers;
 
   const PersonalInformationScreen({super.key, required this.controllers});
@@ -18,7 +20,8 @@ class PersonalInformationScreen extends StatefulWidget {
       PersonalInformationScreenState();
 }
 
-class PersonalInformationScreenState extends State<PersonalInformationScreen> {
+class PersonalInformationScreenState
+    extends ConsumerState<PersonalInformationScreen> {
   bool _showError = false;
 
   @override
@@ -26,6 +29,7 @@ class PersonalInformationScreenState extends State<PersonalInformationScreen> {
     bool validateFields() {
       final establishmentName =
           widget.controllers['establishmentName']?.text.trim() ?? '';
+      ref.read(nameProvider.notifier).state = establishmentName;
       return establishmentName.isNotEmpty;
     }
 
