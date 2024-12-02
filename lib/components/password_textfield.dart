@@ -106,6 +106,7 @@ class PasswordTextFieldState extends State<PasswordTextField> {
             );
           },
           decoration: InputDecoration(
+              hintText: "Enter your password",
               contentPadding: const EdgeInsets.all(10.0),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(

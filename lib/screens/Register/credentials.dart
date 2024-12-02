@@ -19,7 +19,7 @@ class CredentialsScreen extends StatefulWidget {
 }
 
 class CredentialsScreenState extends State<CredentialsScreen> {
-  bool _isLoading = false;
+  bool isLoading = false;
   String? _errorMessage; // Declare the error message here
 
   bool _validateFields() {
@@ -87,10 +87,13 @@ class CredentialsScreenState extends State<CredentialsScreen> {
                     Navigator.push(
                       context,
                       rightToLeftRoute(
-                        RegistrationCameraScreen(onImageUploaded: (imageUrl) {
-                          // Handle the image URL once uploaded
-                          print("Image uploaded: $imageUrl");
-                        }),
+                        RegistrationCameraScreen(
+                          onImageUploaded: (imageUrl) {
+                            // Handle the image URL once uploaded
+                            print("Image uploaded: $imageUrl");
+                          },
+                          controllers: {},
+                        ),
                       ),
                     );
                   }
