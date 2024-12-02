@@ -3,6 +3,7 @@ import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/header.dart';
 import 'package:service_provider/components/screen_transitions.dart';
+import 'package:service_provider/components/text_field.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/screens/Register/credentials.dart';
 import 'package:service_provider/screens/pin_location.dart';
@@ -115,8 +116,28 @@ class AddressDetailsScreenState extends State<AddressDetailsScreen> {
                 "No location pinned yet.",
                 style: TextStyle(color: Colors.red, fontSize: regularText),
               ),
-
             const SizedBox(height: tertiarySizedBox),
+            const SizedBox(height: secondarySizedBox),
+            Row(
+              children: [
+                Expanded(
+                  child: CustomTextField(
+                    label: "Floor/Unit/Room",
+                    controllerKey: "floorUnitRoom",
+                    controllers: widget.controllers,
+                    isRequired: false,
+                  ),
+                ),
+                const SizedBox(width: primarySizedBox),
+                Expanded(
+                  child: CustomTextField(
+                      label: "Street name",
+                      controllerKey: "street",
+                      controllers: widget.controllers),
+                ),
+              ],
+            ),
+            const SizedBox(height: secondarySizedBox),
 
             // Show error message if validation fails (e.g., no location pinned)
             if (_showError)
@@ -124,7 +145,6 @@ class AddressDetailsScreenState extends State<AddressDetailsScreen> {
                 "Please pin your location before proceeding.",
                 style: TextStyle(color: Colors.red, fontSize: regularText),
               ),
-
             // Next button that validates fields before proceeding
             CustomWideButton(
               text: "Next",

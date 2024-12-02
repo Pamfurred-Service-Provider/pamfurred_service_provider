@@ -26,7 +26,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(
-        length: 5,
+        length: 6,
         vsync: this,
         initialIndex: widget.initialTabIndex); // Use the initialTabIndex here
     _initializeSession();
@@ -140,6 +140,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: [
+            _buildTab('Incoming'),
             _buildTab('Today'),
             _buildTab('Upcoming'),
             _buildTab('Done'),
@@ -147,7 +148,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
             _buildTab('All'),
           ],
           indicatorColor: const Color.fromRGBO(160, 62, 6, 1),
-          labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 1),
         ),
       ),
       body: serviceProviderId == null
@@ -183,27 +184,6 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     );
   }
 
-//   Widget _buildAppointmentList(
-//       int tabIndex, List<Map<String, dynamic>> appointmentList) {
-//     final filteredAppointments = appointmentList.where((appointment) {
-//       DateTime appointmentDate;
-
-//       try {
-//         appointmentDate =
-//             DateTime.parse(appointment['appointment_date']).toLocal();
-//       } catch (e) {
-//         appointmentDate = DateTime.now();
-//       }
-//       final now = DateTime.now();
-//       final today = DateTime.now();
-
-// // Debug print for today filtering
-//       if (tabIndex == 0) {
-//         // Only print when filtering for the "Today" tab
-//         print('Appointment Date: $appointmentDate, Today: $today');
-//         print(
-//             'Raw appointment date from DB: ${appointment['appointment_date']}');
-//       }
   Widget _buildAppointmentList(
       int tabIndex, List<Map<String, dynamic>> appointmentList) {
     final filteredAppointments = appointmentList.where((appointment) {

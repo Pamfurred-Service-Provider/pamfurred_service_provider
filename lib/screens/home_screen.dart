@@ -73,11 +73,11 @@ class HomeScreenState extends State<HomeScreen> {
   ];
 
   final List<String> cardTitles = [
-    'Appointments \nToday',
+    'Pending \nAppointments',
     'Upcoming \nAppointments',
+    'Appointments \nToday',
     'Cancelled Appointments',
-    'Services',
-    'Packages',
+    'Services/ \nPackages',
     'Feedback'
   ];
 
@@ -261,7 +261,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void navigateToScreen(String title) {
-    if (title == 'Services' || title == 'Packages') {
+    if (title == 'Services/ \nPackages') {
       Navigator.push(
         context,
         MaterialPageRoute(
