@@ -60,12 +60,6 @@ class PackageBackend {
     final response = await _supabase.storage
         .from('service_provider_images')
         .upload(filePath, image);
-
-    // Check if the upload was successful
-    if (response == null) {
-      print("Image upload error");
-      throw Exception('Failed to upload image, please try again');
-    }
 // If the upload is successful, get the public URL
     final publicUrl = _supabase.storage
         .from('service_provider_images')

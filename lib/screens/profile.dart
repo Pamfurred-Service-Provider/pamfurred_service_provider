@@ -112,16 +112,6 @@ class ProfileScreenState extends State<ProfileScreen> {
             .from('service_provider_images')
             .uploadBinary(fileName, bytes);
 
-        // Check if the response indicates failure (null response means failure)
-        if (response == null) {
-          setState(() {
-            isLoading =
-                false; // Stop loading if there is an error uploading the image
-          });
-          print('Error uploading image: Unknown error');
-          return; // Stop further execution
-        }
-
         // If the upload is successful, get the public URL of the uploaded image
         final imageUrl = Supabase.instance.client.storage
             .from('service_provider_images')
