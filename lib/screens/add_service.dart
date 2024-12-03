@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/service_backend.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/services.dart';
 
 class AddServiceScreen extends StatefulWidget {
@@ -26,6 +28,93 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   final TextEditingController minWeightController = TextEditingController();
   final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
+
+  // Dynamic controllers for price, size, and weight
+  List<TextEditingController> priceControllers = [];
+  List<TextEditingController> minWeightControllers = [];
+  List<TextEditingController> maxWeightControllers = [];
+  List<String> sizeList = []; // Dynamic size list
+
+  @override
+  void initState() {
+    super.initState();
+    // Add initial entry
+    if (sizeList.isEmpty) {
+      addEntry(); // Add at least one entry during initialization
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var controller in priceControllers) {
+      controller.dispose();
+    }
+    for (var controller in minWeightControllers) {
+      controller.dispose();
+    }
+    for (var controller in maxWeightControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  // Add new entry for price, size, and weight
+  void addEntry() {
+    setState(() {
+      if (sizeList.isEmpty) {
+        sizeList.add("S");
+      } else if (sizeList.length < 4) {
+        sizeList.add(["M", "L", "XL"][sizeList.length - 1]);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You can't add more than 4 sizes!")),
+        );
+        return;
+      }
+
+      priceControllers.add(TextEditingController(text: "0"));
+      minWeightControllers.add(TextEditingController(text: "0"));
+      maxWeightControllers.add(TextEditingController(text: "10"));
+    });
+  }
+
+  // Remove an entry for price, size, and weight
+  void removeEntry(int index) {
+    if (index < sizeList.length &&
+        index < priceControllers.length &&
+        index < minWeightControllers.length &&
+        index < maxWeightControllers.length) {
+      setState(() {
+        sizeList.removeAt(index);
+        priceControllers.removeAt(index);
+        minWeightControllers.removeAt(index);
+        maxWeightControllers.removeAt(index);
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to remove entry: Invalid index.")),
+      );
+    }
+  }
+
+  // Validate and check for unique prices and weights
+  bool validateEntries() {
+    final prices = priceControllers.map((e) => e.text).toSet();
+    final weights = {
+      for (int i = 0; i < minWeightControllers.length; i++)
+        '${minWeightControllers[i].text}-${maxWeightControllers[i].text}'
+    };
+
+    if (prices.length != priceControllers.length ||
+        weights.length != minWeightControllers.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Prices and weights must be unique!")),
+      );
+      return false;
+    }
+
+    return true;
+  }
 
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
@@ -86,79 +175,87 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
   //Static data for pet sizes
   List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
+  List<String> serviceTypeOptions = ['Home Service', 'In-clinic'];
+  List<String> selectedServiceTypes = [];
   final List<String> petType = ['dog', 'cat', 'bunny'];
-  String? serviceType = 'In-clinic';
   String? availability = 'Available';
   String? sizes = 'S';
 
-void _addService() async {
-  final backend = ServiceBackend();
-  setState(() {
-    _isLoading = true; // Start loading
-  });
-  int price, minWeight, maxWeight;
+  void _addService() async {
+    final backend = ServiceBackend();
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+    int price, minWeight, maxWeight;
 
-  try {
-    // Parse and validate input fields
-    price = int.parse(priceController.text);
-    minWeight = int.parse(minWeightController.text);
-    maxWeight = int.parse(maxWeightController.text);
+    try {
+      // Parse and validate input fields
+      price = int.parse(priceController.text);
+      minWeight = int.parse(minWeightController.text);
+      maxWeight = int.parse(maxWeightController.text);
 
-    if (nameController.text.isEmpty ||
-        priceController.text.isEmpty ||
-        sizes == null ||
-        minWeightController.text.isEmpty ||
-        serviceType == null ||
-        availability == null) {
-      throw Exception('Please fill all fields');
-    }
+      if (nameController.text.isEmpty ||
+          priceController.text.isEmpty ||
+          sizes == null ||
+          minWeightController.text.isEmpty ||
+          serviceTypeOptions == null ||
+          availability == null) {
+        throw Exception('Please fill all fields');
+      }
 
-    // Upload image if provided
-    String imageUrl = '';
-    if (_image != null) {
-      imageUrl = await backend.uploadImage(_image!);
-    }
+      // Upload image if provided
+      String imageUrl = '';
+      if (_image != null) {
+        imageUrl = await backend.uploadImage(_image!);
+      }
 
-    // Add service to backend
-    final serviceId = await backend.addService(
-      serviceName: nameController.text,
-      price: price,
-      size: sizes ?? '',
-      minWeight: minWeight,
-      maxWeight: maxWeight,
-      petsToCater: petsList,
-      serviceProviderId: widget.serviceProviderId,
-      serviceType: serviceType ?? '',
-      availability: availability == 'Available',
-      imageUrl: imageUrl,
-      serviceCategory: widget.serviceCategory,
-    );
-    
-
-    if (serviceId != null) {
-      // Navigate to ServicesScreen after successful service addition
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+      // Add service to backend
+      final serviceId = await backend.addService(
+        serviceName: nameController.text,
+        price: price,
+        size: sizes ?? '',
+        minWeight: minWeight,
+        maxWeight: maxWeight,
+        petsToCater: petsList,
+        serviceProviderId: widget.serviceProviderId,
+        serviceType: selectedServiceTypes,
+        availability: availability == 'Available',
+        imageUrl: imageUrl,
+        serviceCategory: widget.serviceCategory,
       );
-    } else {
-      throw Exception('Failed to add service, please try again.');
+
+      if (serviceId != null) {
+        // Navigate to ServicesScreen after successful service addition
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ServicesScreen()),
+        );
+      } else {
+        throw Exception('Failed to add service, please try again.');
+      }
+    } catch (e) {
+      // Handle errors and show a Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      setState(() => _isLoading = false); // Stop loading
     }
-  } catch (e) {
-    // Handle errors and show a Snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString())),
-    );
-  } finally {
-    setState(() => _isLoading = false); // Stop loading
   }
-}
 
   @override
   Widget build(BuildContext context) {
+    print("priceControllers length: ${priceControllers.length}");
+    print("sizeList length: ${sizeList.length}");
+
+    print("priceControllers length: ${priceControllers.length}");
+    print("minWeightControllers length: ${minWeightControllers.length}");
+    print("maxWeightControllers length: ${maxWeightControllers.length}");
+    print("sizeList length: ${sizeList.length}");
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Service"),
+        title: const Text("Add Service"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -169,19 +266,6 @@ void _addService() async {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-                  // Information about asterisk fields
-        const Padding(
-          padding: EdgeInsets.only(bottom: 16.0),
-          child: Text(
-            'Fields marked with an asterisk (*) are required.',
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 14.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-
           Center(
             child: Stack(
               alignment: Alignment.center, // Center the overlay text
@@ -220,8 +304,6 @@ void _addService() async {
             ),
           ),
 
-
-
           const SizedBox(height: 20),
           RichText(
             text: TextSpan(
@@ -249,9 +331,7 @@ void _addService() async {
             ),
           ),
 
-          
-          
-          const SizedBox(height: 10),
+          const SizedBox(height: tertiarySizedBox),
           RichText(
             text: TextSpan(
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -278,7 +358,8 @@ void _addService() async {
                     child: InputDecorator(
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -291,7 +372,8 @@ void _addService() async {
                           },
                           items: petType
                               .where((petCategory) =>
-                                  !petsList.contains(petCategory) || petCategory == pet)
+                                  !petsList.contains(petCategory) ||
+                                  petCategory == pet)
                               .map((petCategory) => DropdownMenuItem<String>(
                                     value: petCategory,
                                     child: Text(petCategory),
@@ -320,7 +402,7 @@ void _addService() async {
             // label: const Text("Add Pet Category"),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: tertiarySizedBox),
           RichText(
             text: TextSpan(
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -361,15 +443,13 @@ void _addService() async {
               ),
             ),
           ),
-
-
-          const SizedBox(height: 10),
+          const SizedBox(height: tertiarySizedBox),
           RichText(
             text: TextSpan(
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               children: [
                 TextSpan(
-                  text: 'Add a Size ', // Regular text
+                  text: 'Price, Size and Weights ', // Regular text
                   style: const TextStyle(color: Colors.black),
                 ),
                 TextSpan(
@@ -379,160 +459,104 @@ void _addService() async {
               ],
             ),
           ),
-          InputDecorator(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: sizes,
-                onChanged: (newValue) {
-                  setState(() {
-                    sizes = newValue;
-                  });
-                },
-                hint: const Text('Sizes'),
-                items: sizeOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-
-
-            const SizedBox(height: 10),
-            RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                children: [
-                  TextSpan(
-                    text: 'Weight (in Kilograms) ', // Regular text
-                    style: const TextStyle(color: Colors.black),
-                  ),
-                  TextSpan(
-                    text: '*', // Asterisk in red
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
+          for (int i = 0; i < sizeList.length; i++)
+            Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: minWeightController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly
-                    ],
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                      ),
-                    ),
-                  ),
+                Text(
+                  "Size: ${sizeList[i]}",
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 10),
-                const Text("to"),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: maxWeightController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly
-                    ],
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                Row(
+                  children: [
+                    // Price input
+                    Expanded(
+                      child: TextField(
+                        controller: priceControllers[i],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: "Price",
+                          prefixText: "₱ ",
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    // Weight input
+                    Expanded(
+                      child: TextField(
+                        controller: minWeightControllers[i],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: "Min Weight",
+                          suffixText: "kg",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: maxWeightControllers[i],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: "Max Weight",
+                          suffixText: "kg",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => removeEntry(i),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ElevatedButton.icon(
+            onPressed: addEntry,
+            icon: const Icon(Icons.add),
+            label: const Text("Add"),
+          ),
+          const SizedBox(height: tertiarySizedBox),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              children: [
+                TextSpan(
+                  text: 'Service Type ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
                 ),
               ],
             ),
-
-              const SizedBox(height: 10),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  children: [
-                    TextSpan(
-                      text: 'Price (PHP) ', // Regular text
-                      style: const TextStyle(color: Colors.black),
-                    ),
-                    TextSpan(
-                      text: '*', // Asterisk in red
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ],
-                ),
-              ),
-
-              TextField(
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*')), // Allows only digits
-                ],
-                controller: priceController,
-                decoration: const InputDecoration(
-                  prefixText: '₱ ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                  ),
-                  hintText: "Enter price",
-                ),
-              ),
-
-              const SizedBox(height: 10),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  children: [
-                    TextSpan(
-                      text: 'Service Type ', // Regular text
-                      style: const TextStyle(color: Colors.black),
-                    ),
-                    TextSpan(
-                      text: '*', // Asterisk in red
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ],
-                ),
-              ),
-              InputDecorator(
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: serviceType,
-                    onChanged: (newValue) {
-                      setState(() {
-                        serviceType = newValue;
-                      });
-                    },
-                    hint: const Text('Select Service Type'),
-                    items: ['In-clinic', 'Home service'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-
+          ),
+          CustomDropdown.multiSelect(
+            items: serviceTypeOptions,
+            initialItems: selectedServiceTypes,
+            hintText: 'Select Service Type',
+            onListChanged: (List<String> selectedItems) {
+              setState(() {
+                selectedServiceTypes = selectedItems;
+              });
+              print('Selected service types: $selectedItems');
+            },
+          ),
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -548,7 +572,13 @@ void _addService() async {
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: _addService,
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        if (validateEntries()) {
+                          _addService();
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 100, 176, 81),
                   foregroundColor: Colors.white,
