@@ -6,6 +6,7 @@ class ServiceBackend {
 
   Future<String?> addService({
     required String serviceName,
+    required String serviceDesc,
     required List<String> petsToCater,
     required List<String> serviceType, // Change to List<String>
     required bool availability,
@@ -17,20 +18,35 @@ class ServiceBackend {
     required int minWeight,
     required int maxWeight,
   }) async {
-    // Insert the service and retrieve the service ID in a single operation
+    // Fetch service package category details that match the serviceCategory
+    final servicePackageCategory = await _supabase
+        .from('service_package_category')
+        .select('service_package_category_id, category_name')
+        .eq('category_name',
+            serviceCategory) // Ensure we fetch the correct category
+        .single();
+
+    // Check if a category was found
+    if (servicePackageCategory == null) {
+      throw Exception('Service category not found: $serviceCategory');
+    }
+
+    // Extract the fetched category ID
+    final toBeInsertedCategoryId =
+        servicePackageCategory['service_package_category_id'];
+
+    // Insert the service and include the service_package_category_id
     final response = await _supabase
         .from('service')
         .insert({
+          'service_package_category_id':
+              toBeInsertedCategoryId, // Include the category ID
           'service_name': serviceName,
-          'pet_type': petsToCater,
-          'service_type': serviceType, // Pass list directly
+          'service_desc': serviceDesc,
           'availability_status': availability,
+          'service_type': serviceType, // Pass list directly
+          'pet_type': petsToCater,
           'service_image': imageUrl,
-          'price': price,
-          'size': size,
-          'min_weight': minWeight,
-          'max_weight': maxWeight,
-          'service_category': serviceCategory,
         })
         .select('service_id')
         .single();
@@ -40,6 +56,10 @@ class ServiceBackend {
     await _supabase.from('serviceprovider_service').insert({
       'sp_id': serviceProviderId,
       'service_id': serviceId,
+      'size': size,
+      'price': price,
+      'min_weight': minWeight,
+      'max_weight': maxWeight,
     });
 
     return serviceId;

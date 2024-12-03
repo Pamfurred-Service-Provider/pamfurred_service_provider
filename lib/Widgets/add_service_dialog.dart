@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/components/globals.dart';
 
 class AddNewServiceDialog extends StatelessWidget {
   final TextEditingController nameController;
@@ -21,6 +22,23 @@ class AddNewServiceDialog extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 20),
+        RichText(
+          text: TextSpan(
+            style: const TextStyle(fontSize: 16),
+            children: [
+              TextSpan(
+                text: 'Service name ',
+                style: const TextStyle(color: Colors.black),
+              ),
+              TextSpan(
+                text: '*',
+                style: const TextStyle(color: primaryColor),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: secondarySizedBox),
         DropdownButtonFormField<String>(
           value: selectedService,
           items: [
@@ -58,7 +76,9 @@ class AddNewServiceDialog extends StatelessWidget {
                       autofocus: true,
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                                Radius.circular(secondaryBorderRadius))),
                       ),
                       onChanged: (text) => newServiceName = text,
                     ),
@@ -98,7 +118,9 @@ class AddNewServiceDialog extends StatelessWidget {
             }
           },
           decoration: const InputDecoration(
-            border: OutlineInputBorder(),
+            border: OutlineInputBorder(
+                borderRadius:
+                    BorderRadius.all(Radius.circular(secondaryBorderRadius))),
           ),
         ),
       ],
