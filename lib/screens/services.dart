@@ -62,17 +62,22 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     try {
       final response = await supabase.from('serviceprovider_service').select('''
+              sp_id,
               service_id,
               price,
               size,
               min_weight,
               max_weight,
+              availability_status,
               service(
+                service_id,
                 service_name,
                 service_image,
                 service_type,
                 pet_type,
-                availability_status
+                service_package_category(
+                  category_name
+                )
               )
               ''').eq('sp_id', serviceProviderId);
 
@@ -362,10 +367,10 @@ class ServicesScreenState extends State<ServicesScreen> {
         min_weight,
         max_weight,
         package_id,
+        availability_status,
         package(
           package_name,
           package_image,
-          availability_status,
           package_type,
           pet_type,
           service_package_category(
