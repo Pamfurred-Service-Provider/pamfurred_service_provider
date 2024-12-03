@@ -67,7 +67,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     });
 
     // Check if adding a new entry still maintains the constraints
-    if (sizeList.length > 1) {
+    if (sizeList.length > 2) {
       try {
         // Check if the list has at least one previous entry to validate against
         if (sizeList.length > 1) {
