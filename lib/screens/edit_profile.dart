@@ -685,30 +685,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     });
                   },
                 ),
-
-                // DropdownButtonFormField<String>(
-                //   value: barangay, // Currently selected barangay
-                //   decoration: const InputDecoration(
-                //     border: OutlineInputBorder(
-                //       borderRadius: BorderRadius.all(
-                //         Radius.circular(12.0),
-                //       ),
-                //     ),
-                //   ),
-                //   items: municipality?.barangays
-                //       .map<DropdownMenuItem<String>>((barangay) {
-                //     return DropdownMenuItem<String>(
-                //       value: barangay,
-                //       child: Text(barangay),
-                //     );
-                //   }).toList(),
-                //   onChanged: (String? newBarangay) {
-                //     setState(() {
-                //       barangay = newBarangay;
-                //       barangayController.text = newBarangay ?? '';
-                //     });
-                //   },
-                // ),
               ],
             ),
           ),

@@ -60,6 +60,8 @@ class FeedbacksScreenState extends State<FeedbacksScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("Reviews: $reviews");
+    print("Number of reviews: ${reviews.length}");
     double averageRating = calculateAverageRating();
 
     return Scaffold(
