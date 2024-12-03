@@ -8,7 +8,6 @@ import 'package:service_provider/Widgets/add_service_dialog.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
-import 'package:service_provider/Widgets/remove_pet_type.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/services.dart';
 
@@ -339,7 +338,22 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: tertiarySizedBox),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Service Name ',
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
+          ),
           AddNewServiceDialog(
             nameController: nameController,
             serviceNames: serviceNames,
@@ -468,7 +482,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               return ShowDeleteDialog(
                                 title: 'Confirm Deletion',
                                 content:
-                                    'Are you sure you want to delete this service?',
+                                    'Are you sure you want to delete this?',
                                 onDelete: () => removeEntry(index),
                               );
                             },
@@ -558,7 +572,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               style: const TextStyle(fontSize: 16),
               children: [
                 TextSpan(
-                  text: 'Pet Specific Service ', // Regular text
+                  text: 'Service Type', // Regular text
                   style: const TextStyle(color: Colors.black),
                 ),
                 TextSpan(
