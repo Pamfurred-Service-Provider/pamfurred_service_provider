@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RevenueChart extends StatefulWidget {
@@ -144,7 +145,7 @@ class RevenueChartState extends State<RevenueChart> {
       return const Center(
         child: Text(
           'No available data for this year',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: regularText, color: mediumGreyColor),
         ),
       );
     }

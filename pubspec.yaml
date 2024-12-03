@@ -54,7 +54,7 @@ dependencies:
   salomon_bottom_bar: ^3.3.2
 
   #Local image picker
-  image_picker: ^1.0.0
+  image_picker: ^1.1.2
 
   #Permisson holder
   permission_handler: ^10.2.0
@@ -96,11 +96,24 @@ dependencies:
   video_player: ^2.9.2
   flutter_otp_text_field: ^1.2.0
 
+  flutter_riverpod: ^2.6.1
+
+  flutter_to_pdf: ^0.2.2
+  
+  flutter_date_range_picker: ^0.1.1
+  flutter_pdfview: ^1.3.4
+  syncfusion_flutter_pdf: ^27.2.4
+  open_file: ^3.5.10
+
+  path_provider: ^2.1.5
+  printing: ^5.13.4
+  pull_to_refresh_flutter3: ^2.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_launcher_icons: ^0.10.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter_icons:
   android: true

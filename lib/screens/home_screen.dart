@@ -5,8 +5,10 @@ import 'package:service_provider/components/revenue_chart.dart';
 import 'package:service_provider/components/most_availed_chart.dart';
 import 'package:service_provider/components/annual_appointments_chart.dart';
 import 'package:service_provider/components/satisfaction_rating_chart.dart';
+import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/screens/appointments.dart';
 import 'package:service_provider/screens/feedbacks.dart';
+import 'package:service_provider/screens/generate_report/generate_report.dart';
 import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/components/year_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,7 +27,9 @@ class HomeScreenState extends State<HomeScreen> {
       GlobalKey<MostAvailedChartState>();
 
   String serviceProviderName = '';
-  int selectedYear = DateTime.now().year;
+  int selectedRevenueYear = DateTime.now().year;
+  int selectedMostAvailedServicesYear = DateTime.now().year;
+  int selectedAnnualYear = DateTime.now().year;
   int selectedIndex = 0;
   List<double> annualAppointmentData =
       List.filled(12, 0.0); // Changed to List<double>
@@ -128,7 +132,7 @@ class HomeScreenState extends State<HomeScreen> {
       final response = await Supabase.instance.client
           .rpc('get_monthly_service_counts', params: {
         'provider_id': userId,
-        'year': selectedYear,
+        'year': selectedMostAvailedServicesYear,
       }).execute();
 
       final List<dynamic> services = response.data ?? [];
@@ -210,9 +214,9 @@ class HomeScreenState extends State<HomeScreen> {
           .select('appointment_date')
           .eq('sp_id', userId)
           .gte('appointment_date',
-              DateTime(selectedYear, 1, 1).toIso8601String())
+              DateTime(selectedAnnualYear, 1, 1).toIso8601String())
           .lt('appointment_date',
-              DateTime(selectedYear + 1, 1, 1).toIso8601String())
+              DateTime(selectedAnnualYear + 1, 1, 1).toIso8601String())
           .execute();
 
       final List<dynamic> appointments = response.data ?? [];
@@ -237,22 +241,22 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void updateDataForYear(int year) {
+  void updateAnnualDataForYear(int year) {
     setState(() {
-      selectedYear = year;
+      selectedAnnualYear = year;
     });
     _fetchAnnualAppointments(); // Refresh data for the selected year
   }
 
   void updateMonthlyRevenueForYear(int year) {
     setState(() {
-      selectedYear = year;
+      selectedRevenueYear = year;
     });
   }
 
   void updateMostAvailedServicesForYear(int year) {
     setState(() {
-      selectedYear = year;
+      selectedMostAvailedServicesYear = year;
     });
 
     // Call refreshData on the MostAvailedChartState
@@ -331,42 +335,48 @@ class HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
             ],
           ),
-          Card(
-            color: Colors.white,
-            elevation: 10,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(15), // Padding inside the card
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        ' Monthly Revenue',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                  context, slideUpRoute(const GenerateReportScreen()));
+            },
+            child: Card(
+              color: Colors.white,
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(15), // Padding inside the card
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          ' Monthly Revenue',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.normal,
+                          ),
                         ),
-                      ),
-                      YearDropdown(
-                        years: years,
-                        initialYear: selectedYear,
-                        onYearChanged: updateMonthlyRevenueForYear,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  RevenueChart(
-                    data: [],
-                    labels: [],
-                    // revenueData: const [],
-                    year: selectedYear,
-                  ),
-                ],
+                        YearDropdown(
+                          years: years,
+                          initialYear: selectedRevenueYear,
+                          onYearChanged: updateMonthlyRevenueForYear,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    RevenueChart(
+                      data: [],
+                      labels: [],
+                      // revenueData: const [],
+                      year: selectedRevenueYear,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -393,7 +403,7 @@ class HomeScreenState extends State<HomeScreen> {
                       ),
                       YearDropdown(
                         years: years,
-                        initialYear: selectedYear,
+                        initialYear: selectedMostAvailedServicesYear,
                         onYearChanged: updateMostAvailedServicesForYear,
                       ),
                     ],
@@ -430,8 +440,8 @@ class HomeScreenState extends State<HomeScreen> {
                       ),
                       YearDropdown(
                         years: years,
-                        initialYear: selectedYear,
-                        onYearChanged: updateDataForYear,
+                        initialYear: selectedAnnualYear,
+                        onYearChanged: updateAnnualDataForYear,
                       ),
                     ],
                   ),

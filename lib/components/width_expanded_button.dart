@@ -3,6 +3,7 @@ import 'package:service_provider/components/globals.dart';
 
 class CustomWideButton extends StatelessWidget {
   final String text;
+  final IconData? leadingIcon; // Optional leading icon
   final Function()? onPressed;
   final bool Function()? validator; // Optional validation function
   final Function()? onValidationFailed; // Optional failure handler
@@ -12,6 +13,7 @@ class CustomWideButton extends StatelessWidget {
   const CustomWideButton({
     super.key,
     required this.text,
+    this.leadingIcon,
     required this.onPressed,
     this.validator,
     this.onValidationFailed,
@@ -75,11 +77,25 @@ class CustomWideButton extends StatelessWidget {
           padding: const EdgeInsets.all(tertiarySizedBox),
           child: isLoading
               ? const CircularProgressIndicator(color: Colors.white)
-              : Text(
-                  text,
-                  style: isOutlineButton
-                      ? _outlineTextStyle
-                      : _defaultTextStyle, // Text style for outline or filled button
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (leadingIcon != null)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Icon(
+                          leadingIcon,
+                          color: isOutlineButton ? primaryColor : Colors.white,
+                        ),
+                      ),
+                    Text(
+                      text,
+                      style: isOutlineButton
+                          ? _outlineTextStyle
+                          : _defaultTextStyle, // Text style for outline or filled button
+                    ),
+                  ],
                 ),
         ),
       ),

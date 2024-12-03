@@ -76,6 +76,20 @@ String formatDateToShort(String date) {
   return formattedDate;
 }
 
+// Function to format a string containing date and time, removing the time part
+String formatDateWithoutTime(String dateString) {
+  try {
+    // Parse the string to DateTime object
+    DateTime date = DateTime.parse(dateString);
+
+    // Format the date to 'yyyy-MM-dd' without time
+    return DateFormat('yyyy-MM-dd').format(date);
+  } catch (e) {
+    // If there's an error (e.g., invalid date format), return an empty string or handle as needed
+    return 'Invalid Date';
+  }
+}
+
 String formatTimeToAMPM(String time) {
   if (time.isEmpty) return '';
   time = time.trim(); // remove whitespace

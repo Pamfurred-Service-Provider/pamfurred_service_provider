@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:service_provider/Widgets/dropdown_decoration.dart';
+import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/screens/appointment_time_slot.dart';
 import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -296,6 +297,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         title: const Text("Edit Profile"),
       ),
       body: ListView(
+        physics: BouncingScrollPhysics(),
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -655,33 +657,34 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           ),
 
           const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Barangay",
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 20),
-                          CustomDropdown<String>(
-                            initialItem: 
-                              (municipality?.barangays ?? []).contains(barangay)
-                                  ? barangay
-                                  : (municipality?.barangays.isNotEmpty ?? false) 
-                                      ? municipality!.barangays.first 
-                                      : null, // Ensure the initial item is valid
-                            decoration: getDropdownDecoration(),
-                            hintText: 'Select Barangay',
-                            items: municipality?.barangays ?? [], // Dropdown options
-                            onChanged: (String? value) {
-                              setState(() {
-                                barangay = value; // Update the selected barangay
-                                barangayController.text = value ?? ''; // Sync with the controller
-                              });
-                            },
-                          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Barangay",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 20),
+                CustomDropdown<String>(
+                  initialItem:
+                      (municipality?.barangays ?? []).contains(barangay)
+                          ? barangay
+                          : (municipality?.barangays.isNotEmpty ?? false)
+                              ? municipality!.barangays.first
+                              : null, // Ensure the initial item is valid
+                  decoration: getDropdownDecoration(),
+                  hintText: 'Select Barangay',
+                  items: municipality?.barangays ?? [], // Dropdown options
+                  onChanged: (String? value) {
+                    setState(() {
+                      barangay = value; // Update the selected barangay
+                      barangayController.text =
+                          value ?? ''; // Sync with the controller
+                    });
+                  },
+                ),
 
                 // DropdownButtonFormField<String>(
                 //   value: barangay, // Currently selected barangay
@@ -737,15 +740,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: saveProfile,
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check, size: 16),
-                SizedBox(width: 15),
-                Text("Save"),
-              ],
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: CustomWideButton(
+              text: 'Save',
+              onPressed: saveProfile,
+              leadingIcon: Icons.check,
             ),
           ),
           const SizedBox(height: 20),
