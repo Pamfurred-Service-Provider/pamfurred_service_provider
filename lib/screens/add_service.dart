@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/service_backend.dart';
 import 'package:service_provider/Widgets/add_service_dialog.dart';
+import 'package:service_provider/Widgets/confirmation_dialog.dart';
+import 'package:service_provider/Widgets/delete_dialog.dart';
+import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/Widgets/remove_pet_type.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/services.dart';
@@ -36,6 +39,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   List<TextEditingController> minWeightControllers = [];
   List<TextEditingController> maxWeightControllers = [];
   List<String> sizeList = []; // Dynamic size list
+  Map<String, String> availabilityMap = {};
 
   // Add new entry for price, size, and weight
   void addEntry() {
@@ -45,16 +49,50 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       } else if (sizeList.length < 4) {
         sizeList.add(["M", "L", "XL"][sizeList.length - 1]);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("You can't add more than 4 sizes!")),
+        showErrorDialog(
+          context,
+          "You can't add more than 4 sizes!",
         );
+
         return;
       }
 
       priceControllers.add(TextEditingController(text: "0"));
       minWeightControllers.add(TextEditingController(text: "0"));
       maxWeightControllers.add(TextEditingController(text: "0"));
+      availabilityMap[sizeList.last] = 'Available'; // Set default availability
     });
+
+    // Check if adding a new entry still maintains the constraints
+    if (sizeList.length > 1) {
+      int prevPrice = int.parse(priceControllers[sizeList.length - 2].text);
+      int prevMinWeight =
+          int.parse(minWeightControllers[sizeList.length - 2].text);
+      int prevMaxWeight =
+          int.parse(maxWeightControllers[sizeList.length - 2].text);
+
+      int currPrice = int.parse(priceControllers.last.text);
+      int currMinWeight = int.parse(minWeightControllers.last.text);
+      int currMaxWeight = int.parse(maxWeightControllers.last.text);
+
+      // Ensure current size is not less than the previous size
+      if (currPrice < prevPrice ||
+          currMinWeight < prevMinWeight ||
+          currMaxWeight < prevMaxWeight) {
+        showErrorDialog(
+          context,
+          "New size values must not be lesser than the previous size.!",
+        );
+
+        // Remove the newly added entry if validation fails
+        setState(() {
+          sizeList.removeLast();
+          priceControllers.removeLast();
+          minWeightControllers.removeLast();
+          maxWeightControllers.removeLast();
+        });
+      }
+    }
   }
 
   // Remove an entry for price, size, and weight
@@ -70,8 +108,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         maxWeightControllers.removeAt(index);
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Unable to remove entry: Invalid index.")),
+      showErrorDialog(
+        context,
+        "Unable to remove entry!",
       );
     }
   }
@@ -84,12 +123,43 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         '${minWeightControllers[i].text}-${maxWeightControllers[i].text}'
     };
 
+    // Ensure prices and weights are unique
     if (prices.length != priceControllers.length ||
         weights.length != minWeightControllers.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Prices and weights must be unique!")),
+      showErrorDialog(
+        context,
+        "Prices and weights must be unique!",
       );
       return false;
+    }
+
+    // Validate the price for increasing values as size increases
+    for (int i = 1; i < priceControllers.length; i++) {
+      int prevPrice = int.parse(priceControllers[i - 1].text);
+      int currPrice = int.parse(priceControllers[i].text);
+      if (currPrice < prevPrice) {
+        showErrorDialog(
+          context,
+          "Price for larger sizes should not be lesser!",
+        );
+        return false;
+      }
+    }
+
+    // Validate the weights for increasing values as size increases
+    for (int i = 1; i < minWeightControllers.length; i++) {
+      int prevMinWeight = int.parse(minWeightControllers[i - 1].text);
+      int currMinWeight = int.parse(minWeightControllers[i].text);
+      int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text);
+      int currMaxWeight = int.parse(maxWeightControllers[i].text);
+
+      if (currMinWeight < prevMinWeight || currMaxWeight < prevMaxWeight) {
+        showErrorDialog(
+          context,
+          "Weight for larger sizes should not be lesser!",
+        );
+        return false;
+      }
     }
 
     return true;
@@ -110,38 +180,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     }
   }
 
-// Method to add pet to the list
-  void addPet() async {
-    List<String> availablePets =
-        petType.where((pet) => !petsList.contains(pet)).toList();
-    // If there are available pets left to choose, add another dropdown
-    if (availablePets.isNotEmpty) {
-      setState(() {
-        petsList
-            .add(availablePets.first); // Add the first available pet by default
-      });
-    } else {
-      // Show a message if all pets are already selected
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All pets have been added.')),
-      );
-    }
-  }
-
-  void removePet(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => RemovePetTypeDialog(
-        petsList: {'pet': petsList[index]},
-        onDelete: () {
-          setState(() {
-            petsList.removeAt(index); // Remove pet from the list
-          });
-        },
-      ),
-    );
-  }
-
   //Static data for pet sizes
   List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
   List<String> serviceTypeOptions = ['Home Service', 'In-clinic'];
@@ -151,6 +189,12 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   final List<String> petType = ['dog', 'cat', 'bunny'];
   String? availability = 'Available';
   String? sizes = 'S';
+
+  void updateAvailability(String size, String status) {
+    setState(() {
+      availabilityMap[size] = status;
+    });
+  }
 
   void _addService() async {
     final backend = ServiceBackend();
@@ -417,60 +461,113 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       const SizedBox(width: 10),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => removeEntry(index),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ShowDeleteDialog(
+                                title: 'Confirm Deletion',
+                                content:
+                                    'Are you sure you want to delete this service?',
+                                onDelete: () => removeEntry(index),
+                              );
+                            },
+                          );
+                        },
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  // Availability Toggle for Each Size
                   Row(
                     children: [
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: availability == 'Available'
-                              ? Colors.green
-                              : Colors.grey.shade300,
-                          foregroundColor: availability == 'Available'
-                              ? Colors.white
-                              : Colors.black,
+                          backgroundColor:
+                              availabilityMap[sizeList[index]] == 'Available'
+                                  ? Colors.green
+                                  : Colors.grey.shade300,
+                          foregroundColor:
+                              availabilityMap[sizeList[index]] == 'Available'
+                                  ? Colors.white
+                                  : Colors.black,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            availability = 'Available';
-                          });
+                        onPressed: () async {
+                          // Show the confirmation dialog
+                          bool? confirmed = await ConfirmationDialog.show(
+                            context,
+                            title: 'Change Availability',
+                            content:
+                                'Are you sure you want to mark this as Available?',
+                          );
+
+                          // If the user confirms, update the availability
+                          if (confirmed == true) {
+                            setState(() {
+                              availabilityMap[sizeList[index]] = 'Available';
+                            });
+                          }
                         },
                         child: const Text('Available'),
                       ),
                       const SizedBox(width: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: availability == 'Not Available'
+                          backgroundColor: availabilityMap[sizeList[index]] ==
+                                  'Not Available'
                               ? Colors.red
                               : Colors.grey.shade300,
-                          foregroundColor: availability == 'Not Available'
+                          foregroundColor: availabilityMap[sizeList[index]] ==
+                                  'Not Available'
                               ? Colors.white
                               : Colors.black,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            availability = 'Not Available';
-                          });
+                        onPressed: () async {
+                          // Show the confirmation dialog
+                          bool? confirmed = await ConfirmationDialog.show(
+                            context,
+                            title: 'Change Availability',
+                            content:
+                                'Are you sure you want to mark this as Not Available?',
+                          );
+
+                          // If the user confirms, update the availability
+                          if (confirmed == true) {
+                            setState(() {
+                              availabilityMap[sizeList[index]] =
+                                  'Not Available';
+                            });
+                          }
                         },
                         child: const Text('Not Available'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
                 ],
               );
             },
           ),
+          const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: addEntry,
             icon: const Icon(Icons.add),
             label: const Text("Add"),
           ),
           const SizedBox(height: 20),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Pet Specific Service ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: tertiarySizedBox),
           CustomDropdown.multiSelect(
             items: serviceTypeOptions,
