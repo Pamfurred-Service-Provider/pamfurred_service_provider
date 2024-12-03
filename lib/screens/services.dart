@@ -492,21 +492,6 @@ class ServicesScreenState extends State<ServicesScreen> {
                 setState(() {
                   selectedCategory = 'All';
                 });
-                if (ModalRoute.of(context)?.settings.arguments is MainScreen &&
-                    (ModalRoute.of(context)?.settings.arguments as MainScreen)
-                            .selectedIndex ==
-                        1) {
-                  Navigator.pop(context);
-                } else {
-                  Navigator.pushReplacement(
-                    context,
-                    crossFadeRoute(const MainScreen(
-                      selectedIndex: 1,
-                    )),
-                  );
-                }
-                _fetchServices();
-                _fetchPackages();
               },
             ),
             ListTile(
