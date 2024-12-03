@@ -43,7 +43,6 @@ class ServiceBackend {
               toBeInsertedCategoryId, // Include the category ID
           'service_name': serviceName,
           'service_desc': serviceDesc,
-          'availability_status': availability,
           'service_type': serviceType, // Pass list directly
           'pet_type': petsToCater,
           'service_image': imageUrl,
@@ -56,6 +55,7 @@ class ServiceBackend {
     await _supabase.from('serviceprovider_service').insert({
       'sp_id': serviceProviderId,
       'service_id': serviceId,
+      'availability_status': availability,
       'size': size,
       'price': price,
       'min_weight': minWeight,
@@ -114,7 +114,7 @@ class ServiceBackend {
 
   Future<String> uploadImage(File image) async {
     final filePath = 'service_images/${image.uri.pathSegments.last}';
-    final response = await _supabase.storage
+    await _supabase.storage
         .from('service_provider_images')
         .upload(filePath, image);
 // If the upload is successful, get the public URL

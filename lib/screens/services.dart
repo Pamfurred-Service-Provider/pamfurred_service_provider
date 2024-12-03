@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
+import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/add_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
+import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/screens/package_details.dart';
 import 'package:service_provider/screens/service_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,7 +21,7 @@ class ServicesScreenState extends State<ServicesScreen> {
   String? serviceProviderId; // Nullable to allow dynamic assignment
   List<Map<String, dynamic>> services = [];
   List<Map<String, dynamic>> packages = [];
-  String? selectedCategory = 'All services'; // Default selected category
+  String? selectedCategory = 'All'; // Default selected category
   bool isLoading = true;
 
   @override
@@ -62,17 +64,22 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     try {
       final response = await supabase.from('serviceprovider_service').select('''
+              sp_id,
               service_id,
               price,
               size,
               min_weight,
               max_weight,
+              availability_status,
               service(
+                service_id,
                 service_name,
                 service_image,
                 service_type,
                 pet_type,
-                availability_status
+                service_package_category(
+                  category_name
+                )
               )
               ''').eq('sp_id', serviceProviderId);
 
@@ -362,10 +369,10 @@ class ServicesScreenState extends State<ServicesScreen> {
         min_weight,
         max_weight,
         package_id,
+        availability_status,
         package(
           package_name,
           package_image,
-          availability_status,
           package_type,
           pet_type,
           service_package_category(
@@ -479,6 +486,29 @@ class ServicesScreenState extends State<ServicesScreen> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              title: const Text('All'),
+              onTap: () {
+                setState(() {
+                  selectedCategory = 'All';
+                });
+                if (ModalRoute.of(context)?.settings.arguments is MainScreen &&
+                    (ModalRoute.of(context)?.settings.arguments as MainScreen)
+                            .selectedIndex ==
+                        1) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    crossFadeRoute(const MainScreen(
+                      selectedIndex: 1,
+                    )),
+                  );
+                }
+                _fetchServices();
+                _fetchPackages();
+              },
+            ),
             ListTile(
               title: const Text('Pet Grooming'),
               onTap: () {
@@ -716,7 +746,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                       ),
                 const SizedBox(height: 20),
                 // Centered Add More button
-                if (selectedCategory != 'All services')
+                if (selectedCategory != 'All')
                   Center(
                     child: ElevatedButton(
                       onPressed: () => _navigateToAddService(),
@@ -788,7 +818,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                       ),
                 const SizedBox(height: 20),
                 // Centered Add More button
-                if (selectedCategory != 'All services')
+                if (selectedCategory != 'All')
                   Center(
                     child: ElevatedButton(
                       onPressed: () => _navigateToAddPackage(context),
