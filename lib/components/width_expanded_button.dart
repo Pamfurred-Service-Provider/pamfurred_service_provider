@@ -9,6 +9,7 @@ class CustomWideButton extends StatelessWidget {
   final Function()? onValidationFailed; // Optional failure handler
   final bool isOutlineButton; // For outline button style
   final bool isLoading; // New parameter to show loading indicator
+  final Color? backgroundColor; // Optional custom background color
 
   const CustomWideButton({
     super.key,
@@ -19,6 +20,7 @@ class CustomWideButton extends StatelessWidget {
     this.onValidationFailed,
     this.isOutlineButton = false, // Default to filled button if not specified
     this.isLoading = false, // Default to not loading
+    this.backgroundColor, // Optional parameter for background color
   });
 
   static const Color _defaultBackgroundColor = primaryColor;
@@ -48,11 +50,13 @@ class CustomWideButton extends StatelessWidget {
           backgroundColor: WidgetStateProperty.all<Color>(
             isOutlineButton
                 ? Colors.transparent
-                : _defaultBackgroundColor, // Transparent for outline
+                : (backgroundColor ??
+                    _defaultBackgroundColor), // Use custom color or default
           ),
           side: isOutlineButton
-              ? WidgetStateProperty.all(const BorderSide(
-                  color: primaryColor)) // Outline with primary color border
+              ? WidgetStateProperty.all(
+                  const BorderSide(color: primaryColor),
+                ) // Outline with primary color border
               : null, // No border for filled button
         ),
         onPressed: isLoading
