@@ -67,7 +67,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     });
 
     // Check if adding a new entry still maintains the constraints
-    if (sizeList.length > 1) {
+    if (sizeList.length > 2) {
       try {
         int prevPrice =
             int.parse(priceControllers[sizeList.length - 2].text.trim());
