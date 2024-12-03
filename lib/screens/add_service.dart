@@ -36,15 +36,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   List<String> sizeList = []; // Dynamic size list
 
   @override
-  void initState() {
-    super.initState();
-    // Add initial entry
-    if (sizeList.isEmpty) {
-      addEntry(); // Add at least one entry during initialization
-    }
-  }
-
-  @override
   void dispose() {
     for (var controller in priceControllers) {
       controller.dispose();
@@ -187,7 +178,18 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       _isLoading = true; // Start loading
     });
     int price, minWeight, maxWeight;
+  void _addService() async {
+    final backend = ServiceBackend();
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+    int price, minWeight, maxWeight;
 
+    try {
+      // Parse and validate input fields
+      price = int.parse(priceController.text);
+      minWeight = int.parse(minWeightController.text);
+      maxWeight = int.parse(maxWeightController.text);
     try {
       // Parse and validate input fields
       price = int.parse(priceController.text);
@@ -203,6 +205,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         throw Exception('Please fill all fields');
       }
 
+      // Upload image if provided
+      String imageUrl = '';
+      if (_image != null) {
+        imageUrl = await backend.uploadImage(_image!);
+      }
       // Upload image if provided
       String imageUrl = '';
       if (_image != null) {
@@ -243,6 +250,34 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     }
   }
 
+  final serviceBackend = ServiceBackend();
+  List<String> serviceNames = [];
+  String? selectedService;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchServices();
+  }
+
+  Future<void> fetchServices() async {
+    try {
+      final services = await serviceBackend.fetchServiceName();
+      setState(() {
+        serviceNames = services;
+      });
+    } catch (error) {
+      print('Error fetching services: $error');
+    }
+  }
+
+  void addNewService(String newService) {
+    setState(() {
+      serviceNames.add(newService); // Add the new service to the list
+      selectedService = newService; // Set the new service as selected
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     print("priceControllers length: ${priceControllers.length}");
@@ -266,6 +301,19 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          // Information about asterisk fields
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16.0),
+            child: Text(
+              'Fields marked with an asterisk (*) are required.',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 14.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
           Center(
             child: Stack(
               alignment: Alignment.center, // Center the overlay text
@@ -320,15 +368,39 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ],
             ),
           ),
-          TextField(
-            textCapitalization: TextCapitalization.words,
-            controller: nameController,
-            decoration: const InputDecoration(
-              hintText: "Enter service name",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
+          DropdownButtonFormField<String>(
+            value: selectedService,
+            items: serviceNames
+                .map((service) => DropdownMenuItem<String>(
+                      value: service,
+                      child: Text(service),
+                    ))
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                selectedService = value;
+              });
+            },
+            decoration: InputDecoration(
+              labelText: 'Select a Service',
+              border: OutlineInputBorder(),
             ),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () async {
+              final newService = await showDialog<String>(
+                context: context,
+                builder: (context) {
+                  return AddServiceDialog();
+                },
+              );
+
+              if (newService != null && newService.isNotEmpty) {
+                addNewService(newService);
+              }
+            },
+            child: Text('Add New Service'),
           ),
 
           const SizedBox(height: tertiarySizedBox),
@@ -360,6 +432,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                         border: OutlineInputBorder(),
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -372,6 +446,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                           },
                           items: petType
                               .where((petCategory) =>
+                                  !petsList.contains(petCategory) ||
+                                  petCategory == pet)
                                   !petsList.contains(petCategory) ||
                                   petCategory == pet)
                               .map((petCategory) => DropdownMenuItem<String>(
@@ -591,6 +667,34 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class AddServiceDialog extends StatelessWidget {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add New Service'),
+      content: TextField(
+        controller: _controller,
+        decoration: InputDecoration(hintText: 'Enter service name'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context), // Cancel action
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(
+                context, _controller.text.trim()); // Return new service name
+          },
+          child: Text('Add'),
+        ),
+      ],
     );
   }
 }

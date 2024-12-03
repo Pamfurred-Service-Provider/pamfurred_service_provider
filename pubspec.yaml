@@ -91,10 +91,12 @@ dependencies:
 
   #Notifications
   flutter_local_notifications: ^18.0.1
-  
+
   #Register video player
   video_player: ^2.9.2
   flutter_otp_text_field: ^1.2.0
+
+  flutter_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:

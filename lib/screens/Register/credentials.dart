@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/header.dart';
 import 'package:service_provider/components/password_textfield.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/components/text_field.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
+import 'package:service_provider/providers/register_provider.dart';
 import 'package:service_provider/screens/Register/intro_to_app.dart';
 import 'package:service_provider/screens/Register/registration_camera.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 
-class CredentialsScreen extends StatefulWidget {
+class CredentialsScreen extends ConsumerStatefulWidget {
   final Map<String, TextEditingController> controllers;
 
   const CredentialsScreen({super.key, required this.controllers});
@@ -18,13 +20,15 @@ class CredentialsScreen extends StatefulWidget {
   CredentialsScreenState createState() => CredentialsScreenState();
 }
 
-class CredentialsScreenState extends State<CredentialsScreen> {
+class CredentialsScreenState extends ConsumerState<CredentialsScreen> {
   bool isLoading = false;
   String? _errorMessage; // Declare the error message here
 
   bool _validateFields() {
     final email = widget.controllers['email']?.text.trim() ?? '';
     final password = widget.controllers['password']?.text ?? '';
+    ref.read(emailProvider.notifier).state = email;
+    ref.read(passwordProvider.notifier).state = password;
 
     if (email.isEmpty ||
         !RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")

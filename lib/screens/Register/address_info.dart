@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/header.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/components/text_field.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
+import 'package:service_provider/providers/register_provider.dart';
 import 'package:service_provider/screens/Register/credentials.dart';
 import 'package:service_provider/screens/pin_location.dart';
 import 'package:service_provider/screens/register/intro_to_app.dart';
 
-class AddressDetailsScreen extends StatefulWidget {
+class AddressDetailsScreen extends ConsumerStatefulWidget {
   final Map<String, TextEditingController> controllers;
 
   const AddressDetailsScreen({super.key, required this.controllers});
@@ -18,7 +20,7 @@ class AddressDetailsScreen extends StatefulWidget {
   AddressDetailsScreenState createState() => AddressDetailsScreenState();
 }
 
-class AddressDetailsScreenState extends State<AddressDetailsScreen> {
+class AddressDetailsScreenState extends ConsumerState<AddressDetailsScreen> {
   bool _showError = false;
 
   // Variables for selected location
@@ -30,6 +32,9 @@ class AddressDetailsScreenState extends State<AddressDetailsScreen> {
     final street = widget.controllers['street']?.text.trim() ?? '';
     final barangay = widget.controllers['barangay']?.text.trim() ?? '';
     final city = widget.controllers['city']?.text.trim() ?? '';
+    ref.watch(streetProvider.notifier).state = street;
+    ref.watch(barangayProvider.notifier).state = barangay;
+    ref.watch(cityProvider.notifier).state = city;
 
     return pinnedLatitude != null &&
         pinnedLongitude != null &&
@@ -50,6 +55,9 @@ class AddressDetailsScreenState extends State<AddressDetailsScreen> {
       setState(() {
         pinnedLatitude = result['latitude'];
         pinnedLongitude = result['longitude'];
+
+        ref.read(pinnedLatitudeProvider.notifier).state = pinnedLatitude;
+        ref.read(pinnedLongitudeProvider.notifier).state = pinnedLongitude;
         pinnedAddress = result['address'];
 
         // Log to verify the data received from PinLocationNew screen

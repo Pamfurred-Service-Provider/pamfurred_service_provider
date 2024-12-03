@@ -17,6 +17,7 @@ class ServiceBackend {
     required int minWeight,
     required int maxWeight,
   }) async {
+    // Insert the service and retrieve the service ID in a single operation
     final response = await _supabase
         .from('service')
         .insert({
@@ -101,6 +102,18 @@ class ServiceBackend {
         .from('service_provider_images')
         .getPublicUrl(filePath);
     return publicUrl;
+  }
+
+  Future<List<String>> fetchServiceName() async {
+    final response = await _supabase.from('service').select('service_name');
+    print("Services list: $response");
+
+    // Extract only the 'service_name' values
+    final services = (response as List)
+        .map((service) => service['service_name'] as String)
+        .toList();
+
+    return services;
   }
 
   Future<void> updateService({

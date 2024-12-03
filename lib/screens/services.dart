@@ -80,7 +80,7 @@ class ServicesScreenState extends State<ServicesScreen> {
               ''')
           .eq('sp_id', serviceProviderId);
 
-      print("Supabase response: $response"); // Debugging response
+      print("Supabase response FOR FETCHSERVICES: $response"); // Debugging response
 
       if (response is List && response.isNotEmpty) {
         setState(() {
@@ -248,44 +248,51 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-  Future<void> _fetchPackagesByCategory(String category) async {
-    if (serviceProviderId == null) return;
+Future<void> _fetchPackagesByCategory(String category) async {
+  if (serviceProviderId == null) return;
 
-    final response = await supabase
-        .from('serviceprovider_package')
-        .select('*, package!inner(package_name, price, package_image, size, availability_status, inclusions, pet_type, min_weight, max_weight, package_type)')
-        .eq('sp_id', serviceProviderId)
-        .filter('package.package_category', 'cs', '["$category"]');
+  setState(() {
+    packages = []; // Reset packages to avoid stale data
+    isLoading = true;
+  });
 
-    // Check if the response contains data
-    if (response is List && response.isNotEmpty) {
-      setState(() {
-        packages = List<Map<String, dynamic>>.from(response.map((item) {
-          final package = item['package'];
-          return {
-            'id': item['package_id'], // Ensure you fetch the id
-            'name': item['package']['package_name'] ?? 'Unknown',
-            'price': item['package']['price'] ?? 0,
-            'image': item['package']['package_image'] ??
-                'assets/images/default_image.png',
-            'sizes': item['package']['size'] ?? 0,
-            'availability': (package['availability_status'] is bool)
-                ? (package['availability_status'] ? 'Available' : 'Unavailable')
-                : package['availability_status'] ?? 'Unknown',
-            'inclusions': (package['inclusions'] as List).join(', '),
-            'pets': (package['pet_type'] as List).join(', '),
-            'minWeight': item['package']['min_weight'] ?? 0,
-            'maxWeight': item['package']['max_weight'] ?? 0,
-            'type': (package['package_type'] as List).join(', '),
-          };
-        }));
-      });
-    } else {
-      setState(() {
-        packages = [];
-      });
-    }
+  final response = await supabase
+      .from('service_package_with_category')
+      .select('*')
+      .eq('sp_id', serviceProviderId)
+      .eq('category_name', category);
+
+  print("Response from service_package_with_category: $response");
+
+  if (response is List && response.isNotEmpty) {
+    setState(() {
+      packages = List<Map<String, dynamic>>.from(response.map((item) {
+        print("Fetched Packages: ${response.length} services found.");
+        return {
+          'id': item['serviceprovider_package_id'],
+          'name': item['package_name'] ?? 'Unknown',
+          'price': item['price'] ?? 0,
+          'image': item['package_image'] ?? 'assets/images/default_image.png',
+          'sizes': item['size'] ?? 'Unknown',
+          'availability': item['availability_status'] == true
+              ? 'Available'
+              : 'Unavailable',
+          'pets': (item['pet_type'] as List?)?.join(', ') ?? 'Unknown',
+          'minWeight': item['min_weight'] ?? 0,
+          'maxWeight': item['max_weight'] ?? 0,
+          'type': (item['package_type'] as List?)?.join(', ') ?? 'Unknown',
+          'category': item['category_name'] ?? 'Unknown',
+        };
+      }));
+      isLoading = false;
+    });
+  } else {
+    setState(() {
+      packages = [];
+      isLoading = false;
+    });
   }
+}
 
   Future<void> _createPackage(Map<String, dynamic> newPackage) async {
     final response = await supabase.from('serviceprovider_package').insert({
@@ -342,79 +349,82 @@ class ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
-  Future<void> _fetchPackages() async {
-    if (serviceProviderId == null) return;
+Future<void> _fetchPackages() async {
+  if (serviceProviderId == null) return;
 
-    setState(() {
-      isLoading = true;
-    });
+  setState(() {
+    isLoading = true;
+  });
 
-    try {
-      final response = await supabase
-          .from('serviceprovider_package')
-          .select(
-              '''
-              package_id,
-              price,
-              size,
-              min_weight,
-              max_weight,
-              package(
-                package_name,
-                package_image,
-                availability_status,
-                package_category,
-                package_type,
-                pet_type
-              )
-              ''')
-          .eq('sp_id', serviceProviderId);
+  try {
+    final response = await supabase
+        .from('serviceprovider_package')
+        .select(
+            '''
+            serviceprovider_package_id,
+            price,
+            size,
+            min_weight,
+            max_weight,
+            package_id,
+            package(
+              package_name,
+              package_image,
+              availability_status,
+              package_type,
+              pet_type
+            ),
+            service_package_category(
+              category_name
+            )
+            ''')
+        .eq('sp_id', serviceProviderId);
 
-      print("Supabase response: $response"); // Debugging output
+    print("Supabase response for fetchPackages: $response"); // Debugging output
 
-      if (response is List && response.isNotEmpty) {
-        setState(() {
-          packages = response.map((item) {
-            final package = item['package'] as Map<String, dynamic>? ?? {};
-            return {
-              'id': item['package_id'] ?? 'N/A',
-              'name': package['package_name'] ?? 'Unknown',
-              'price': item['price'] ?? 0,
-              'image': (package['package_image'] ?? '').isNotEmpty
-                  ? package['package_image']
-                  : 'assets/images/default_image.png',
-              'size': item['size'] ?? 'Unknown',
-              'availability': package['availability_status'] == true
-                  ? 'Available'
-                  : 'Unavailable',
-              'categories': package['package_category'] is List
-                  ? (package['package_category'] as List).join(', ')
-                  : package['package_category'] ?? 'Unknown',
-              'pets': package['pet_type'] is List
-                  ? (package['pet_type'] as List).join(', ')
-                  : package['pet_type'] ?? 'Unknown',
-              'minWeight': item['min_weight'] ?? 0,
-              'maxWeight': item['max_weight'] ?? 0,
-              'type': package['package_type'] is List
-                  ? (package['package_type'] as List).join(', ')
-                  : package['package_type'] ?? 'Unknown',
-            };
-          }).toList();
-        });
-      } else {
-        setState(() {
-          packages = [];
-        });
-      }
-    } catch (error, stackTrace) {
-      print("Error fetching packages: $error");
-      print("Stack trace: $stackTrace");
-    } finally {
+    if (response is List && response.isNotEmpty) {
       setState(() {
-        isLoading = false;
+        packages = response.map((item) {
+          final package = item['package'] as Map<String, dynamic>? ?? {};
+          final category = item['service_package_category'] as Map<String, dynamic>? ?? {};
+
+          return {
+            'id': item['serviceprovider_package_id'] ?? 'N/A',
+            'name': package['package_name'] ?? 'Unknown',
+            'price': item['price'] ?? 0,
+            'image': (package['package_image'] ?? '').isNotEmpty
+                ? package['package_image']
+                : 'assets/images/default_image.png',
+            'size': item['size'] ?? 'Unknown',
+            'availability': package['availability_status'] == true
+                ? 'Available'
+                : 'Unavailable',
+            'category': category['category_name'] ?? 'Unknown',
+            'pets': package['pet_type'] is List
+                ? (package['pet_type'] as List).join(', ')
+                : package['pet_type'] ?? 'Unknown',
+            'minWeight': item['min_weight'] ?? 0,
+            'maxWeight': item['max_weight'] ?? 0,
+            'type': package['package_type'] is List
+                ? (package['package_type'] as List).join(', ')
+                : package['package_type'] ?? 'Unknown',
+          };
+        }).toList();
+      });
+    } else {
+      setState(() {
+        packages = [];
       });
     }
+  } catch (error, stackTrace) {
+    print("Error fetching packages: $error");
+    print("Stack trace: $stackTrace");
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
   }
+}
 
 // Delete package from Supabase
   Future<void> _deletePackage(Map<String, dynamic> package) async {
@@ -513,44 +523,50 @@ class ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _fetchServicesByCategory(String category) async {
-    if (serviceProviderId == null) return;
+    if (serviceProviderId == null) {
+      print("No service provider ID provided.");
+      return;
+    }
 
+    // Fetch services from the service_with_category view
     final response = await supabase
-        .from('serviceprovider_service')
-        .select(
-            '*, service!inner(service_name, price, service_image, service_category, service_type, pet_type, size, min_weight, max_weight, availability_status)')
-        .eq('sp_id', serviceProviderId)
-        .filter('service.service_category', 'cs', '["$category"]');
+        .from('service_with_category')
+        .select('*')
+        .eq('sp_id', serviceProviderId) // Filter by service provider ID
+        .eq('category_name', category); // Filter by category name
+
+    print("Response from service_with_category: $response");
 
     if (response is List && response.isNotEmpty) {
+      print("Fetched services: ${response.length} services found.");
       setState(() {
         services = List<Map<String, dynamic>>.from(response.map((item) {
-          final service = item['service'];
           return {
-            'id': item['service_id'],
-            'name': service['service_name'] ?? 'Unknown',
-            'price': service['price'] ?? 0,
-            'image':
-                service['service_image'] ?? 'assets/images/default_image.png',
-            'type': service['service_type'] != null &&
-                    service['service_type'] is List
-                ? (service['service_type'] as List).join(', ')
-                : service['service_type'] ?? 'Unknown',
-            'pets': service['pet_type'] != null && service['pet_type'] is List
-                ? (service['pet_type'] as List).join(', ')
-                : service['pet_type'] ?? 'Unknown',
-            'size': service['size'] ?? 'Unknown',
-            'minWeight': service['min_weight'] ?? 0,
-            'maxWeight': service['max_weight'] ?? 0,
-            'availability': service['availability_status'] is bool
-                ? (service['availability_status'] ? 'Available' : 'Unavailable')
-                : service['availability_status'] ?? 'Unknown',
+            'id': item['serviceprovider_service_id'],
+            'name': item['service_name'] ?? 'Unknown',
+            'price': item['price'] ?? 0,
+            'size': item['size'] ?? 'Unknown',
+            'minWeight': item['min_weight'] ?? 0,
+            'maxWeight': item['max_weight'] ?? 0,
+            'image': item['service_image'] ?? 'assets/images/default_image.png',
+            'description': item['service_desc'] ?? 'No description available',
+            'availability': item['availability_status'] != null
+                ? (item['availability_status'] ? 'Available' : 'Unavailable')
+                : 'Unknown',
+            'type': item['service_type'] != null && item['service_type'] is List
+                ? (item['service_type'] as List).join(', ')
+                : item['service_type'] ?? 'Unknown',
+            'pets': item['pet_type'] != null && item['pet_type'] is List
+                ? (item['pet_type'] as List).join(', ')
+                : item['pet_type'] ?? 'Unknown',
+            'category': item['category_name'] ?? 'Unknown',
           };
         }));
       });
     } else {
+      print("No services found or the response is empty.");
       setState(() {
-        services = []; // Clear services if none found
+        services = [];
       });
     }
   }
@@ -718,6 +734,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
+
                 const SizedBox(height: 20),
                 // Display added packages in card form
                 packages.isEmpty
@@ -759,6 +776,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                                     ),
                                   ),
                                 ),
+                                
                                 // The trash icon outside the card
                                 IconButton(
                                   icon: const Icon(Icons.delete,
