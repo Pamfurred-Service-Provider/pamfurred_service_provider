@@ -178,18 +178,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       _isLoading = true; // Start loading
     });
     int price, minWeight, maxWeight;
-  void _addService() async {
-    final backend = ServiceBackend();
-    setState(() {
-      _isLoading = true; // Start loading
-    });
-    int price, minWeight, maxWeight;
 
-    try {
-      // Parse and validate input fields
-      price = int.parse(priceController.text);
-      minWeight = int.parse(minWeightController.text);
-      maxWeight = int.parse(maxWeightController.text);
     try {
       // Parse and validate input fields
       price = int.parse(priceController.text);
@@ -205,11 +194,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         throw Exception('Please fill all fields');
       }
 
-      // Upload image if provided
-      String imageUrl = '';
-      if (_image != null) {
-        imageUrl = await backend.uploadImage(_image!);
-      }
       // Upload image if provided
       String imageUrl = '';
       if (_image != null) {
@@ -432,8 +416,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                         border: OutlineInputBorder(),
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -446,8 +428,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                           },
                           items: petType
                               .where((petCategory) =>
-                                  !petsList.contains(petCategory) ||
-                                  petCategory == pet)
                                   !petsList.contains(petCategory) ||
                                   petCategory == pet)
                               .map((petCategory) => DropdownMenuItem<String>(
