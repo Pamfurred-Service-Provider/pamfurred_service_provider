@@ -8,8 +8,10 @@ import 'package:service_provider/Widgets/add_service_dialog.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
-import 'package:service_provider/Widgets/remove_pet_type.dart';
+import 'package:service_provider/components/capitalize_first_letter.dart';
+import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
+import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/screens/services.dart';
 
 class AddServiceScreen extends StatefulWidget {
@@ -29,6 +31,7 @@ class AddServiceScreen extends StatefulWidget {
 class _AddServiceScreenState extends State<AddServiceScreen> {
   //Controllers
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController descController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   final TextEditingController minWeightController = TextEditingController();
   final TextEditingController maxWeightController = TextEditingController();
@@ -65,26 +68,42 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
     // Check if adding a new entry still maintains the constraints
     if (sizeList.length > 1) {
-      int prevPrice = int.parse(priceControllers[sizeList.length - 2].text);
-      int prevMinWeight =
-          int.parse(minWeightControllers[sizeList.length - 2].text);
-      int prevMaxWeight =
-          int.parse(maxWeightControllers[sizeList.length - 2].text);
+      try {
+        int prevPrice =
+            int.parse(priceControllers[sizeList.length - 2].text.trim());
+        int prevMinWeight =
+            int.parse(minWeightControllers[sizeList.length - 2].text.trim());
+        int prevMaxWeight =
+            int.parse(maxWeightControllers[sizeList.length - 2].text.trim());
 
-      int currPrice = int.parse(priceControllers.last.text);
-      int currMinWeight = int.parse(minWeightControllers.last.text);
-      int currMaxWeight = int.parse(maxWeightControllers.last.text);
+        int currPrice = int.parse(priceControllers.last.text.trim());
+        int currMinWeight = int.parse(minWeightControllers.last.text.trim());
+        int currMaxWeight = int.parse(maxWeightControllers.last.text.trim());
 
-      // Ensure current size is not less than the previous size
-      if (currPrice < prevPrice ||
-          currMinWeight < prevMinWeight ||
-          currMaxWeight < prevMaxWeight) {
+        // Ensure current size is not less than the previous size
+        if (currPrice < prevPrice ||
+            currMinWeight < prevMinWeight ||
+            currMaxWeight < prevMaxWeight) {
+          showErrorDialog(
+            context,
+            "New size values must not be lesser than the previous size!",
+          );
+
+          // Remove the newly added entry if validation fails
+          setState(() {
+            sizeList.removeLast();
+            priceControllers.removeLast();
+            minWeightControllers.removeLast();
+            maxWeightControllers.removeLast();
+          });
+        }
+      } catch (e) {
         showErrorDialog(
           context,
-          "New size values must not be lesser than the previous size.!",
+          "Invalid input detected. Please ensure all fields contain valid numeric values.",
         );
 
-        // Remove the newly added entry if validation fails
+        // Optionally, remove the last entry if the error is critical
         setState(() {
           sizeList.removeLast();
           priceControllers.removeLast();
@@ -207,10 +226,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     int minWeight = int.parse(minWeightControllers[0].text);
     int maxWeight = int.parse(maxWeightControllers[0].text);
     if (nameController.text.isEmpty ||
+        descController.text.isEmpty ||
         priceController.text.isEmpty ||
         sizes == null ||
         minWeightController.text.isEmpty ||
-        serviceTypeOptions == null ||
+        serviceTypeOptions.isEmpty ||
         availability == null) {
       throw Exception('Please fill all fields');
     }
@@ -223,16 +243,17 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
     // Add service to backend
     final serviceId = await backend.addService(
+      serviceProviderId: widget.serviceProviderId,
+      imageUrl: imageUrl,
       serviceName: nameController.text,
+      serviceDesc: descController.text,
+      petsToCater: petsList,
+      serviceType: selectedServiceTypes,
       price: price,
       size: sizes ?? '',
       minWeight: minWeight,
       maxWeight: maxWeight,
-      petsToCater: petsList,
-      serviceProviderId: widget.serviceProviderId,
-      serviceType: selectedServiceTypes,
       availability: availability == 'Available',
-      imageUrl: imageUrl,
       serviceCategory: widget.serviceCategory,
     );
 
@@ -290,16 +311,10 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Add Service"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      appBar: customAppBarWithTitle(context, 'Add service'),
+      backgroundColor: Colors.white,
       body: ListView(
+        physics: BouncingScrollPhysics(),
         padding: const EdgeInsets.all(16.0),
         children: [
           Center(
@@ -353,7 +368,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               style: const TextStyle(fontSize: 16),
               children: [
                 TextSpan(
-                  text: 'Pet Specific Service ', // Regular text
+                  text: 'Description ', // Regular text
                   style: const TextStyle(color: Colors.black),
                 ),
                 TextSpan(
@@ -363,7 +378,58 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ],
             ),
           ),
+          const SizedBox(height: secondarySizedBox),
+          SizedBox(
+            height: 90,
+            child: TextFormField(
+                minLines: 3,
+                maxLines: 5,
+                controller: descController,
+                cursorColor: Colors.black,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.all(10.0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(secondaryBorderRadius),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: primaryColor),
+                    borderRadius: BorderRadius.circular(secondaryBorderRadius),
+                  ),
+                ),
+                inputFormatters: [
+                  TextInputFormatter.withFunction((oldValue, newValue) {
+                    final newText = capitalizeFirstLetter(
+                        newValue.text); // Capitalize only the first letter
+                    return newValue.copyWith(text: newText);
+                  }),
+                ]),
+          ),
+          const SizedBox(height: tertiarySizedBox),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Service pet type ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: secondarySizedBox),
           CustomDropdown.multiSelect(
+            decoration: CustomDropdownDecoration(
+              hintStyle: TextStyle(fontSize: smallText, color: greyColor),
+              closedBorder: Border.all(width: .75),
+              closedBorderRadius: BorderRadius.circular(secondaryBorderRadius),
+              expandedBorder: Border.all(width: .75),
+              expandedBorderRadius:
+                  BorderRadius.circular(secondaryBorderRadius),
+            ),
             items: petTypeOptions,
             initialItems: selectedPetTypes,
             hintText: 'Select Pet Type',
@@ -390,7 +456,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               ],
             ),
           ),
-          const SizedBox(height: tertiarySizedBox),
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -399,16 +464,20 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Text(
-                      "Size: ${sizeList[index]}",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                  const SizedBox(height: tertiarySizedBox),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Size: ${sizeList[index]}",
+                        style: const TextStyle(
+                          fontSize: regularText,
+                          fontWeight: boldWeight,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: tertiarySizedBox),
                   Row(
                     children: [
                       // Price
@@ -460,7 +529,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       ),
                       const SizedBox(width: 10),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
+                        icon: const Icon(Icons.delete, color: primaryColor),
                         onPressed: () {
                           showDialog(
                             context: context,
@@ -477,11 +546,15 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: tertiarySizedBox),
                   Row(
                     children: [
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(secondaryBorderRadius)),
                           backgroundColor:
                               availabilityMap[sizeList[index]] == 'Available'
                                   ? Colors.green
@@ -512,9 +585,13 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       const SizedBox(width: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(secondaryBorderRadius)),
                           backgroundColor: availabilityMap[sizeList[index]] ==
                                   'Not Available'
-                              ? Colors.red
+                              ? primaryColor
                               : Colors.grey.shade300,
                           foregroundColor: availabilityMap[sizeList[index]] ==
                                   'Not Available'
@@ -546,11 +623,12 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               );
             },
           ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
+          const SizedBox(height: secondarySizedBox),
+          CustomWideButton(
+            text: 'Add more',
             onPressed: addEntry,
-            icon: const Icon(Icons.add),
-            label: const Text("Add"),
+            leadingIcon: Icons.add,
+            backgroundColor: Colors.green,
           ),
           const SizedBox(height: 20),
           RichText(
@@ -558,18 +636,26 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               style: const TextStyle(fontSize: 16),
               children: [
                 TextSpan(
-                  text: 'Pet Specific Service ', // Regular text
+                  text: 'Service type ', // Regular text
                   style: const TextStyle(color: Colors.black),
                 ),
                 TextSpan(
                   text: '*', // Asterisk in red
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: primaryColor),
                 ),
               ],
             ),
           ),
           const SizedBox(height: tertiarySizedBox),
           CustomDropdown.multiSelect(
+            decoration: CustomDropdownDecoration(
+              hintStyle: TextStyle(fontSize: smallText, color: greyColor),
+              closedBorder: Border.all(width: .75),
+              closedBorderRadius: BorderRadius.circular(secondaryBorderRadius),
+              expandedBorder: Border.all(width: .75),
+              expandedBorderRadius:
+                  BorderRadius.circular(secondaryBorderRadius),
+            ),
             items: serviceTypeOptions,
             initialItems: selectedServiceTypes,
             hintText: 'Select Service Type',
@@ -580,19 +666,29 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               print('Selected service types: $selectedItems');
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: quaternarySizedBox),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton(
                 style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFFA03E06),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(secondaryBorderRadius)),
+                  backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: const Text('Cancel'),
+                child: Padding(
+                  padding: const EdgeInsets.all(primarySizedBox),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontSize: regularText),
+                  ),
+                ),
               ),
               ElevatedButton(
                 onPressed: _isLoading
@@ -603,12 +699,21 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 100, 176, 81),
+                  shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(secondaryBorderRadius)),
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                 ),
                 child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Save'),
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      )
+                    : const Text(
+                        'Save',
+                        style: TextStyle(fontSize: regularText),
+                      ),
               ),
             ],
           ),

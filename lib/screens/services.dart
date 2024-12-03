@@ -356,23 +356,23 @@ class ServicesScreenState extends State<ServicesScreen> {
 
     try {
       final response = await supabase.from('serviceprovider_package').select('''
-            serviceprovider_package_id,
-            price,
-            size,
-            min_weight,
-            max_weight,
-            package_id,
-            package(
-              package_name,
-              package_image,
-              availability_status,
-              package_type,
-              pet_type
-            ),
-            service_package_category(
-              category_name
-            )
-            ''').eq('sp_id', serviceProviderId);
+        serviceprovider_package_id,
+        price,
+        size,
+        min_weight,
+        max_weight,
+        package_id,
+        package(
+          package_name,
+          package_image,
+          availability_status,
+          package_type,
+          pet_type,
+          service_package_category(
+            category_name
+          )
+        )
+      ''').eq('sp_id', serviceProviderId);
 
       print(
           "Supabase response for fetchPackages: $response"); // Debugging output
@@ -382,7 +382,8 @@ class ServicesScreenState extends State<ServicesScreen> {
           packages = response.map((item) {
             final package = item['package'] as Map<String, dynamic>? ?? {};
             final category =
-                item['service_package_category'] as Map<String, dynamic>? ?? {};
+                package['service_package_category'] as Map<String, dynamic>? ??
+                    {};
 
             return {
               'id': item['serviceprovider_package_id'] ?? 'N/A',
