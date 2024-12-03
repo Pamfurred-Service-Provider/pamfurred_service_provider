@@ -61,10 +61,7 @@ class ServicesScreenState extends State<ServicesScreen> {
     });
 
     try {
-      final response = await supabase
-          .from('serviceprovider_service')
-          .select(
-              '''
+      final response = await supabase.from('serviceprovider_service').select('''
               service_id,
               price,
               size,
@@ -77,10 +74,10 @@ class ServicesScreenState extends State<ServicesScreen> {
                 pet_type,
                 availability_status
               )
-              ''')
-          .eq('sp_id', serviceProviderId);
+              ''').eq('sp_id', serviceProviderId);
 
-      print("Supabase response FOR FETCHSERVICES: $response"); // Debugging response
+      print(
+          "Supabase response FOR FETCHSERVICES: $response"); // Debugging response
 
       if (response is List && response.isNotEmpty) {
         setState(() {
@@ -123,7 +120,6 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-
   Future<void> _createService(Map<String, dynamic> newService) async {
     try {
       // Prepare the service provider service data
@@ -137,8 +133,11 @@ class ServicesScreenState extends State<ServicesScreen> {
       };
 
       // Insert into the 'serviceprovider_service' table
-      final response = await supabase.from('serviceprovider_service').insert(serviceData).select();
-      
+      final response = await supabase
+          .from('serviceprovider_service')
+          .insert(serviceData)
+          .select();
+
       if (response is List && response.isNotEmpty) {
         // Fetch services by category after successful insertion
         await _fetchServicesByCategory(selectedCategory!);
@@ -162,7 +161,6 @@ class ServicesScreenState extends State<ServicesScreen> {
       throw Exception('Error creating service: $error');
     }
   }
-
 
   void _navigateToAddService() async {
     final newService = await Navigator.push(
@@ -227,7 +225,7 @@ class ServicesScreenState extends State<ServicesScreen> {
             .from('service_provider_images')
             .remove([filePath]);
         print("Image deleted from the bucket successfully.");
-            }
+      }
 
       // First, delete from the bridge table
       await supabase
@@ -248,51 +246,51 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-Future<void> _fetchPackagesByCategory(String category) async {
-  if (serviceProviderId == null) return;
+  Future<void> _fetchPackagesByCategory(String category) async {
+    if (serviceProviderId == null) return;
 
-  setState(() {
-    packages = []; // Reset packages to avoid stale data
-    isLoading = true;
-  });
-
-  final response = await supabase
-      .from('service_package_with_category')
-      .select('*')
-      .eq('sp_id', serviceProviderId)
-      .eq('category_name', category);
-
-  print("Response from service_package_with_category: $response");
-
-  if (response is List && response.isNotEmpty) {
     setState(() {
-      packages = List<Map<String, dynamic>>.from(response.map((item) {
-        print("Fetched Packages: ${response.length} services found.");
-        return {
-          'id': item['serviceprovider_package_id'],
-          'name': item['package_name'] ?? 'Unknown',
-          'price': item['price'] ?? 0,
-          'image': item['package_image'] ?? 'assets/images/default_image.png',
-          'sizes': item['size'] ?? 'Unknown',
-          'availability': item['availability_status'] == true
-              ? 'Available'
-              : 'Unavailable',
-          'pets': (item['pet_type'] as List?)?.join(', ') ?? 'Unknown',
-          'minWeight': item['min_weight'] ?? 0,
-          'maxWeight': item['max_weight'] ?? 0,
-          'type': (item['package_type'] as List?)?.join(', ') ?? 'Unknown',
-          'category': item['category_name'] ?? 'Unknown',
-        };
-      }));
-      isLoading = false;
+      packages = []; // Reset packages to avoid stale data
+      isLoading = true;
     });
-  } else {
-    setState(() {
-      packages = [];
-      isLoading = false;
-    });
+
+    final response = await supabase
+        .from('service_package_with_category')
+        .select('*')
+        .eq('sp_id', serviceProviderId)
+        .eq('category_name', category);
+
+    print("Response from service_package_with_category: $response");
+
+    if (response is List && response.isNotEmpty) {
+      setState(() {
+        packages = List<Map<String, dynamic>>.from(response.map((item) {
+          print("Fetched Packages: ${response.length} services found.");
+          return {
+            'id': item['serviceprovider_package_id'],
+            'name': item['package_name'] ?? 'Unknown',
+            'price': item['price'] ?? 0,
+            'image': item['package_image'] ?? 'assets/images/default_image.png',
+            'sizes': item['size'] ?? 'Unknown',
+            'availability': item['availability_status'] == true
+                ? 'Available'
+                : 'Unavailable',
+            'pets': (item['pet_type'] as List?)?.join(', ') ?? 'Unknown',
+            'minWeight': item['min_weight'] ?? 0,
+            'maxWeight': item['max_weight'] ?? 0,
+            'type': (item['package_type'] as List?)?.join(', ') ?? 'Unknown',
+            'category': item['category_name'] ?? 'Unknown',
+          };
+        }));
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        packages = [];
+        isLoading = false;
+      });
+    }
   }
-}
 
   Future<void> _createPackage(Map<String, dynamic> newPackage) async {
     final response = await supabase.from('serviceprovider_package').insert({
@@ -349,18 +347,15 @@ Future<void> _fetchPackagesByCategory(String category) async {
     );
   }
 
-Future<void> _fetchPackages() async {
-  if (serviceProviderId == null) return;
+  Future<void> _fetchPackages() async {
+    if (serviceProviderId == null) return;
 
-  setState(() {
-    isLoading = true;
-  });
+    setState(() {
+      isLoading = true;
+    });
 
-  try {
-    final response = await supabase
-        .from('serviceprovider_package')
-        .select(
-            '''
+    try {
+      final response = await supabase.from('serviceprovider_package').select('''
             serviceprovider_package_id,
             price,
             size,
@@ -377,54 +372,55 @@ Future<void> _fetchPackages() async {
             service_package_category(
               category_name
             )
-            ''')
-        .eq('sp_id', serviceProviderId);
+            ''').eq('sp_id', serviceProviderId);
 
-    print("Supabase response for fetchPackages: $response"); // Debugging output
+      print(
+          "Supabase response for fetchPackages: $response"); // Debugging output
 
-    if (response is List && response.isNotEmpty) {
+      if (response is List && response.isNotEmpty) {
+        setState(() {
+          packages = response.map((item) {
+            final package = item['package'] as Map<String, dynamic>? ?? {};
+            final category =
+                item['service_package_category'] as Map<String, dynamic>? ?? {};
+
+            return {
+              'id': item['serviceprovider_package_id'] ?? 'N/A',
+              'name': package['package_name'] ?? 'Unknown',
+              'price': item['price'] ?? 0,
+              'image': (package['package_image'] ?? '').isNotEmpty
+                  ? package['package_image']
+                  : 'assets/images/default_image.png',
+              'size': item['size'] ?? 'Unknown',
+              'availability': package['availability_status'] == true
+                  ? 'Available'
+                  : 'Unavailable',
+              'category': category['category_name'] ?? 'Unknown',
+              'pets': package['pet_type'] is List
+                  ? (package['pet_type'] as List).join(', ')
+                  : package['pet_type'] ?? 'Unknown',
+              'minWeight': item['min_weight'] ?? 0,
+              'maxWeight': item['max_weight'] ?? 0,
+              'type': package['package_type'] is List
+                  ? (package['package_type'] as List).join(', ')
+                  : package['package_type'] ?? 'Unknown',
+            };
+          }).toList();
+        });
+      } else {
+        setState(() {
+          packages = [];
+        });
+      }
+    } catch (error, stackTrace) {
+      print("Error fetching packages: $error");
+      print("Stack trace: $stackTrace");
+    } finally {
       setState(() {
-        packages = response.map((item) {
-          final package = item['package'] as Map<String, dynamic>? ?? {};
-          final category = item['service_package_category'] as Map<String, dynamic>? ?? {};
-
-          return {
-            'id': item['serviceprovider_package_id'] ?? 'N/A',
-            'name': package['package_name'] ?? 'Unknown',
-            'price': item['price'] ?? 0,
-            'image': (package['package_image'] ?? '').isNotEmpty
-                ? package['package_image']
-                : 'assets/images/default_image.png',
-            'size': item['size'] ?? 'Unknown',
-            'availability': package['availability_status'] == true
-                ? 'Available'
-                : 'Unavailable',
-            'category': category['category_name'] ?? 'Unknown',
-            'pets': package['pet_type'] is List
-                ? (package['pet_type'] as List).join(', ')
-                : package['pet_type'] ?? 'Unknown',
-            'minWeight': item['min_weight'] ?? 0,
-            'maxWeight': item['max_weight'] ?? 0,
-            'type': package['package_type'] is List
-                ? (package['package_type'] as List).join(', ')
-                : package['package_type'] ?? 'Unknown',
-          };
-        }).toList();
-      });
-    } else {
-      setState(() {
-        packages = [];
+        isLoading = false;
       });
     }
-  } catch (error, stackTrace) {
-    print("Error fetching packages: $error");
-    print("Stack trace: $stackTrace");
-  } finally {
-    setState(() {
-      isLoading = false;
-    });
   }
-}
 
 // Delete package from Supabase
   Future<void> _deletePackage(Map<String, dynamic> package) async {
@@ -776,7 +772,7 @@ Future<void> _fetchPackages() async {
                                     ),
                                   ),
                                 ),
-                                
+
                                 // The trash icon outside the card
                                 IconButton(
                                   icon: const Icon(Icons.delete,
