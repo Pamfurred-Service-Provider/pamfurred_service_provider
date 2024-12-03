@@ -11,6 +11,9 @@ final revenueByDateRangeProvider =
   final startDate = params['startDate'] ?? ref.watch(reportStartDateProvider);
   final endDate = params['endDate'] ?? ref.watch(reportEndDateProvider);
 
+  // print("Fetching revenue data...");
+  // print("Parameters: spId=$spId, startDate=$startDate, endDate=$endDate");
+
   // Call the Supabase RPC function to fetch the revenue data
   final response = await Supabase.instance.client.rpc(
     'fetch_revenue_by_date_range',
@@ -22,7 +25,7 @@ final revenueByDateRangeProvider =
   );
 
   // Log the response to check the data structure
-  print("Supabase response: $response");
+  // print("Supabase response: $response");
 
   // Assuming that the response data is a list of records
   return List<Map<String, dynamic>>.from(response);

@@ -58,15 +58,41 @@ class _GenerateReportScreenState extends ConsumerState<GenerateReportScreen>
         _startDate.value = newSelectedDate.start;
         _endDate.value = newSelectedDate.end;
 
-        final selectedStartDate = ref
-            .read(reportStartDateProvider.notifier)
-            .state = formatDateWithoutTime((_startDate.value).toString());
-        final selectedEndDate = ref.read(reportEndDateProvider.notifier).state =
-            formatDateWithoutTime((_endDate.value).toString());
+        final selectedStartDate =
+            formatDateWithoutTime(_startDate.value.toString());
+        final selectedEndDate =
+            formatDateWithoutTime(_endDate.value.toString());
+
+        // Update the state in the providers
+        ref.watch(reportStartDateProvider.notifier).state = selectedStartDate;
+        ref.watch(reportEndDateProvider.notifier).state = selectedEndDate;
 
         print('Selected start date: $selectedStartDate');
         print('Selected end date: $selectedEndDate');
       });
+
+      // Use the future of the revenue data and handle its states
+      final revenueDataFuture = ref.refresh(revenueByDateRangeProvider({
+        'spId': ref.watch(userIdProvider),
+        'startDate': ref.watch(reportStartDateProvider),
+        'endDate': ref.watch(reportEndDateProvider),
+      }));
+
+      // Handle the result of the future
+      revenueDataFuture.when(
+        data: (revenueList) {
+          // Process revenue data if needed
+          print("Revenue data fetched: $revenueList");
+        },
+        loading: () {
+          // Optionally handle loading state if necessary
+          print("Loading revenue data...");
+        },
+        error: (error, stack) {
+          // Handle error state if necessary
+          print("Error fetching revenue data: $error");
+        },
+      );
     }
   }
 
@@ -186,8 +212,10 @@ class _GenerateReportScreenState extends ConsumerState<GenerateReportScreen>
                       return Column(
                         children: revenueList.map((revenue) {
                           return ListTile(
-                            title: Text('Revenue Type: ${revenue['total_amount']}'),
-                            subtitle: Text('Total: \$${revenue['total_revenue']}'),
+                            title: Text(
+                                'Revenue Type: ${revenue['total_amount']}'),
+                            subtitle:
+                                Text('Total: \$${revenue['total_revenue']}'),
                           );
                         }).toList(),
                       );
