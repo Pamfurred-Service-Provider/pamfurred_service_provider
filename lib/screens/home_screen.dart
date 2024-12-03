@@ -280,11 +280,13 @@ class HomeScreenState extends State<HomeScreen> {
     }
 
     // Set the initial tab index based on the title
-    int initialTabIndex = title == 'Appointments \nToday'
+    int initialTabIndex = title == 'Pending \nAppointments'
         ? 0
-        : title == 'Upcoming \nAppointments'
+        : title == 'Appointments \nToday'
             ? 1
-            : 3;
+            : title == 'Upcoming \nAppointments'
+                ? 2
+                : 4;
     print('Navigating to screen with title: $title');
     print('Initial tab index set to: $initialTabIndex');
 
