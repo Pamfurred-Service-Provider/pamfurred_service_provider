@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/components/header.dart';
+import 'package:service_provider/providers/register_provider.dart';
 import 'package:service_provider/screens/Register/intro_to_app.dart';
 import 'package:service_provider/screens/otp_input.dart';
 import 'dart:io';
@@ -9,7 +11,7 @@ import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 
-class RegistrationCameraScreen extends StatefulWidget {
+class RegistrationCameraScreen extends ConsumerStatefulWidget {
   final Map<String, TextEditingController>
       controllers; // Passed from previous screens
 
@@ -20,11 +22,12 @@ class RegistrationCameraScreen extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<RegistrationCameraScreen> createState() =>
+  ConsumerState<RegistrationCameraScreen> createState() =>
       _RegistrationCameraScreenState();
 }
 
-class _RegistrationCameraScreenState extends State<RegistrationCameraScreen> {
+class _RegistrationCameraScreenState
+    extends ConsumerState<RegistrationCameraScreen> {
   final supabase = Supabase.instance.client;
   File? imageFile;
   bool isUploading = false;
@@ -75,17 +78,17 @@ class _RegistrationCameraScreenState extends State<RegistrationCameraScreen> {
     setState(() => isLoading = true);
 
     try {
-      final firstName = widget.controllers['firstName']?.text ?? '';
-      final lastName = widget.controllers['lastName']?.text ?? '';
-      final establishmentName =
-          widget.controllers['establishmentName']?.text ?? '';
-      final email = widget.controllers['email']?.text ?? '';
-      final phoneNumber = widget.controllers['phoneNumber']?.text ?? '';
-      final password = widget.controllers['password']?.text ?? '';
-      final floorUnitRoom = widget.controllers['floorUnitRoom']?.text ?? '';
-      final street = widget.controllers['street']?.text ?? '';
-      final barangay = widget.controllers['barangay']?.text ?? '';
-      final city = widget.controllers['city']?.text ?? '';
+      final establishmentName = ref.watch(nameProvider);
+      final email = ref.watch(emailProvider);
+      final phoneNumber = ref.watch(phoneNumberProvider);
+      final password = ref.watch(passwordProvider);
+      final floorUnitRoom = ref.watch(floorUnitRoomProvider);
+      final street = ref.watch(streetProvider);
+      final barangay = ref.watch(barangayProvider);
+      final city = ref.watch(cityProvider);
+
+      final pinnedLatitude = ref.watch(pinnedLatitudeProvider);
+      final pinnedLongitude = ref.watch(pinnedLongitudeProvider);
 
       final imageUrl = await uploadImage();
 
@@ -96,8 +99,6 @@ class _RegistrationCameraScreenState extends State<RegistrationCameraScreen> {
         email: email,
         password: password,
         data: {
-          'firstName': firstName,
-          'lastName': lastName,
           'phone_number': phoneNumber,
         },
       );
@@ -105,33 +106,38 @@ class _RegistrationCameraScreenState extends State<RegistrationCameraScreen> {
       if (response.user != null) {
         final userId = response.user!.id;
 
-        // Insert data into 'user' table
-        await supabase.from('user').insert({
-          'user_id': userId,
-          'phone_number': phoneNumber,
-          'user_type': 'service_provider',
-          'created_at': DateTime.now().toUtc().toIso8601String(),
-        });
-
-        // Insert data into 'service_provider' table
-        await supabase.from('service_provider').insert({
-          'name': establishmentName,
-          'email': email,
-          'sp_id': userId,
-          'sp_business_permit': imageUrl,
-        });
-
         // Insert address information
-        await supabase
+        final addressResponse = await supabase
             .from('address')
             .insert({
               'floor_unit_room': floorUnitRoom,
               'street': street,
               'barangay': barangay,
               'city': city,
+              'latitude': pinnedLatitude,
+              'longitude': pinnedLongitude,
             })
             .select('address_id')
             .single();
+
+        final addressId = addressResponse['address_id'];
+
+        // Insert data into 'user' table
+        await supabase.from('user').insert({
+          'user_id': userId,
+          'phone_number': phoneNumber,
+          'email': email,
+          'user_type': 'service_provider',
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+          'address_id': addressId,
+        });
+
+        // Insert data into 'service_provider' table
+        await supabase.from('service_provider').insert({
+          'name': establishmentName,
+          'sp_id': userId,
+          'sp_business_permit': imageUrl,
+        });
 
         // Navigate to OTP verification
         Navigator.pushReplacement(

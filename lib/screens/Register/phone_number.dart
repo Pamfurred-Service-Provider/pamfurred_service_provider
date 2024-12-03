@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/header.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
+import 'package:service_provider/providers/register_provider.dart';
 import 'package:service_provider/screens/Register/address_info.dart';
 import 'package:service_provider/screens/register/intro_to_app.dart';
 
-class PhoneNumberScreen extends StatefulWidget {
+class PhoneNumberScreen extends ConsumerStatefulWidget {
   final Map<String, TextEditingController> controllers;
 
   const PhoneNumberScreen({super.key, required this.controllers});
@@ -17,12 +19,13 @@ class PhoneNumberScreen extends StatefulWidget {
   PhoneNumberScreenState createState() => PhoneNumberScreenState();
 }
 
-class PhoneNumberScreenState extends State<PhoneNumberScreen> {
+class PhoneNumberScreenState extends ConsumerState<PhoneNumberScreen> {
   bool _showError = false;
 
   /// Validates if the phone number contains exactly 10 digits, including the country code
   bool _validatePhoneNumber() {
     final phoneNumber = widget.controllers['phoneNumber']?.text.trim() ?? '';
+    ref.read(phoneNumberProvider.notifier).state = phoneNumber;
 
     // Remove all non-numeric characters (this includes spaces and symbols)
     final phoneDigits = phoneNumber.replaceAll(RegExp(r'\D'), '');

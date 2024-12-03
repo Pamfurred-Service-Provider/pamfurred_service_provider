@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/service_backend.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/services.dart';
 
 class AddServiceScreen extends StatefulWidget {
@@ -26,6 +28,70 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   final TextEditingController minWeightController = TextEditingController();
   final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
+
+  // Dynamic controllers for price, size, and weight
+  List<TextEditingController> priceControllers = [];
+  List<TextEditingController> minWeightControllers = [];
+  List<TextEditingController> maxWeightControllers = [];
+  List<String> sizeList = []; // Dynamic size list
+
+  // Add new entry for price, size, and weight
+  void addEntry() {
+    setState(() {
+      if (sizeList.isEmpty) {
+        sizeList.add("S");
+      } else if (sizeList.length < 4) {
+        sizeList.add(["M", "L", "XL"][sizeList.length - 1]);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You can't add more than 4 sizes!")),
+        );
+        return;
+      }
+
+      priceControllers.add(TextEditingController(text: "0"));
+      minWeightControllers.add(TextEditingController(text: "0"));
+      maxWeightControllers.add(TextEditingController(text: "0"));
+    });
+  }
+
+  // Remove an entry for price, size, and weight
+  void removeEntry(int index) {
+    if (index < sizeList.length &&
+        index < priceControllers.length &&
+        index < minWeightControllers.length &&
+        index < maxWeightControllers.length) {
+      setState(() {
+        sizeList.removeAt(index);
+        priceControllers.removeAt(index);
+        minWeightControllers.removeAt(index);
+        maxWeightControllers.removeAt(index);
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to remove entry: Invalid index.")),
+      );
+    }
+  }
+
+  // Validate and check for unique prices and weights
+  bool validateEntries() {
+    final prices = priceControllers.map((e) => e.text).toSet();
+    final weights = {
+      for (int i = 0; i < minWeightControllers.length; i++)
+        '${minWeightControllers[i].text}-${maxWeightControllers[i].text}'
+    };
+
+    if (prices.length != priceControllers.length ||
+        weights.length != minWeightControllers.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Prices and weights must be unique!")),
+      );
+      return false;
+    }
+
+    return true;
+  }
 
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
@@ -86,29 +152,35 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
   //Static data for pet sizes
   List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
+  List<String> serviceTypeOptions = ['Home Service', 'In-clinic'];
+  List<String> selectedServiceTypes = [];
   final List<String> petType = ['dog', 'cat', 'bunny'];
-  String? serviceType = 'In-clinic';
   String? availability = 'Available';
   String? sizes = 'S';
 
-void _addService() async {
-  final backend = ServiceBackend();
-  setState(() {
-    _isLoading = true; // Start loading
-  });
-  int price, minWeight, maxWeight;
+  void _addService() async {
+    final backend = ServiceBackend();
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+    List<int> prices = [];
+    List<int> minWeights = [];
+    List<int> maxWeights = [];
+    for (var i = 0; i < priceControllers.length; i++) {
+      int price = int.tryParse(priceControllers[i].text) ?? 0;
+      int minWeight = int.tryParse(minWeightControllers[i].text) ?? 0;
+      int maxWeight = int.tryParse(maxWeightControllers[i].text) ?? 0;
+    }
 
-  try {
-    // Parse and validate input fields
-    price = int.parse(priceController.text);
-    minWeight = int.parse(minWeightController.text);
-    maxWeight = int.parse(maxWeightController.text);
-
+    int price = int.parse(priceController.text);
+    String size = sizeList[0];
+    int minWeight = int.parse(minWeightControllers[0].text);
+    int maxWeight = int.parse(maxWeightControllers[0].text);
     if (nameController.text.isEmpty ||
         priceController.text.isEmpty ||
         sizes == null ||
         minWeightController.text.isEmpty ||
-        serviceType == null ||
+        serviceTypeOptions == null ||
         availability == null) {
       throw Exception('Please fill all fields');
     }
@@ -128,12 +200,11 @@ void _addService() async {
       maxWeight: maxWeight,
       petsToCater: petsList,
       serviceProviderId: widget.serviceProviderId,
-      serviceType: serviceType ?? '',
+      serviceType: selectedServiceTypes,
       availability: availability == 'Available',
       imageUrl: imageUrl,
       serviceCategory: widget.serviceCategory,
     );
-    
 
     if (serviceId != null) {
       // Navigate to ServicesScreen after successful service addition
@@ -144,21 +215,52 @@ void _addService() async {
     } else {
       throw Exception('Failed to add service, please try again.');
     }
-  } catch (e) {
-    // Handle errors and show a Snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString())),
-    );
-  } finally {
-    setState(() => _isLoading = false); // Stop loading
   }
-}
+
+  final serviceBackend = ServiceBackend();
+  List<String> serviceNames = [];
+  String? selectedService;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchServices();
+    sizeList.add("S");
+    priceControllers.add(TextEditingController(text: "0"));
+    minWeightControllers.add(TextEditingController(text: "0"));
+    maxWeightControllers.add(TextEditingController(text: "0"));
+  }
+
+  Future<void> fetchServices() async {
+    try {
+      final services = await serviceBackend.fetchServiceName();
+      setState(() {
+        serviceNames = services;
+      });
+    } catch (error) {
+      print('Error fetching services: $error');
+    }
+  }
+
+  void addNewService(String newService) {
+    setState(() {
+      serviceNames.add(newService); // Add the new service to the list
+      selectedService = newService; // Set the new service as selected
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    print("priceControllers length: ${priceControllers.length}");
+    print("sizeList length: ${sizeList.length}");
+    print("priceControllers length: ${priceControllers.length}");
+    print("minWeightControllers length: ${minWeightControllers.length}");
+    print("maxWeightControllers length: ${maxWeightControllers.length}");
+    print("sizeList length: ${sizeList.length}");
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Service"),
+        title: const Text("Add Service"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -169,19 +271,6 @@ void _addService() async {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-                  // Information about asterisk fields
-        const Padding(
-          padding: EdgeInsets.only(bottom: 16.0),
-          child: Text(
-            'Fields marked with an asterisk (*) are required.',
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 14.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-
           Center(
             child: Stack(
               alignment: Alignment.center, // Center the overlay text
@@ -219,9 +308,6 @@ void _addService() async {
               ],
             ),
           ),
-
-
-
           const SizedBox(height: 20),
           RichText(
             text: TextSpan(
@@ -238,20 +324,95 @@ void _addService() async {
               ],
             ),
           ),
-          TextField(
-            textCapitalization: TextCapitalization.words,
-            controller: nameController,
-            decoration: const InputDecoration(
-              hintText: "Enter service name",
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
+          DropdownButtonFormField<String>(
+            value: selectedService,
+            items: [
+              ...serviceNames.map((service) => DropdownMenuItem<String>(
+                    value: service,
+                    child: Text(service),
+                  )),
+              const DropdownMenuItem<String>(
+                enabled: false,
+                child: Divider(
+                  thickness: 1,
+                  color: Colors.grey,
+                ),
               ),
+              DropdownMenuItem<String>(
+                value: 'Add New Service',
+                child: Row(
+                  children: [
+                    const Icon(Icons.add, color: Color(0xFFA03E06)),
+                    const Text('Add New Service'),
+                  ],
+                ),
+              ),
+            ],
+            onChanged: (value) async {
+              if (value == 'Add New Service') {
+                final newService = await showDialog<String>(
+                  context: context,
+                  builder: (context) {
+                    String? newServiceName = '';
+                    return AlertDialog(
+                      title: const Text('Add New Service'),
+                      content: TextField(
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter service name',
+                        ),
+                        onChanged: (text) => newServiceName = text,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (newServiceName != null &&
+                                newServiceName!.isNotEmpty) {
+                              Navigator.pop(context, newServiceName);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('Please enter a valid service name'),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text('Add'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (newService != null && newService.isNotEmpty) {
+                  setState(() {
+                    serviceNames
+                        .add(newService); // Add the new service to the list
+                    selectedService =
+                        newService; // Set the new service as selected
+                    nameController.text =
+                        newService; // Update the controller with the new value
+                  });
+                }
+              } else {
+                setState(() {
+                  selectedService = value; // Update the selected service
+                  nameController.text = value ?? ''; // Update the controller
+                });
+              }
+            },
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
             ),
           ),
 
-          
-          
-          const SizedBox(height: 10),
+          const SizedBox(height: tertiarySizedBox),
           RichText(
             text: TextSpan(
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -278,7 +439,8 @@ void _addService() async {
                     child: InputDecorator(
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -291,7 +453,8 @@ void _addService() async {
                           },
                           items: petType
                               .where((petCategory) =>
-                                  !petsList.contains(petCategory) || petCategory == pet)
+                                  !petsList.contains(petCategory) ||
+                                  petCategory == pet)
                               .map((petCategory) => DropdownMenuItem<String>(
                                     value: petCategory,
                                     child: Text(petCategory),
@@ -320,7 +483,7 @@ void _addService() async {
             // label: const Text("Add Pet Category"),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: tertiarySizedBox),
           RichText(
             text: TextSpan(
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -361,15 +524,13 @@ void _addService() async {
               ),
             ),
           ),
-
-
-          const SizedBox(height: 10),
+          const SizedBox(height: tertiarySizedBox),
           RichText(
             text: TextSpan(
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               children: [
                 TextSpan(
-                  text: 'Add a Size ', // Regular text
+                  text: 'Price, Size and Weights ', // Regular text
                   style: const TextStyle(color: Colors.black),
                 ),
                 TextSpan(
@@ -379,40 +540,88 @@ void _addService() async {
               ],
             ),
           ),
-          InputDecorator(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+          for (int i = 0; i < sizeList.length; i++)
+            Column(
+              children: [
+                Text(
+                  "Size: ${sizeList[i]}",
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: tertiarySizedBox),
+                Row(
+                  children: [
+                    // Price input
+                    Expanded(
+                      child: TextField(
+                        controller: priceControllers[i],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: "Price",
+                          prefixText: "₱ ",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Weight input
+                    Expanded(
+                      child: TextField(
+                        controller: minWeightControllers[i],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: "Min Weight",
+                          suffixText: "kg",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: maxWeightControllers[i],
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: "Max Weight",
+                          suffixText: "kg",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => removeEntry(i),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: sizes,
-                onChanged: (newValue) {
-                  setState(() {
-                    sizes = newValue;
-                  });
-                },
-                hint: const Text('Sizes'),
-                items: sizeOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
+          ElevatedButton.icon(
+            onPressed: addEntry,
+            icon: const Icon(Icons.add),
+            label: const Text("Add"),
           ),
-
-
-            const SizedBox(height: 10),
-            RichText(
+          const SizedBox(height: tertiarySizedBox),
+          Padding(
+            padding: const EdgeInsets.all(12), // Padding inside the container
+            child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 children: [
                   TextSpan(
-                    text: 'Weight (in Kilograms) ', // Regular text
+                    text: 'Service Type ', // Regular text
                     style: const TextStyle(color: Colors.black),
                   ),
                   TextSpan(
@@ -422,117 +631,18 @@ void _addService() async {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: minWeightController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly
-                    ],
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Text("to"),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: maxWeightController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly
-                    ],
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-              const SizedBox(height: 10),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  children: [
-                    TextSpan(
-                      text: 'Price (PHP) ', // Regular text
-                      style: const TextStyle(color: Colors.black),
-                    ),
-                    TextSpan(
-                      text: '*', // Asterisk in red
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ],
-                ),
-              ),
-
-              TextField(
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*')), // Allows only digits
-                ],
-                controller: priceController,
-                decoration: const InputDecoration(
-                  prefixText: '₱ ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                  ),
-                  hintText: "Enter price",
-                ),
-              ),
-
-              const SizedBox(height: 10),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  children: [
-                    TextSpan(
-                      text: 'Service Type ', // Regular text
-                      style: const TextStyle(color: Colors.black),
-                    ),
-                    TextSpan(
-                      text: '*', // Asterisk in red
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ],
-                ),
-              ),
-              InputDecorator(
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: serviceType,
-                    onChanged: (newValue) {
-                      setState(() {
-                        serviceType = newValue;
-                      });
-                    },
-                    hint: const Text('Select Service Type'),
-                    items: ['In-clinic', 'Home service'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-
+          ),
+          CustomDropdown.multiSelect(
+            items: serviceTypeOptions,
+            initialItems: selectedServiceTypes,
+            hintText: 'Select Service Type',
+            onListChanged: (List<String> selectedItems) {
+              setState(() {
+                selectedServiceTypes = selectedItems;
+              });
+              print('Selected service types: $selectedItems');
+            },
+          ),
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -548,7 +658,13 @@ void _addService() async {
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: _addService,
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        if (validateEntries()) {
+                          _addService();
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 100, 176, 81),
                   foregroundColor: Colors.white,

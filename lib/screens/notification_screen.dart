@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:service_provider/components/globals.dart';
-import 'package:service_provider/screens/notification_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -13,14 +12,12 @@ class NotificationScreen extends StatefulWidget {
 class NotificationScreenState extends State<NotificationScreen> {
   String? serviceProviderId;
   List<Map<String, dynamic>> notifications = [];
-  late List<bool> isTapped; // Track the tapped state for each card
   bool isLoading = true; // Loading state for data fetching
 
   @override
   void initState() {
     super.initState();
     _initializeSession();
-    isTapped = [];
   }
 
   Future<void> _initializeSession() async {
@@ -58,11 +55,9 @@ class NotificationScreenState extends State<NotificationScreen> {
       );
 
       final fetchedNotifications = List<Map<String, dynamic>>.from(response);
-      print('Numrber of notifications: ${fetchedNotifications.length}');
 
       setState(() {
         notifications = fetchedNotifications;
-        isTapped = List<bool>.filled(notifications.length, false);
         isLoading = false;
       });
     } catch (e) {
@@ -71,16 +66,6 @@ class NotificationScreenState extends State<NotificationScreen> {
         isLoading = false;
       });
     }
-    // print(
-    //     "Today's notifications: ${notifications.where((notification) => isToday(DateTime.parse(notification['created_at']))).toList()}");
-    // print(
-    //     "Yesterday's notifications: ${notifications.where((notification) => isYesterday(DateTime.parse(notification['created_at']))).toList()}");
-    // print(
-    //     "Earlier notifications: ${notifications.where((notification) => !isToday(DateTime.parse(notification['created_at'])) && !isYesterday(DateTime.parse(notification['created_at']))).toList()}");
-    // // print('Notifications: $notifications');
-    // // print('Created at: ${notifications[0]['created_at']}');
-    // // print(
-    // //     'Time elapsed: ${timeElapsed(DateTime.parse(notifications[0]['created_at']))}');
   }
 
   // Function to check if the date is today
@@ -222,152 +207,133 @@ class NotificationScreenState extends State<NotificationScreen> {
 
   // Notification card widget
   Widget _buildNotificationCard(int index, Map<String, dynamic> notification) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => NotificationDetailsScreen(
-              notification: notification,
-              appointment: notification, // Pass the notification data
-            ),
-          ),
-        );
-      },
-      child: Card(
-        color: isTapped[index]
-            ? Colors.white
-            : Colors.grey[200], // Change color on tap
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Notification Title
-              Row(
-                children: [
-                  if (notification['appointment_notif_type'] == 'Upcoming') ...[
-                    Text(
-                      notification['name'] ?? 'Appointment',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                  if (notification['appointment_notif_type'] != 'Upcoming') ...[
-                    Text(
-                      notification['Appointment'] ?? 'Appointment',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Notification Title
+            Row(
+              children: [
+                if (notification['appointment_notif_type'] == 'Upcoming') ...[
                   Text(
-                    notification['appointment_notif_type'] == "Done"
-                        ? " completed"
-                        : " ${notification['appointment_notif_type']}",
+                    notification['name'] ?? 'Appointment',
                     style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(height: primarySizedBox),
-              // Notification Body
-              RichText(
-                text: TextSpan(
-                  children: [
-                    // Determine the initial message based on appointment status
-                    TextSpan(
-                      text: (() {
-                        if (notification['appointment_notif_type'] ==
-                            'Upcoming') {
-                          return 'You have an';
-                        } else {
-                          return 'Your appointment with';
-                        }
-                      })(),
-                      style: const TextStyle(
-                          fontSize: regularText, color: Colors.black),
+                if (notification['appointment_notif_type'] != 'Upcoming') ...[
+                  Text(
+                    notification['Appointment'] ?? 'Appointment',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    if (notification['appointment_notif_type'] ==
-                        'Upcoming') ...[
-                      const TextSpan(
-                        text:
-                            ' upcoming ', // Null check for 'establishment_name'
-                        style: TextStyle(
-                            fontSize: regularText, color: primaryColor),
-                      ),
-                      const TextSpan(
-                        text: 'appointment with',
-                        style: TextStyle(
-                          fontSize: regularText,
-                          color: Colors.black,
-                        ),
-                      ),
-                      TextSpan(
-                        text: ' ${notification['pet_owner_name'] ?? "unknown"}',
-                        style: const TextStyle(
-                          fontSize: regularText,
-                          color: primaryColor,
-                        ),
-                      ),
-                    ],
-                    if (notification['appointment_notif_type'] !=
-                        'Upcoming') ...[
-                      TextSpan(
-                        text: ' ${notification['pet_owner_name'] ?? "unknown"}',
-                        style: const TextStyle(
-                          fontSize: regularText,
-                          color: primaryColor,
-                        ),
-                      ),
-                      const TextSpan(
-                        text: ' has been ',
-                        style: TextStyle(
-                          fontSize: regularText,
-                          color: Colors.black,
-                        ),
-                      ),
-                      TextSpan(
-                        text: notification['appointment_notif_type'] == 'Done'
-                            ? 'completed'
-                            : (notification['appointment_notif_type'] ?? ''),
-                        style: const TextStyle(
-                          fontSize: regularText,
-                          color: primaryColor,
-                        ),
-                      ),
-                    ],
+                  ),
+                ],
+                Text(
+                  notification['appointment_notif_type'] == "Done"
+                      ? " completed"
+                      : " ${notification['appointment_notif_type']}",
+                  style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: primarySizedBox),
+            // Notification Body
+            RichText(
+              text: TextSpan(
+                children: [
+                  // Determine the initial message based on appointment status
+                  TextSpan(
+                    text: (() {
+                      if (notification['appointment_notif_type'] ==
+                          'Upcoming') {
+                        return 'You have an';
+                      } else {
+                        return 'Your appointment with';
+                      }
+                    })(),
+                    style: const TextStyle(
+                        fontSize: regularText, color: Colors.black),
+                  ),
+                  if (notification['appointment_notif_type'] == 'Upcoming') ...[
                     const TextSpan(
-                      text: ".",
+                      text: ' upcoming ', // Null check for 'establishment_name'
+                      style:
+                          TextStyle(fontSize: regularText, color: primaryColor),
+                    ),
+                    const TextSpan(
+                      text: 'appointment with',
                       style: TextStyle(
                         fontSize: regularText,
                         color: Colors.black,
                       ),
                     ),
+                    TextSpan(
+                      text: ' ${notification['pet_owner_name'] ?? "unknown"}',
+                      style: const TextStyle(
+                        fontSize: regularText,
+                        color: primaryColor,
+                      ),
+                    ),
                   ],
-                ),
-              ),
-              const SizedBox(height: primarySizedBox),
-
-              // Time Elapsed
-              Text(
-                timeElapsed(
-                  DateTime.parse(
-                    notification['created_at'] ?? DateTime.now().toString(),
+                  if (notification['appointment_notif_type'] != 'Upcoming') ...[
+                    TextSpan(
+                      text: ' ${notification['pet_owner_name'] ?? "unknown"}',
+                      style: const TextStyle(
+                        fontSize: regularText,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: ' has been ',
+                      style: TextStyle(
+                        fontSize: regularText,
+                        color: Colors.black,
+                      ),
+                    ),
+                    TextSpan(
+                      text: notification['appointment_notif_type'] == 'Done'
+                          ? 'completed'
+                          : (notification['appointment_notif_type'] ?? ''),
+                      style: const TextStyle(
+                        fontSize: regularText,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ],
+                  const TextSpan(
+                    text: ".",
+                    style: TextStyle(
+                      fontSize: regularText,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black,
+                ],
+              ),
+            ),
+            const SizedBox(height: primarySizedBox),
+
+            // Time Elapsed
+            Text(
+              timeElapsed(
+                DateTime.parse(
+                  notification['created_at'] ?? DateTime.now().toString(),
                 ),
               ),
-            ],
-          ),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black,
+              ),
+            ),
+          ],
         ),
       ),
     );
