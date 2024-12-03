@@ -140,7 +140,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            _buildTab('Incoming'),
+            _buildTab('Pending'),
             _buildTab('Today'),
             _buildTab('Upcoming'),
             _buildTab('Done'),
