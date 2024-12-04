@@ -32,9 +32,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   //Controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descController = TextEditingController();
-  final TextEditingController priceController = TextEditingController();
-  final TextEditingController minWeightController = TextEditingController();
-  final TextEditingController maxWeightController = TextEditingController();
+  // final TextEditingController priceController = TextEditingController();
+  // final TextEditingController minWeightController = TextEditingController();
+  // final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
 
   // Dynamic controllers for price, size, and weight
@@ -154,13 +154,31 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     }
   }
 
-  // Validate and check for unique prices and weights
   bool validateEntries() {
+    // Check if price controllers are empty
     final prices = priceControllers.map((e) => e.text).toSet();
+    if (prices.contains('')) {
+      showErrorDialog(context, "Price fields cannot be empty!");
+      return false;
+    }
+
+    // Check if weight fields are empty
+    for (int i = 0; i < minWeightControllers.length; i++) {
+      if (minWeightControllers[i].text.isEmpty ||
+          maxWeightControllers[i].text.isEmpty) {
+        showErrorDialog(context, "Weight fields cannot be empty!");
+        return false;
+      }
+    }
+
+    // Create the weights set
     final weights = {
       for (int i = 0; i < minWeightControllers.length; i++)
         '${minWeightControllers[i].text}-${maxWeightControllers[i].text}'
     };
+
+    print("prices: $prices");
+    print("weights: $weights");
 
     // Ensure prices and weights are unique
     if (prices.length != priceControllers.length ||
@@ -174,34 +192,52 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
     // Validate the price for increasing values as size increases
     for (int i = 1; i < priceControllers.length; i++) {
-      int prevPrice = int.parse(priceControllers[i - 1].text);
-      int currPrice = int.parse(priceControllers[i].text);
-      if (currPrice < prevPrice) {
-        showErrorDialog(
-          context,
-          "Price for larger sizes should not be lesser!",
-        );
+      try {
+        int prevPrice = int.parse(prices.elementAt(i - 1));
+        int currPrice = int.parse(prices.elementAt(i));
+        if (currPrice < prevPrice) {
+          showErrorDialog(
+            context,
+            "Price for larger sizes should not be lesser!",
+          );
+          print("price: $prevPrice, $currPrice ");
+          return false;
+        }
+      } catch (e) {
+        showErrorDialog(context, "Invalid price format!");
         return false;
       }
     }
 
     // Validate the weights for increasing values as size increases
-    for (int i = 1; i < minWeightControllers.length; i++) {
-      int prevMinWeight = int.parse(minWeightControllers[i - 1].text);
-      int currMinWeight = int.parse(minWeightControllers[i].text);
-      int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text);
-      int currMaxWeight = int.parse(maxWeightControllers[i].text);
+    for (int i = 0; i < minWeightControllers.length; i++) {
+      try {
+        // Clean the input before parsing
+        int minWeight = int.parse(minWeightControllers[i].text);
+        int maxWeight = int.parse(maxWeightControllers[i].text);
 
-      if (currMinWeight < prevMinWeight || currMaxWeight < prevMaxWeight) {
-        showErrorDialog(
-          context,
-          "Weight for larger sizes should not be lesser!",
-        );
+        if (i > 0) {
+          int prevMinWeight = int.parse(minWeightControllers[i - 1].text);
+          int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text);
+
+          if (minWeight < prevMinWeight || maxWeight < prevMaxWeight) {
+            showErrorDialog(
+              context,
+              "Weight for larger sizes should not be lesser!",
+            );
+            print(
+                "weights: $minWeight $maxWeight prev: $prevMinWeight $prevMaxWeight ");
+            return false;
+          }
+        }
+      } catch (e) {
+        showErrorDialog(context, "Invalid weight format!");
         return false;
       }
     }
+    print("VERY GOOD!");
 
-    return true;
+    return true; // Return true if all validations pass
   }
 
   File? _image; // Store the picked image file
@@ -235,56 +271,106 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     });
   }
 
-  void _addService() async {
+  Future<void> _addService() async {
     final backend = ServiceBackend();
     setState(() {
       _isLoading = true; // Start loading
     });
 
-    int price = int.parse(priceController.text);
-    // String size = sizeList[0];
-    int minWeight = int.parse(minWeightControllers[0].text);
-    int maxWeight = int.parse(maxWeightControllers[0].text);
-    if (nameController.text.isEmpty ||
-        descController.text.isEmpty ||
-        priceController.text.isEmpty ||
-        sizes == null ||
-        minWeightController.text.isEmpty ||
-        serviceTypeOptions.isEmpty ||
-        availability == null) {
-      throw Exception('Please fill all fields');
-    }
+    try {
+      // Attempt to parse input values
+      int price;
+      int minWeight;
+      int maxWeight;
 
-    // Upload image if provided
-    String imageUrl = '';
-    if (_image != null) {
-      imageUrl = await backend.uploadImage(_image!);
-    }
+      try {
+        price = int.parse(priceControllers[0].text.trim());
+      } catch (e) {
+        throw Exception(
+            "Invalid price format. Received: '${priceControllers[0].text}'. Please enter a valid integer.");
+      }
 
-    // Add service to backend
-    final serviceId = await backend.addService(
-      serviceProviderId: widget.serviceProviderId,
-      imageUrl: imageUrl,
-      serviceName: nameController.text,
-      serviceDesc: descController.text,
-      petsToCater: petsList,
-      serviceType: selectedServiceTypes,
-      price: price,
-      size: sizes ?? '',
-      minWeight: minWeight,
-      maxWeight: maxWeight,
-      availability: availability == 'Available',
-      serviceCategory: widget.serviceCategory,
-    );
+      try {
+        minWeight = int.parse(minWeightControllers[0].text);
+      } catch (e) {
+        throw Exception(
+            'Invalid maximum weight format. Received: \'${maxWeightControllers[0].text}\'. Please enter a valid integer.');
+      }
 
-    if (serviceId != null) {
-      // Navigate to ServicesScreen after successful service addition
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+      try {
+        maxWeight = int.parse(maxWeightControllers[0].text);
+      } catch (e) {
+        throw Exception(
+            'Invalid maximum weight format. Please enter a valid integer.');
+      }
+
+      // Validate input fields before proceeding
+      if (nameController.text.isEmpty) {
+        throw Exception('Service name cannot be empty');
+      }
+      if (descController.text.isEmpty) {
+        throw Exception('Service description cannot be empty');
+      }
+      if (priceControllers[0].text.isEmpty) {
+        throw Exception('Price cannot be empty');
+      }
+      if (sizes == null) {
+        throw Exception('Size must be selected');
+      }
+      if (minWeightControllers[0].text.isEmpty) {
+        throw Exception('Minimum weight cannot be empty');
+      }
+      if (serviceTypeOptions.isEmpty) {
+        throw Exception('At least one service type must be selected');
+      }
+      if (availability == null) {
+        throw Exception('Availability must be specified');
+      }
+
+      // Upload image if provided
+      String imageUrl = '';
+      if (_image != null) {
+        try {
+          imageUrl = await backend.uploadImage(_image!);
+        } catch (uploadError) {
+          throw Exception('Failed to upload image: $uploadError');
+        }
+      }
+
+      // Add service to backend
+      final serviceId = await backend.addService(
+        serviceProviderId: widget.serviceProviderId,
+        imageUrl: imageUrl,
+        serviceName: nameController.text,
+        serviceDesc: descController.text,
+        petsToCater: petsList,
+        serviceType: selectedServiceTypes,
+        price: price,
+        size: sizes ?? '',
+        minWeight: minWeight,
+        maxWeight: maxWeight,
+        availability: availability == 'Available',
+        serviceCategory: widget.serviceCategory,
       );
-    } else {
-      throw Exception('Failed to add service, please try again.');
+
+      if (serviceId != null) {
+        // Navigate to ServicesScreen after successful service addition
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ServicesScreen()),
+        );
+      } else {
+        throw Exception('Failed to add service, please try again.');
+      }
+    } catch (e) {
+      // Handle exceptions gracefully
+      print('Error occurred: $e');
+      showErrorDialog(context, e.toString()); // Display the error to the user
+    } finally {
+      // Ensure loading state is reset
+      setState(() {
+        _isLoading = false; // Stop loading
+      });
     }
   }
 
