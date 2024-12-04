@@ -100,20 +100,20 @@ class SaveBtnBuilder extends ConsumerWidget {
         children: [
           p.TableRow(
             children: [
-              _buildTableCell('Appointment ID'),
-              _buildTableCell('Appointment Date'),
-              _buildTableCell('Pet Owner'),
-              _buildTableCell('Total Amount'),
+              _buildTableCell('Appointment ID', isTitle: true),
+              _buildTableCell('Appointment Date', isTitle: true),
+              _buildTableCell('Pet Owner', isTitle: true),
+              _buildTableCell('Total Amount', isTitle: true),
             ],
           ),
           // Loop through the revenue data and add rows
           for (var i = 0; i < revenueData.length; i++)
             p.TableRow(
               children: [
-                _buildTableCell(revenueData[i]['appointment_id'].toString()),
-                _buildTableCell(revenueData[i]['appointment_date']),
-                _buildTableCell(revenueData[i]['pet_owner_name']),
-                _buildTableCell('PHP${revenueData[i]['total_amount']}'),
+                _buildTableCell(revenueData[i]['appointment_id'].toString(), isTitle: false),
+                _buildTableCell(revenueData[i]['appointment_date'], isTitle: false),
+                _buildTableCell(revenueData[i]['pet_owner_name'], isTitle: false),
+                _buildTableCell('PHP${revenueData[i]['total_amount']}', isTitle: false),
               ],
             ),
         ],
@@ -151,12 +151,14 @@ class SaveBtnBuilder extends ConsumerWidget {
   }
 
   // Helper function to build a table cell
-  p.Widget _buildTableCell(String content) {
+  p.Widget _buildTableCell(String content, {required bool isTitle}) {
     return p.Padding(
       padding: const p.EdgeInsets.all(5.0),
       child: p.Text(
         content,
-        style: p.TextStyle(fontSize: 12.00),
+        style: p.TextStyle(
+            fontSize: 12.00,
+            fontWeight: isTitle ? p.FontWeight.bold : p.FontWeight.normal),
       ),
     );
   }
