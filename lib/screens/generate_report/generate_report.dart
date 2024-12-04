@@ -173,11 +173,11 @@ class _GenerateReportScreenState extends ConsumerState<GenerateReportScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     customPaddedOutlinedTextButton(
-                      text: 'Pick date range',
-                      onPressed: () {
-                        _restorableDateRangePickerRouteFuture.present();
-                      },
-                    ),
+                        text: 'Pick date range',
+                        onPressed: () {
+                          _restorableDateRangePickerRouteFuture.present();
+                        },
+                        trailingIcon: Icon(Icons.calendar_month)),
                   ],
                 ),
                 const SizedBox(height: secondarySizedBox),

@@ -45,6 +45,8 @@ Widget customPaddedTextButton({
 Widget customPaddedOutlinedTextButton({
   required String text,
   required VoidCallback onPressed,
+  Widget? leadingIcon, // Optional leading icon
+  Widget? trailingIcon, // Optional trailing icon
 }) {
   return TextButton(
     onPressed: onPressed,
@@ -59,12 +61,25 @@ Widget customPaddedOutlinedTextButton({
         const EdgeInsets.all(10.0),
       ),
     ),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: regularText,
-        color: primaryColor,
-      ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (leadingIcon != null) ...[
+          leadingIcon,
+          const SizedBox(width: 8), // Space between icon and text
+        ],
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: regularText,
+            color: primaryColor,
+          ),
+        ),
+        if (trailingIcon != null) ...[
+          const SizedBox(width: 8), // Space between text and icon
+          trailingIcon,
+        ],
+      ],
     ),
   );
 }

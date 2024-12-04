@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:service_provider/components/custom_padded_button.dart';
 import 'package:service_provider/providers/global_providers.dart';
-import 'printable_data.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as p;
@@ -16,7 +15,7 @@ class SaveBtnBuilder extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return customFloatingActionButton(
       context,
-      buttonText: 'Save as PDF',
+      buttonText: 'Generate PDF',
       onPressed: () async {
         await _printDoc(ref, context);
       },
@@ -110,10 +109,14 @@ class SaveBtnBuilder extends ConsumerWidget {
           for (var i = 0; i < revenueData.length; i++)
             p.TableRow(
               children: [
-                _buildTableCell(revenueData[i]['appointment_id'].toString(), isTitle: false),
-                _buildTableCell(revenueData[i]['appointment_date'], isTitle: false),
-                _buildTableCell(revenueData[i]['pet_owner_name'], isTitle: false),
-                _buildTableCell('PHP${revenueData[i]['total_amount']}', isTitle: false),
+                _buildTableCell(revenueData[i]['appointment_id'].toString(),
+                    isTitle: false),
+                _buildTableCell(revenueData[i]['appointment_date'],
+                    isTitle: false),
+                _buildTableCell(revenueData[i]['pet_owner_name'],
+                    isTitle: false),
+                _buildTableCell('PHP${revenueData[i]['total_amount']}',
+                    isTitle: false),
               ],
             ),
         ],
