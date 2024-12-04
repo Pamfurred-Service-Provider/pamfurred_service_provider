@@ -19,7 +19,7 @@ class PackageBackend {
     required String packageProviderId,
   }) async {
     // Log all inputs
-    
+
     print('--- Package Data to be Inserted ---');
     print('Package Name: $packageName');
     print('Price: $price');
@@ -46,8 +46,11 @@ class PackageBackend {
     final servicePackageCategory = await _supabase
         .from('service_package_category')
         .select('service_package_category_id, category_name')
-        .eq('category_name', packageCategory)
-        .single();
+        // .contains('category_name', packageCategory)
+        .ilike('category_name', '%${packageCategory}%')
+
+        // .eq('category_name', packageCategory)
+        .maybeSingle();
 
     if (servicePackageCategory == null) {
       throw Exception(

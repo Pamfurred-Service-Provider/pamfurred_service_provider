@@ -27,10 +27,10 @@ class AddPackageScreen extends StatefulWidget {
 
 class _AddPackageScreenState extends State<AddPackageScreen> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController priceController = TextEditingController();
+  // final TextEditingController priceController = TextEditingController();
   final TextEditingController inclusionsController = TextEditingController();
-  final TextEditingController minWeightController = TextEditingController();
-  final TextEditingController maxWeightController = TextEditingController();
+  // final TextEditingController minWeightController = TextEditingController();
+  //final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
 
   // Dynamic controllers for price, size, and weight
@@ -55,34 +55,70 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
         return;
       }
 
-      priceControllers.add(TextEditingController(text: "0"));
-      minWeightControllers.add(TextEditingController(text: "0"));
-      maxWeightControllers.add(TextEditingController(text: "0"));
+      priceControllers.add(TextEditingController());
+      minWeightControllers.add(TextEditingController());
+      maxWeightControllers.add(TextEditingController());
       availabilityMap[sizeList.last] = 'Available'; // Set default availability
     });
 
     // Check if adding a new entry still maintains the constraints
-    if (sizeList.length > 1) {
-      int prevPrice = int.parse(priceControllers[sizeList.length - 2].text);
-      int prevMinWeight =
-          int.parse(minWeightControllers[sizeList.length - 2].text);
-      int prevMaxWeight =
-          int.parse(maxWeightControllers[sizeList.length - 2].text);
+    if (sizeList.length > 2) {
+      try {
+        // Check if the list has at least one previous entry to validate against
+        if (sizeList.length > 1) {
+          // Parse the previous size values
+          int prevPrice =
+              int.tryParse(priceControllers[sizeList.length - 2].text.trim()) ??
+                  -1;
+          int prevMinWeight = int.tryParse(
+                  minWeightControllers[sizeList.length - 2].text.trim()) ??
+              -1;
+          int prevMaxWeight = int.tryParse(
+                  maxWeightControllers[sizeList.length - 2].text.trim()) ??
+              -1;
 
-      int currPrice = int.parse(priceControllers.last.text);
-      int currMinWeight = int.parse(minWeightControllers.last.text);
-      int currMaxWeight = int.parse(maxWeightControllers.last.text);
+          // Parse the current size values
+          int currPrice = int.tryParse(priceControllers.last.text.trim()) ?? -1;
+          int currMinWeight =
+              int.tryParse(minWeightControllers.last.text.trim()) ?? -1;
+          int currMaxWeight =
+              int.tryParse(maxWeightControllers.last.text.trim()) ?? -1;
 
-      // Ensure current size is not less than the previous size
-      if (currPrice < prevPrice ||
-          currMinWeight < prevMinWeight ||
-          currMaxWeight < prevMaxWeight) {
+          // Validate all parsed values
+          if (prevPrice < 0 ||
+              prevMinWeight < 0 ||
+              prevMaxWeight < 0 ||
+              currPrice < 0 ||
+              currMinWeight < 0 ||
+              currMaxWeight < 0) {
+            throw FormatException();
+          }
+
+          // Ensure current size is not less than the previous size
+          if (currPrice < prevPrice ||
+              currMinWeight < prevMinWeight ||
+              currMaxWeight < prevMaxWeight) {
+            showErrorDialog(
+              context,
+              "New size values must not be lesser than the previous size!",
+            );
+
+            // Remove the newly added entry if validation fails
+            setState(() {
+              sizeList.removeLast();
+              priceControllers.removeLast();
+              minWeightControllers.removeLast();
+              maxWeightControllers.removeLast();
+            });
+          }
+        }
+      } catch (e) {
         showErrorDialog(
           context,
-          "New size values must not be lesser than the previous size.!",
+          "Invalid input detected. Please ensure all fields contain valid numeric values.",
         );
 
-        // Remove the newly added entry if validation fails
+        // Remove the last entry in case of invalid input
         setState(() {
           sizeList.removeLast();
           priceControllers.removeLast();
@@ -114,10 +150,26 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
   bool validateEntries() {
     final prices = priceControllers.map((e) => e.text).toSet();
+    if (prices.contains('')) {
+      showErrorDialog(context, "Price fields cannot be empty!");
+      return false;
+    }
+
+    // Check if weight fields are empty
+    for (int i = 0; i < minWeightControllers.length; i++) {
+      if (minWeightControllers[i].text.isEmpty ||
+          maxWeightControllers[i].text.isEmpty) {
+        showErrorDialog(context, "Weight fields cannot be empty!");
+        return false;
+      }
+    } // Create the weights set
     final weights = {
       for (int i = 0; i < minWeightControllers.length; i++)
         '${minWeightControllers[i].text}-${maxWeightControllers[i].text}'
     };
+
+    print("prices: $prices");
+    print("weights: $weights");
 
     // Ensure prices and weights are unique
     if (prices.length != priceControllers.length ||
@@ -131,8 +183,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
     // Validate the price for increasing values as size increases
     for (int i = 1; i < priceControllers.length; i++) {
-      int prevPrice = int.parse(priceControllers[i - 1].text);
-      int currPrice = int.parse(priceControllers[i].text);
+      int prevPrice = int.parse(prices.elementAt(i - 1));
+      int currPrice = int.parse(prices.elementAt(i));
       if (currPrice < prevPrice) {
         showErrorDialog(
           context,
@@ -143,21 +195,34 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     }
 
     // Validate the weights for increasing values as size increases
-    for (int i = 1; i < minWeightControllers.length; i++) {
-      int prevMinWeight = int.parse(minWeightControllers[i - 1].text);
-      int currMinWeight = int.parse(minWeightControllers[i].text);
-      int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text);
-      int currMaxWeight = int.parse(maxWeightControllers[i].text);
+    for (int i = 0; i < minWeightControllers.length; i++) {
+      try {
+        // Clean the input before parsing
+        int minWeight = int.parse(minWeightControllers[i].text);
+        int maxWeight = int.parse(maxWeightControllers[i].text);
 
-      if (currMinWeight < prevMinWeight || currMaxWeight < prevMaxWeight) {
-        showErrorDialog(
-          context,
-          "Weight for larger sizes should not be lesser!",
-        );
+        if (i > 0) {
+          int prevMinWeight = int.parse(minWeightControllers[i - 1].text);
+          int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text);
+
+          if (minWeight < prevMinWeight || maxWeight < prevMaxWeight) {
+            showErrorDialog(
+              context,
+              "Weight for larger sizes should not be lesser!",
+            );
+            print(
+                "weights: $minWeight $maxWeight prev: $prevMinWeight $prevMaxWeight ");
+            return false;
+          }
+        }
+      } catch (e) {
+        showErrorDialog(context, "Invalid weight format!");
         return false;
       }
     }
-    return true;
+    print("VERY GOOD!");
+
+    return true; // Return true if all validations pass
   }
 
   File? _image; // Store the picked image file
@@ -193,48 +258,51 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       isLoading = true; // Start loading
     });
 
-    // if (nameController.text.isEmpty ||
-    //     priceController.text.isEmpty ||
-    //     sizes == null ||
-    //     minWeightController.text.isEmpty ||
-    //     packageType == null ||
-    //     availability == null) {
-    //   throw Exception('Please fill all fields');
-    // }
     String imageUrl = '';
     if (_image != null) {
       imageUrl = await backend
           .uploadImage(_image!); // Get the image URL after uploading
     }
-
-    String priceText = priceController.text;
-    String minWeightText = minWeightController.text;
-    String maxWeightText = maxWeightController.text;
-    // Validate the input values
-    if (priceText.replaceAll(RegExp(r'\s+'), '').isEmpty ||
-        minWeightText.replaceAll(RegExp(r'\s+'), '').isEmpty ||
-        maxWeightText.replaceAll(RegExp(r'\s+'), '').isEmpty) {
-      showErrorDialog(
-        context,
-        "Please fill all fields",
-      );
-      return;
+    int price;
+    int minWeight;
+    int maxWeight;
+    try {
+      price = int.parse(priceControllers[0].text.trim());
+    } catch (e) {
+      throw Exception(
+          "Invalid price format. Received: '${priceControllers[0].text}'. Please enter a valid integer.");
     }
 
-    // Try to parse the input values to integers
-    int? price;
-    int? minWeight;
-    int? maxWeight;
     try {
-      price = int.parse(priceText);
-      minWeight = int.parse(minWeightText);
-      maxWeight = int.parse(maxWeightText);
+      minWeight = int.parse(minWeightControllers[0].text);
     } catch (e) {
-      showErrorDialog(
-        context,
-        "Invalid input. Please enter valid numbers",
-      );
-      return; // Return from the function here
+      throw Exception(
+          'Invalid maximum weight format. Received: \'${maxWeightControllers[0].text}\'. Please enter a valid integer.');
+    }
+    try {
+      maxWeight = int.parse(maxWeightControllers[0].text);
+    } catch (e) {
+      throw Exception(
+          'Invalid maximum weight format. Please enter a valid integer.');
+    }
+    // Validate input fields before proceeding
+    if (nameController.text.isEmpty) {
+      throw Exception('Service name cannot be empty');
+    }
+    if (priceControllers[0].text.isEmpty) {
+      throw Exception('Price cannot be empty');
+    }
+    if (sizes == null) {
+      throw Exception('Size must be selected');
+    }
+    if (minWeightControllers[0].text.isEmpty) {
+      throw Exception('Minimum weight cannot be empty');
+    }
+    if (serviceTypeOptions.isEmpty) {
+      throw Exception('At least one service type must be selected');
+    }
+    if (availability == null) {
+      throw Exception('Availability must be specified');
     }
 
     final packageId = await backend.addPackage(
@@ -243,7 +311,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       size: sizes ?? '',
       minWeight: minWeight,
       maxWeight: maxWeight,
-      petsToCater: petsList,
+      petsToCater: selectedPetTypes,
       packageProviderId: widget.packageProviderId, // petsToCater:
       packageType: packageType ?? '',
       availability: availability == 'Available',
@@ -252,21 +320,21 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       packageCategory: widget.packageCategory, // Pass package category here
     );
     if (packageId != null) {
-      final newPackage = {
-        'package_id': packageId,
-        'name': nameController.text,
-        'price': price,
-        'size': sizes ?? '',
-        'min_weight': minWeight,
-        'max_weight': maxWeight,
-        'pets_to_cater': petsList,
-        'package_provider_id': widget.packageProviderId,
-        'package_type': packageType ?? '',
-        'availability': availability,
-        'inclusion_list': inclusions,
-        'image_url': imageUrl,
-        'package_category': widget.packageCategory,
-      };
+      // final newPackage = {
+      //   'package_id': packageId,
+      //   'name': nameController.text,
+      //   'price': price,
+      //   'size': sizes ?? '',
+      //   'min_weight': minWeight,
+      //   'max_weight': maxWeight,
+      //   'pets_to_cater': petsList,
+      //   'package_provider_id': widget.packageProviderId,
+      //   'package_type': packageType ?? '',
+      //   'availability': availability,
+      //   'inclusion_list': inclusions,
+      //   'image_url': imageUrl,
+      //   'package_category': widget.packageCategory,
+      // };
 
       Navigator.pushReplacement(
         context,
@@ -308,9 +376,9 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     super.initState();
     fetchServices();
     sizeList.add("S");
-    priceControllers.add(TextEditingController(text: "0"));
-    minWeightControllers.add(TextEditingController(text: "0"));
-    maxWeightControllers.add(TextEditingController(text: "0"));
+    priceControllers.add(TextEditingController());
+    minWeightControllers.add(TextEditingController());
+    maxWeightControllers.add(TextEditingController());
   }
 
   Future<void> fetchServices() async {
