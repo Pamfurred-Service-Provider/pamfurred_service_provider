@@ -18,28 +18,54 @@ class PackageBackend {
     required String? packageCategory,
     required String packageProviderId,
   }) async {
+    // Log all inputs
+    
+    print('--- Package Data to be Inserted ---');
+    print('Package Name: $packageName');
+    print('Price: $price');
+    print('Size: $size');
+    print('Min Weight: $minWeight');
+    print('Max Weight: $maxWeight');
+    print('Pets to Cater: $petsToCater');
+    print('Inclusions: $inclusionList');
+    print('Package Type: $packageType');
+    print('Availability: $availability');
+    print('Image URL: $imageUrl');
+    print('Package Category: $packageCategory');
+    print('Package Provider ID: $packageProviderId');
+    print('-----------------------------------');
+
+    print('Inserting package: $packageName');
+
     // Validate the size value to match database constraints
     const allowedSizes = ['S', 'M', 'L', 'XL', 'N/A'];
     if (!allowedSizes.contains(size)) {
       throw Exception(
           "Invalid size value: $size. Allowed values are $allowedSizes");
     }
+    final servicePackageCategory = await _supabase
+        .from('service_package_category')
+        .select('service_package_category_id, category_name')
+        .eq('category_name', packageCategory)
+        .single();
 
+    if (servicePackageCategory == null) {
+      throw Exception(
+          "Service package category not found for category: $packageCategory");
+    }
+
+    final servicePackageCategoryId =
+        servicePackageCategory['service_package_category_id'];
     // Insert the package and retrieve the package ID in a single operation
     final response = await _supabase
         .from('package')
         .insert({
           'package_name': packageName,
-          'price': price,
-          'size': size,
-          'min_weight': minWeight,
-          'max_weight': maxWeight,
           'pet_type': petsToCater,
-          'package_type': [packageType],
-          'availability_status': availability,
-          'inclusions': inclusionList,
+          'package_type': packageType,
+          'inclusion': inclusionList,
           'package_image': imageUrl,
-          'package_category': [packageCategory],
+          'service_package_category_id': servicePackageCategoryId,
         })
         .select('package_id')
         .single();
@@ -50,6 +76,12 @@ class PackageBackend {
     await _supabase.from('serviceprovider_package').insert({
       'sp_id': packageProviderId,
       'package_id': packageId,
+      // 'serviceprovider_package_id': packageId,
+      'availability_status': availability,
+      'price': price,
+      'size': size,
+      'min_weight': minWeight,
+      'max_weight': maxWeight,
     });
 
     return packageId; // Return as a Map
@@ -68,6 +100,17 @@ class PackageBackend {
     return publicUrl;
   }
 
+  Future<List<String>> fetchServiceName() async {
+    final response = await _supabase.from('service').select('service_name');
+    print("Services list: $response");
+
+    // Extract only the 'service_name' values
+    final services = (response as List)
+        .map((service) => service['service_name'] as String)
+        .toList();
+
+    return services;
+  }
   //   return _supabase.storage
   //       .from('package_provider_images')
   //       .getPublicUrl(filePath);

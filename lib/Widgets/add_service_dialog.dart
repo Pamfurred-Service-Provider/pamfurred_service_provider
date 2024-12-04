@@ -22,22 +22,6 @@ class AddNewServiceDialog extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 20),
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(fontSize: 16),
-            children: [
-              TextSpan(
-                text: 'Service name ',
-                style: const TextStyle(color: Colors.black),
-              ),
-              TextSpan(
-                text: '*',
-                style: const TextStyle(color: primaryColor),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: secondarySizedBox),
         DropdownButtonFormField<String>(
           value: selectedService,
