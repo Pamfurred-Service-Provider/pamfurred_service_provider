@@ -1,8 +1,14 @@
 import 'dart:io';
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/package_backend.dart';
+import 'package:service_provider/Widgets/add_service_dialog.dart';
+import 'package:service_provider/Widgets/confirmation_dialog.dart';
+import 'package:service_provider/Widgets/delete_dialog.dart';
+import 'package:service_provider/Widgets/error_dialog.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/services.dart';
 
 class AddPackageScreen extends StatefulWidget {
@@ -27,25 +33,138 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
   final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
 
+  // Dynamic controllers for price, size, and weight
+  List<TextEditingController> priceControllers = [];
+  List<TextEditingController> minWeightControllers = [];
+  List<TextEditingController> maxWeightControllers = [];
+  List<String> sizeList = []; // Dynamic size list
+  Map<String, String> availabilityMap = {};
+
+  void addEntry() {
+    setState(() {
+      if (sizeList.isEmpty) {
+        sizeList.add("S");
+      } else if (sizeList.length < 4) {
+        sizeList.add(["M", "L", "XL"][sizeList.length - 1]);
+      } else {
+        showErrorDialog(
+          context,
+          "You can't add more than 4 sizes!",
+        );
+
+        return;
+      }
+
+      priceControllers.add(TextEditingController(text: "0"));
+      minWeightControllers.add(TextEditingController(text: "0"));
+      maxWeightControllers.add(TextEditingController(text: "0"));
+      availabilityMap[sizeList.last] = 'Available'; // Set default availability
+    });
+
+    // Check if adding a new entry still maintains the constraints
+    if (sizeList.length > 1) {
+      int prevPrice = int.parse(priceControllers[sizeList.length - 2].text);
+      int prevMinWeight =
+          int.parse(minWeightControllers[sizeList.length - 2].text);
+      int prevMaxWeight =
+          int.parse(maxWeightControllers[sizeList.length - 2].text);
+
+      int currPrice = int.parse(priceControllers.last.text);
+      int currMinWeight = int.parse(minWeightControllers.last.text);
+      int currMaxWeight = int.parse(maxWeightControllers.last.text);
+
+      // Ensure current size is not less than the previous size
+      if (currPrice < prevPrice ||
+          currMinWeight < prevMinWeight ||
+          currMaxWeight < prevMaxWeight) {
+        showErrorDialog(
+          context,
+          "New size values must not be lesser than the previous size.!",
+        );
+
+        // Remove the newly added entry if validation fails
+        setState(() {
+          sizeList.removeLast();
+          priceControllers.removeLast();
+          minWeightControllers.removeLast();
+          maxWeightControllers.removeLast();
+        });
+      }
+    }
+  }
+
+  void removeEntry(int index) {
+    if (index < sizeList.length &&
+        index < priceControllers.length &&
+        index < minWeightControllers.length &&
+        index < maxWeightControllers.length) {
+      setState(() {
+        sizeList.removeAt(index);
+        priceControllers.removeAt(index);
+        minWeightControllers.removeAt(index);
+        maxWeightControllers.removeAt(index);
+      });
+    } else {
+      showErrorDialog(
+        context,
+        "Unable to remove entry!",
+      );
+    }
+  }
+
+  bool validateEntries() {
+    final prices = priceControllers.map((e) => e.text).toSet();
+    final weights = {
+      for (int i = 0; i < minWeightControllers.length; i++)
+        '${minWeightControllers[i].text}-${maxWeightControllers[i].text}'
+    };
+
+    // Ensure prices and weights are unique
+    if (prices.length != priceControllers.length ||
+        weights.length != minWeightControllers.length) {
+      showErrorDialog(
+        context,
+        "Prices and weights must be unique!",
+      );
+      return false;
+    }
+
+    // Validate the price for increasing values as size increases
+    for (int i = 1; i < priceControllers.length; i++) {
+      int prevPrice = int.parse(priceControllers[i - 1].text);
+      int currPrice = int.parse(priceControllers[i].text);
+      if (currPrice < prevPrice) {
+        showErrorDialog(
+          context,
+          "Price for larger sizes should not be lesser!",
+        );
+        return false;
+      }
+    }
+
+    // Validate the weights for increasing values as size increases
+    for (int i = 1; i < minWeightControllers.length; i++) {
+      int prevMinWeight = int.parse(minWeightControllers[i - 1].text);
+      int currMinWeight = int.parse(minWeightControllers[i].text);
+      int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text);
+      int currMaxWeight = int.parse(maxWeightControllers[i].text);
+
+      if (currMinWeight < prevMinWeight || currMaxWeight < prevMaxWeight) {
+        showErrorDialog(
+          context,
+          "Weight for larger sizes should not be lesser!",
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   File? _image; // Store the picked image file
   final ImagePicker _picker = ImagePicker();
-  List<String> petsList = ['dog']; // List to store pets
-  List<String> inclusions = ['bath'];
+  List<String> petsList = []; // List to store pets
+  List<String> inclusions = [];
   bool isLoading = false;
-  //Static data for pet sizes
-  List<String> sizeOptions = ['S', 'M', 'L', 'XL', 'N/A'];
-  final List<String> petType = ['dog', 'cat', 'bunny'];
-  List<String> inclusionList = [
-    'bath',
-    'haircut',
-    'nail clipping',
-    'ear cleaning',
-    'pet cologne',
-    'tooth brushing',
-    'neuter',
-    'spay',
-    'dental prophylaxis'
-  ]; // List to store package inclusions
   String? packageType = 'In-clinic';
   String? availability = 'Available';
   String? sizes = 'S';
@@ -61,155 +180,155 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     }
   }
 
+  List<String> serviceTypeOptions = ['Home Service', 'In-clinic'];
+  List<String> selectedServiceTypes = [];
+  List<String> petTypeOptions = ['dog', 'cat', 'bunny'];
+  List<String> selectedPetTypes = [];
+  List<String> selectedServices = []; // List to hold selected services
 // Method to add pet to the list
-  void addPet() async {
-    List<String> availablePets =
-        petType.where((pet) => !petsList.contains(pet)).toList();
-    // If there are available pets left to choose, add another dropdown
-    if (availablePets.isNotEmpty) {
-      setState(() {
-        petsList
-            .add(availablePets.first); // Add the first available pet by default
-      });
-    } else {
-      // Show a message if all pets are already selected
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All pets have been added.')),
+
+  void addPackage() async {
+    final backend = PackageBackend();
+    setState(() {
+      isLoading = true; // Start loading
+    });
+
+    // if (nameController.text.isEmpty ||
+    //     priceController.text.isEmpty ||
+    //     sizes == null ||
+    //     minWeightController.text.isEmpty ||
+    //     packageType == null ||
+    //     availability == null) {
+    //   throw Exception('Please fill all fields');
+    // }
+    String imageUrl = '';
+    if (_image != null) {
+      imageUrl = await backend
+          .uploadImage(_image!); // Get the image URL after uploading
+    }
+
+    String priceText = priceController.text;
+    String minWeightText = minWeightController.text;
+    String maxWeightText = maxWeightController.text;
+    // Validate the input values
+    if (priceText.replaceAll(RegExp(r'\s+'), '').isEmpty ||
+        minWeightText.replaceAll(RegExp(r'\s+'), '').isEmpty ||
+        maxWeightText.replaceAll(RegExp(r'\s+'), '').isEmpty) {
+      showErrorDialog(
+        context,
+        "Please fill all fields",
       );
+      return;
+    }
+
+    // Try to parse the input values to integers
+    int? price;
+    int? minWeight;
+    int? maxWeight;
+    try {
+      price = int.parse(priceText);
+      minWeight = int.parse(minWeightText);
+      maxWeight = int.parse(maxWeightText);
+    } catch (e) {
+      showErrorDialog(
+        context,
+        "Invalid input. Please enter valid numbers",
+      );
+      return; // Return from the function here
+    }
+
+    final packageId = await backend.addPackage(
+      packageName: nameController.text,
+      price: price,
+      size: sizes ?? '',
+      minWeight: minWeight,
+      maxWeight: maxWeight,
+      petsToCater: petsList,
+      packageProviderId: widget.packageProviderId, // petsToCater:
+      packageType: packageType ?? '',
+      availability: availability == 'Available',
+      inclusionList: inclusions,
+      imageUrl: imageUrl,
+      packageCategory: widget.packageCategory, // Pass package category here
+    );
+    if (packageId != null) {
+      final newPackage = {
+        'package_id': packageId,
+        'name': nameController.text,
+        'price': price,
+        'size': sizes ?? '',
+        'min_weight': minWeight,
+        'max_weight': maxWeight,
+        'pets_to_cater': petsList,
+        'package_provider_id': widget.packageProviderId,
+        'package_type': packageType ?? '',
+        'availability': availability,
+        'inclusion_list': inclusions,
+        'image_url': imageUrl,
+        'package_category': widget.packageCategory,
+      };
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ServicesScreen()),
+      );
+    } else {
+      throw Exception('Failed to add package: packageId is null');
     }
   }
 
-  // Method to remove a pet from the list
-  void _removePet(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Pet'),
-        content: const Text('Are you sure you want to delete this?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(), // Close dialog
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() => petsList.removeAt(index)); // Remove pet
-              Navigator.of(context).pop(); // Close dialog
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  } // Dialog to input pet name
+  final serviceBackend = PackageBackend();
+  List<String> serviceNames = [];
+  String? selectedService;
 
-  void addInclusion() async {
-    List<String> availableInclusions = inclusionList
-        .where((inclusion) => !inclusions.contains(inclusion))
-        .toList();
-    if (availableInclusions.isNotEmpty) {
+  void addNewService(String newService) {
+    setState(() {
+      serviceNames.add(newService);
+      selectedService = newService;
+      nameController.text = newService;
+    });
+  }
+
+  void selectService(String service) {
+    setState(() {
+      if (!selectedServices.contains(service)) {
+        selectedServices.add(service); // Add selected service to the list
+      }
+    });
+  }
+
+  void removeService(String service) {
+    setState(() {
+      selectedServices.remove(service); // Remove service from selected list
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchServices();
+    sizeList.add("S");
+    priceControllers.add(TextEditingController(text: "0"));
+    minWeightControllers.add(TextEditingController(text: "0"));
+    maxWeightControllers.add(TextEditingController(text: "0"));
+  }
+
+  Future<void> fetchServices() async {
+    try {
+      final services = await serviceBackend.fetchServiceName();
       setState(() {
-        inclusions.add(availableInclusions.first);
+        serviceNames = services;
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All inclusions have been added.')),
-      );
+    } catch (error) {
+      print('Error fetching services: $error');
     }
   }
-
-  void _removeInclusion(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Inclusion'),
-        content: const Text('Are you sure you want to delete this?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(), // Close dialog
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() => inclusions.removeAt(index)); // Remove pet
-              Navigator.of(context).pop(); // Close dialog
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-void addPackage() async {
-  final backend = PackageBackend();
-  setState(() {
-    isLoading = true; // Start loading
-  });
-
-  if (nameController.text.isEmpty ||
-      priceController.text.isEmpty ||
-      sizes == null ||
-      minWeightController.text.isEmpty ||
-      packageType == null ||
-      availability == null) {
-    throw Exception('Please fill all fields');
-  }
-  String imageUrl = '';
-  if (_image != null) {
-    imageUrl = await backend.uploadImage(_image!); // Get the image URL after uploading
-    print("Uploaded image URL: $imageUrl"); // Debug print
-    print("Inclusions: $inclusionList");
-  }
-  int price = int.parse(priceController.text);
-  int minWeight = int.parse(minWeightController.text);
-  int maxWeight = int.parse(maxWeightController.text);
-
-  final packageId = await backend.addPackage(
-    packageName: nameController.text,
-    price: price,
-    size: sizes ?? '',
-    minWeight: minWeight,
-    maxWeight: maxWeight,
-    petsToCater: petsList,
-    packageProviderId: widget.packageProviderId, // petsToCater:
-    packageType: packageType ?? '',
-    availability: availability == 'Available',
-    inclusionList: inclusions,
-    imageUrl: imageUrl,
-    packageCategory: widget.packageCategory, // Pass package category here
-  );
-  if (packageId != null) {
-    final newPackage = {
-      'package_id': packageId,
-      'name': nameController.text,
-      'price': price,
-      'size': sizes ?? '',
-      'min_weight': minWeight,
-      'max_weight': maxWeight,
-      'pets_to_cater': petsList,
-      'package_provider_id': widget.packageProviderId,
-      'package_type': packageType ?? '',
-      'availability': availability,
-      'inclusion_list': inclusions,
-      'image_url': imageUrl,
-      'package_category': widget.packageCategory,
-    };
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ServicesScreen()),
-    );
-  } else {
-    throw Exception('Failed to add package: packageId is null');
-  }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Package"),
+        title: const Text("Add Package"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -257,10 +376,21 @@ void addPackage() async {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          const Text(
-            "Package Name",
-            style: TextStyle(fontSize: 16),
+          const SizedBox(height: tertiarySizedBox),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Package Name ',
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
           ),
           TextField(
             textCapitalization: TextCapitalization.words,
@@ -272,264 +402,324 @@ void addPackage() async {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            "Pet specific package",
-            style: TextStyle(fontSize: 16),
+          const SizedBox(height: tertiarySizedBox),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Pet Specific Service ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
           ),
-          ...petsList.asMap().entries.map((entry) {
-            int index = entry.key;
-            String pet = entry.value;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
+          CustomDropdown.multiSelect(
+            items: petTypeOptions,
+            initialItems: selectedPetTypes,
+            hintText: 'Select Pet Type',
+            onListChanged: (List<String> selectedItems) {
+              setState(() {
+                selectedPetTypes = selectedItems;
+              });
+              print('Selected pet types: $selectedItems');
+            },
+          ),
+          const SizedBox(height: tertiarySizedBox),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Package Inclusions ',
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
+          ),
+          AddNewServiceDialog(
+            nameController: nameController,
+            serviceNames: serviceNames,
+            selectedService: selectedService,
+            onServiceSelected: (String service) {
+              setState(() {
+                if (!inclusions.contains(service)) {
+                  inclusions.add(service);
+                }
+              });
+            },
+            onNewServiceAdded: (String newService) {
+              setState(() {
+                serviceNames.add(newService);
+                inclusions.add(newService);
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Selected Services:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          // Chips to display selected services
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.grey.shade300,
+                width: 1.5,
+              ),
+            ),
+            child: inclusions.isEmpty
+                ? const Text(
+                    'No services selected',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  )
+                : Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: inclusions.map((service) {
+                      return Chip(
+                        backgroundColor: Colors.blue.shade50,
+                        label: Text(
+                          service,
+                          style: const TextStyle(
+                            fontSize: 14,
+                          ),
+                        ),
+                        deleteIcon: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        onDeleted: () {
+                          setState(() {
+                            inclusions.remove(service);
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+          ),
+          const SizedBox(height: tertiarySizedBox),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Price, Size and Weights ', // Regular text
+                  style: const TextStyle(color: Colors.black),
+                ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: tertiarySizedBox),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: sizeList.length,
+            itemBuilder: (context, index) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  Center(
+                    child: Text(
+                      "Size: ${sizeList[index]}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: pet,
-                          isExpanded: true,
-                          onChanged: (newValue) {
-                            setState(() {
-                              petsList[index] = newValue!;
-                            });
-                          },
-                          items: petType
-                              .where((petCategory) =>
-                                  !petsList.contains(petCategory) ||
-                                  petCategory == pet)
-                              .map((petCategory) => DropdownMenuItem<String>(
-                                    value: petCategory,
-                                    child: Text(petCategory),
-                                  ))
-                              .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      // Price
+                      Expanded(
+                        child: TextField(
+                          controller: priceControllers[index],
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: "Price",
+                            prefixText: "₱ ",
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _removePet(index),
-                  ),
-                ],
-              ),
-            );
-          }),
-          const SizedBox(height: 20),
-          // Add more pets button
-          ElevatedButton.icon(
-            onPressed: addPet, // Add pet when pressed
-            icon: const Icon(Icons.add),
-            label: const Text("Add More"),
-            // label: const Text("Add Pet Category"),
-          ),
-          const Text(
-            "Package Inclusions",
-            style: TextStyle(fontSize: 16),
-          ),
-          ...inclusions.asMap().entries.map((entry) {
-            int index = entry.key;
-            String inclusion = entry.value;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: inclusion,
-                          isExpanded: true,
-                          onChanged: (newValue) {
-                            setState(() {
-                              inclusions[index] = newValue!;
-                            });
-                          },
-                          items: inclusionList
-                              .where((item) =>
-                                  !inclusions.contains(item) ||
-                                  item == inclusion)
-                              .map((String item) {
-                            return DropdownMenuItem<String>(
-                              value: item,
-                              child: Text(item),
-                            );
-                          }).toList(),
+                      const SizedBox(width: 10),
+                      // Min Weight
+                      Expanded(
+                        child: TextField(
+                          controller: minWeightControllers[index],
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: "Min Weight",
+                            suffixText: "kg",
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      // Max Weight
+                      Expanded(
+                        child: TextField(
+                          controller: maxWeightControllers[index],
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: "Max Weight",
+                            suffixText: "kg",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ShowDeleteDialog(
+                                title: 'Confirm Deletion',
+                                content:
+                                    'Are you sure you want to delete this?',
+                                onDelete: () => removeEntry(index),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _removeInclusion(index),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              availabilityMap[sizeList[index]] == 'Available'
+                                  ? Colors.green
+                                  : Colors.grey.shade300,
+                          foregroundColor:
+                              availabilityMap[sizeList[index]] == 'Available'
+                                  ? Colors.white
+                                  : Colors.black,
+                        ),
+                        onPressed: () async {
+                          // Show the confirmation dialog
+                          bool? confirmed = await ConfirmationDialog.show(
+                            context,
+                            title: 'Change Availability',
+                            content:
+                                'Are you sure you want to mark this as Available?',
+                          );
+
+                          // If the user confirms, update the availability
+                          if (confirmed == true) {
+                            setState(() {
+                              availabilityMap[sizeList[index]] = 'Available';
+                            });
+                          }
+                        },
+                        child: const Text('Available'),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: availabilityMap[sizeList[index]] ==
+                                  'Not Available'
+                              ? Colors.red
+                              : Colors.grey.shade300,
+                          foregroundColor: availabilityMap[sizeList[index]] ==
+                                  'Not Available'
+                              ? Colors.white
+                              : Colors.black,
+                        ),
+                        onPressed: () async {
+                          // Show the confirmation dialog
+                          bool? confirmed = await ConfirmationDialog.show(
+                            context,
+                            title: 'Change Availability',
+                            content:
+                                'Are you sure you want to mark this as Not Available?',
+                          );
+
+                          // If the user confirms, update the availability
+                          if (confirmed == true) {
+                            setState(() {
+                              availabilityMap[sizeList[index]] =
+                                  'Not Available';
+                            });
+                          }
+                        },
+                        child: const Text('Not Available'),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            );
-          }),
+              );
+            },
+          ),
           const SizedBox(height: 20),
-          // Add more pets button
           ElevatedButton.icon(
-            onPressed: addInclusion, // Add pet when pressed
+            onPressed: addEntry,
             icon: const Icon(Icons.add),
-            label: const Text("Add More"),
-            // label: const Text("Add Pet Category"),
+            label: const Text("Add"),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            "Availability",
-            style: TextStyle(fontSize: 16),
-          ),
-          InputDecorator(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: availability,
-                onChanged: (newValue) {
-                  setState(() {
-                    availability = newValue;
-                  });
-                },
-                hint: const Text('Select Availability'),
-                items: ['Available', 'Unavailable'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Add a Size",
-            style: TextStyle(fontSize: 16),
-          ),
-          InputDecorator(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: sizes,
-                onChanged: (newValue) {
-                  setState(() {
-                    sizes = newValue;
-                  });
-                },
-                hint: const Text('Sizes'),
-                items: sizeOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Input Weight (in kg)",
-            style: TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: minWeightController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                    ),
-                  ),
+          const SizedBox(height: 20),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 16),
+              children: [
+                TextSpan(
+                  text: 'Service Type', // Regular text
+                  style: const TextStyle(color: Colors.black),
                 ),
-              ),
-              const SizedBox(width: 10),
-              const Text("to"),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: maxWeightController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                    ),
-                  ),
+                TextSpan(
+                  text: '*', // Asterisk in red
+                  style: const TextStyle(color: Colors.red),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Price (PHP)",
-            style: TextStyle(fontSize: 16),
-          ),
-          TextField(
-            keyboardType: TextInputType.number,
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.digitsOnly
-            ],
-            controller: priceController,
-            decoration: const InputDecoration(
-              prefixText: '₱ ',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            "package Type",
-            style: TextStyle(fontSize: 16),
-          ),
-          InputDecorator(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12.0)),
-              ),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: packageType,
-                onChanged: (newValue) {
-                  setState(() {
-                    packageType = newValue;
-                  });
-                },
-                hint: const Text('Select Package Type'),
-                items: ['In-clinic', 'Home service'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ),
+          const SizedBox(height: tertiarySizedBox),
+          CustomDropdown.multiSelect(
+            items: serviceTypeOptions,
+            initialItems: selectedServiceTypes,
+            hintText: 'Select Service Type',
+            onListChanged: (List<String> selectedItems) {
+              setState(() {
+                selectedServiceTypes = selectedItems;
+              });
+              print('Selected service types: $selectedItems');
+            },
           ),
           const SizedBox(height: 20),
           Row(
