@@ -294,10 +294,14 @@ class ServicesScreenState extends State<ServicesScreen> {
                     ? 'Available'
                     : 'Unavailable')
                 : 'Unknown',
-            'pets': (item['pet_type'] as List?)?.join(', ') ?? 'Unknown',
+            'pets': item['pet_type'] is List
+                ? (item['pet_type'] as List).join(', ')
+                : item['pet_type'] ?? 'Unknown',
             'minWeight': item['min_weight'] ?? 0,
             'maxWeight': item['max_weight'] ?? 0,
-            'type': (item['package_type'] as List?)?.join(', ') ?? 'Unknown',
+            'type': item['package_type'] is List
+                ? (item['package_type'] as List).join(', ')
+                : item['package_type'] ?? 'Unknown',
             'category': item['category_name'] ?? '',
           };
         }));

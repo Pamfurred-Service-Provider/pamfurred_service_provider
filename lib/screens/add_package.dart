@@ -953,7 +953,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
                                           'Available'
-                                      ? Colors.blue
+                                      ? Colors.green
                                       : Colors.grey.shade300,
                               foregroundColor:
                                   availabilityMap[sizeList[index]] ==
