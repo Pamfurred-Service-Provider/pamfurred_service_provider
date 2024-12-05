@@ -6,7 +6,6 @@ import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
-import 'package:philippines_rpcmb/philippines_rpcmb.dart';
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -28,16 +27,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   final supabase = Supabase.instance.client;
   late final String userId;
   String dropdownValue = number.first; //dropdown for # of pets catered per day
-  final Region predefinedRegion = philippineRegions.firstWhere(
-    (region) => region.regionName == 'REGION X',
-  );
-  final Province predefinedProvince = philippineRegions
-      .firstWhere((region) => region.regionName == 'REGION X')
-      .provinces
-      .firstWhere((province) => province.name == 'MISAMIS ORIENTAL');
-
-  Municipality? municipality;
-  String? barangay;
 
   // Controllers
   final TextEditingController establishmentNameController =
@@ -117,11 +106,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     final serviceSession = supabase.auth.currentSession;
     userId = serviceSession?.user.id ?? '';
     print('User ID: $userId');
-    // Set default municipality
-    municipality = predefinedProvince.municipalities.firstWhere(
-      (mun) => mun.name == 'CAGAYAN DE ORO CITY', // Example municipality
-      orElse: () => predefinedProvince.municipalities.first,
-    );
+
     // Fetch the user's service provider data from Supabase
     _fetchServiceProviderData();
   }
@@ -147,8 +132,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .execute();
 // Helper method to convert time to 24-hour format
 
-      if (serviceProviderResponse.error == null &&
-          serviceProviderResponse.data != null) {
+      if (serviceProviderResponse == null && serviceProviderResponse != null) {
         setState(() {
           // Prefill the service provider data
           establishmentNameController.text =
@@ -163,10 +147,10 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         });
       } else {
         print(
-            'Error fetching service provider data: ${serviceProviderResponse.error?.message}');
+            'Error fetching service provider data: ${serviceProviderResponse}');
       }
 
-      if (addressResponse.error == null && addressResponse.data != null) {
+      if (addressResponse == null && addressResponse.data != null) {
         setState(() {
           var addressData =
               addressResponse.data['address']; // Address data from the response
@@ -175,20 +159,15 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           floorNoController.text = addressData['floor_unit_room'] ?? '';
           streetController.text = addressData['street'] ?? '';
           cityController.text = addressData['city'] ?? '';
-          // Set the barangay value for the dropdown instead of directly setting the controller text
-          barangay = addressData['barangay'] ?? '';
-          // If needed, set the value in the dropdown
-          barangayController.text = barangay ?? '';
-          // For exactAddressController, format the address as needed
-          exactAddressController.text =
-              '${addressData['city'] ?? "Not Found"}, '
-              '${addressData['barangay'] ?? "Not Found"}, '
-              '${addressData['street'] ?? "Not Found"}, '
-              '${addressData['latitude'] ?? "Not Found"}, '
-              '${addressData['longitude'] ?? "Not Found"}';
+
+          exactAddressController.text = '${addressData['city']}, '
+              '${addressData['barangay']}, '
+              '${addressData['street']}, '
+              '${addressData['latitude']}, '
+              '${addressData['longitude']}';
         });
       } else {
-        print('Error fetching address data: ${addressResponse.error?.message}');
+        print('Error fetching address data: ${addressResponse}');
       }
     } catch (e) {
       print('Error fetching data: $e');
@@ -204,8 +183,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         .single()
         .execute();
 
-    if (userResponse.error != null || userResponse.data == null) {
-      print('Error fetching user address ID: ${userResponse.error?.message}');
+    if (userResponse != null || userResponse.data == null) {
+      print('Error fetching user address ID: ${userResponse}');
       return;
     }
 
@@ -227,11 +206,10 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .eq('sp_id', userId) // Match the sp_id with userId
           .execute();
 
-      if (response.error == null) {
+      if (response == null) {
         print('Service provider profile updated successfully');
       } else {
-        print(
-            'Error updating service provider profile: ${response.error?.message}');
+        print('Error updating service provider profile: ${response}');
       }
 
       // 4. Update the address table with the new address details
@@ -249,12 +227,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .eq('address_id', addressId)
           .execute();
 
-      if (addressResponse.error == null) {
+      if (addressResponse == null) {
         // Address updated successfully
         print('Address updated successfully');
         Navigator.pop(context, updatedProfile); // Return updated profile
       } else {
-        print('Error updating address: ${addressResponse.error?.message}');
+        print('Error updating address: ${addressResponse}');
       }
     } catch (error) {
       print('Error saving profile: $error');
@@ -663,39 +641,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Barangay",
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 20),
-                CustomDropdown<String>(
-                  initialItem:
-                      (municipality?.barangays ?? []).contains(barangay)
-                          ? barangay
-                          : (municipality?.barangays.isNotEmpty ?? false)
-                              ? municipality!.barangays.first
-                              : null, // Ensure the initial item is valid
-                  decoration: getDropdownDecoration(),
-                  hintText: 'Select Barangay',
-                  items: municipality?.barangays ?? [], // Dropdown options
-                  onChanged: (String? value) {
-                    setState(() {
-                      barangay = value; // Update the selected barangay
-                      barangayController.text =
-                          value ?? ''; // Sync with the controller
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
                   "City",
                   style: TextStyle(fontSize: 16),
                 ),
@@ -747,8 +692,4 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       ],
     );
   }
-}
-
-extension on PostgrestResponse {
-  get error => null;
 }
