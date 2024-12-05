@@ -310,7 +310,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
         MaterialPageRoute(builder: (context) => const ServicesScreen()),
       );
     } else {
-      throw Exception('Failed to add package: packageId is null');
+      throw Exception('Failed to add package');
     }
   }
 

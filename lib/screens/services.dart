@@ -90,8 +90,8 @@ class ServicesScreenState extends State<ServicesScreen> {
               'id': item['service_id'] ?? 'N/A',
               'name': service['service_name'] ?? 'Unknown',
               'price': item['price'] ?? 0,
-              'image': (service['package_image'] ?? '').isNotEmpty
-                  ? service['package_image']
+              'image': (service['service_image'] ?? '').isNotEmpty
+                  ? service['service_image']
                   : 'assets/pamfurred_secondarylogo.png',
               'type': service['service_type'] is List
                   ? (service['service_type'] as List).join(', ')
@@ -158,11 +158,11 @@ class ServicesScreenState extends State<ServicesScreen> {
           });
         });
       } else {
-        throw Exception('Failed to create service. Response: $response');
+        throw Exception('Failed to create service.');
       }
     } catch (error) {
       print("Error creating service: $error");
-      throw Exception('Error creating service: $error');
+      throw Exception('Error creating service');
     }
   }
 
@@ -286,7 +286,8 @@ class ServicesScreenState extends State<ServicesScreen> {
             'id': item['serviceprovider_package_id'],
             'name': item['package_name'] ?? 'Unknown',
             'price': item['price'] ?? 0,
-            'image': item['package_image'] ?? 'assets/images/default_image.png',
+            'image':
+                item['package_image'] ?? 'assets/pamfurred_secondarylogo.png',
             'sizes': item['size'] ?? 'Unknown',
             'availability': item['availability_status'] != null
                 ? (item['availability_status'] == 'Available'
@@ -409,7 +410,7 @@ class ServicesScreenState extends State<ServicesScreen> {
               'price': item['price'] ?? 0,
               'image': (package['package_image'] ?? '').isNotEmpty
                   ? package['package_image']
-                  : 'assets/images/default_image.png',
+                  : 'assets/pamfurred_secondarylogo.png',
               'size': item['size'] ?? 'Unknown',
               'availability': package['availability_status'] == true
                   ? 'Available'
@@ -587,7 +588,8 @@ class ServicesScreenState extends State<ServicesScreen> {
             'size': item['size'] ?? 'Unknown',
             'minWeight': item['min_weight'] ?? 0,
             'maxWeight': item['max_weight'] ?? 0,
-            'image': item['service_image'] ?? 'assets/images/default_image.png',
+            'image':
+                item['service_image'] ?? 'assets/pamfurred_secondarylogo.png',
             'description': item['service_desc'] ?? 'No description available',
             'availability': item['availability_status'] != null
                 ? (item['availability_status'] == 'Available'
