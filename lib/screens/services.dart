@@ -4,7 +4,6 @@ import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/add_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
-import 'package:service_provider/screens/main_screen.dart';
 import 'package:service_provider/screens/package_details.dart';
 import 'package:service_provider/screens/service_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -94,9 +93,9 @@ class ServicesScreenState extends State<ServicesScreen> {
               'id': item['service_id'] ?? 'N/A',
               'name': service['service_name'] ?? 'Unknown',
               'price': item['price'] ?? 0,
-              'image': (service['service_image'] ?? '').isNotEmpty
-                  ? service['service_image']
-                  : 'assets/images/default_image.png',
+              'image': (service['package_image'] ?? '').isNotEmpty
+                  ? service['package_image']
+                  : 'assets/pamfurred_secondarylogo.png',
               'type': service['service_type'] is List
                   ? (service['service_type'] as List).join(', ')
                   : service['service_type'] ?? 'Unknown',
@@ -109,6 +108,8 @@ class ServicesScreenState extends State<ServicesScreen> {
               'availability': item['availability_status'] == 'Available'
                   ? 'Available'
                   : 'Unavailable',
+              'category':
+                  selectedCategory ?? service['category_name'] ?? 'Unknown',
             };
           }).toList();
         });
@@ -132,6 +133,7 @@ class ServicesScreenState extends State<ServicesScreen> {
       // Prepare the service provider service data
       final serviceData = {
         'sp_id': serviceProviderId,
+        'service_category': [selectedCategory],
         'service_id': newService['service_id'],
         'size': newService['size'] ?? 'Unknown', // Ensure 'size' is included
         'price': newService['price'] ?? 0,
@@ -393,7 +395,7 @@ class ServicesScreenState extends State<ServicesScreen> {
                     {};
 
             return {
-              'id': item['serviceprovider_package_id'] ?? 'N/A',
+              'id': item['package_id'] ?? 'N/A',
               'name': package['package_name'] ?? 'Unknown',
               'price': item['price'] ?? 0,
               'image': (package['package_image'] ?? '').isNotEmpty
@@ -689,15 +691,19 @@ class ServicesScreenState extends State<ServicesScreen> {
                                         right:
                                             10), // To give some space between card and icon
                                     child: ListTile(
-                                      leading: service['image'] != null &&
-                                              service['image'].isNotEmpty
-                                          ? Image.network(
-                                              service['image'],
-                                              width: 50,
-                                              height: 50,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : const Icon(Icons.image, size: 50),
+                                      leading: SizedBox(
+                                        width: 50,
+                                        child:
+                                            service['image'].startsWith('http')
+                                                ? Image.network(
+                                                    service['image'],
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Image.asset(
+                                                    service['image'],
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                      ),
                                       title: Text(
                                           service['name'] ?? 'Unknown Name'),
                                       trailing: Row(
