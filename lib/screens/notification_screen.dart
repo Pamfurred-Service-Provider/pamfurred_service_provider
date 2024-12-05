@@ -302,7 +302,8 @@ class NotificationScreenState extends State<NotificationScreen> {
                     TextSpan(
                       text: notification['appointment_notif_type'] == 'Done'
                           ? 'completed'
-                          : (notification['appointment_notif_type'] ?? ''),
+                          : (notification['appointment_notif_type'] ?? '')
+                              .toLowerCase(),
                       style: const TextStyle(
                         fontSize: regularText,
                         color: primaryColor,

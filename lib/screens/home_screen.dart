@@ -61,20 +61,20 @@ class HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> mostAvailedData =
       []; // Initialize as an empty list
 
-  final List<Map<String, dynamic>> revenueData = [
-    {'month': 'Jan', 'value': 2500.00},
-    {'month': 'Feb', 'value': 5000.00},
-    {'month': 'Mar', 'value': 1000.00},
-    {'month': 'Apr', 'value': 2000.00},
-    {'month': 'May', 'value': 3000.00},
-    {'month': 'Jun', 'value': 4080.00},
-    {'month': 'Jul', 'value': 5480.00},
-    {'month': 'Aug', 'value': 5050.00},
-    {'month': 'Sep', 'value': 6540.00},
-    {'month': 'Oct', 'value': 7000.00},
-    {'month': 'Nov', 'value': 8000.00},
-    {'month': 'Dec', 'value': 3152.00},
-  ];
+  // final List<Map<String, dynamic>> revenueData = [
+  //   {'month': 'Jan', 'value': 2500.00},
+  //   {'month': 'Feb', 'value': 5000.00},
+  //   {'month': 'Mar', 'value': 1000.00},
+  //   {'month': 'Apr', 'value': 2000.00},
+  //   {'month': 'May', 'value': 3000.00},
+  //   {'month': 'Jun', 'value': 4080.00},
+  //   {'month': 'Jul', 'value': 5480.00},
+  //   {'month': 'Aug', 'value': 5050.00},
+  //   {'month': 'Sep', 'value': 6540.00},
+  //   {'month': 'Oct', 'value': 7000.00},
+  //   {'month': 'Nov', 'value': 8000.00},
+  //   {'month': 'Dec', 'value': 3152.00},
+  // ];
 
   final List<String> cardTitles = [
     'Pending \nAppointments',
@@ -306,8 +306,8 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    revenueData.map((e) => e['value'] as double).toList();
-    revenueData.map((e) => e['month'] as String).toList();
+    // revenueData.map((e) => e['value'] as double).toList();
+    // revenueData.map((e) => e['month'] as String).toList();
 
     return Scaffold(
       appBar: HomeAppBar(context),

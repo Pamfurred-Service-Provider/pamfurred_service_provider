@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/screens/appointment_details.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
@@ -17,9 +18,10 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   String? serviceProviderId; // Nullable service provider ID
 
   final Map<String, Color> statusColors = {
-    'Upcoming': const Color.fromRGBO(255, 143, 0, 1),
+    'Upcoming': secondaryColor,
     'Done': Colors.green,
-    'Cancelled': const Color.fromRGBO(160, 62, 6, 1),
+    'Cancelled': primaryColor,
+    'Pending': greyColor,
   };
 
   @override
@@ -166,7 +168,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
                   return TabBarView(
                     controller: _tabController,
                     physics: const BouncingScrollPhysics(),
-                    children: List.generate(5, (index) {
+                    children: List.generate(6, (index) {
                       return _buildAppointmentList(index, appointmentList);
                     }),
                   );
@@ -203,25 +205,24 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
         print('Error parsing date: ${appointment['appointment_date']}');
         return false; // Skip this appointment if date parsing fails
       }
+      final normalizedAppointmentDate = DateTime(
+        appointmentDate.year,
+        appointmentDate.month,
+        appointmentDate.day,
+      );
       switch (tabIndex) {
-        case 0: // Today
-          final normalizedAppointmentDate = DateTime(
-            appointmentDate.year,
-            appointmentDate.month,
-            appointmentDate.day,
-          );
-          final normalizedToday = DateTime(today.year, today.month, today.day);
-          final isToday =
-              normalizedAppointmentDate.isAtSameMomentAs(normalizedToday);
-
-          return isToday;
-        case 1: // Upcoming
+        case 0: // Pending
+          return appointment['appointment_status'] == 'Pending';
+        case 1: // Today
+          return normalizedAppointmentDate.isAtSameMomentAs(today) &&
+              appointment['appointment_status'] == 'Approved';
+        case 2: // Upcoming
           return appointment['appointment_status'] == 'Upcoming';
-        case 2: // Done
+        case 3: // Done
           return appointment['appointment_status'] == 'Done';
-        case 3: // Cancelled
+        case 4: // Cancelled
           return appointment['appointment_status'] == 'Cancelled';
-        case 4: // All
+        case 5: // All
           return true;
         default:
           return false;
@@ -295,7 +296,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: <Widget>[
                     Text(
-                      appointment['appointment_status'] ?? 'Unknown',
+                      appointment['appointment_status'] ?? '',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color:

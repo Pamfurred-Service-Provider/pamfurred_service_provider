@@ -243,7 +243,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             buildDetailSection(
                 'Pet Name:', '${widget.appointment['pet_name'] ?? ''}'),
             buildDetailSection(
-                'Pet Gender:', '${widget.appointment['pet_sex'] ?? ''}'),
+                'Pet Sex:', '${widget.appointment['pet_sex'] ?? ''}'),
             buildDetailSection(
                 'Pet Type:', '${widget.appointment['pet_type'] ?? ''}'),
             buildDetailSection(
