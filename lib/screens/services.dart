@@ -106,7 +106,7 @@ class ServicesScreenState extends State<ServicesScreen> {
               'size': item['size'] ?? 'Unknown',
               'minWeight': item['min_weight'] ?? 0,
               'maxWeight': item['max_weight'] ?? 0,
-              'availability': service['availability_status'] == true
+              'availability': item['availability_status'] == 'Available'
                   ? 'Available'
                   : 'Unavailable',
             };
@@ -279,7 +279,7 @@ class ServicesScreenState extends State<ServicesScreen> {
             'price': item['price'] ?? 0,
             'image': item['package_image'] ?? 'assets/images/default_image.png',
             'sizes': item['size'] ?? 'Unknown',
-            'availability': item['availability_status'] == true
+            'availability': item['availability_status'] == 'Available'
                 ? 'Available'
                 : 'Unavailable',
             'pets': (item['pet_type'] as List?)?.join(', ') ?? 'Unknown',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/screens/appointments.dart';
 
 // 1) appBar
@@ -60,16 +61,20 @@ AppBar customAppBar(BuildContext context) {
 // This is for other screens but homescreen
 AppBar customAppBarWithTitle(BuildContext context, String title) {
   return AppBar(
-    backgroundColor: Colors.white,
+    backgroundColor: lighterGreyColor,
     toolbarHeight: 70,
     title: Padding(
       padding: const EdgeInsets.only(top: 10.0),
-      child: Text(title),
+      child: Text(
+        title,
+        style: TextStyle(),
+      ),
     ),
     leading: Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 0, 20),
       child: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+        icon: const Icon(Icons.arrow_back_ios,
+            color: Color.fromARGB(255, 0, 0, 0)),
         onPressed: () {
           // Custom action on back button press
           Navigator.pop(context);

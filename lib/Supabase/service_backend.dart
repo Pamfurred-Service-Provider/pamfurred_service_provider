@@ -9,14 +9,14 @@ class ServiceBackend {
     required String serviceDesc,
     required List<String> petsToCater,
     required List<String> serviceType, // Change to List<String>
-    required bool availability,
+    required Map<String, String> availability,
     required String? imageUrl,
     required String serviceProviderId,
     String? serviceCategory,
-    required int price,
-    required String size,
-    required int minWeight,
-    required int maxWeight,
+    required List<int> prices,
+    required List<String?> sizes,
+    required List<int> minWeights,
+    required List<int> maxWeights,
   }) async {
     // Fetch service package category details that match the serviceCategory
     final servicePackageCategory = await _supabase
@@ -31,7 +31,7 @@ class ServiceBackend {
       throw Exception('Service category not found: $serviceCategory');
     }
 
-    // Extract the fetched category ID
+    // // Extract the fetched category ID
     final toBeInsertedCategoryId =
         servicePackageCategory['service_package_category_id'];
 
@@ -52,15 +52,62 @@ class ServiceBackend {
 
     final serviceId = response['service_id'];
 
-    await _supabase.from('serviceprovider_service').insert({
-      'sp_id': serviceProviderId,
-      'service_id': serviceId,
-      'availability_status': availability,
-      'size': size,
-      'price': price,
-      'min_weight': minWeight,
-      'max_weight': maxWeight,
-    });
+    print("availability map: $availability");
+
+    List<String> allSizes = availability.keys.toList();
+
+    final List<String> availabilityStatus = allSizes.map((size) {
+      // Get the availability status for each size
+      return availability[size] ??
+          'Unknown'; // Default to 'Unknown' if the size is not in the map
+    }).toList();
+
+    print("Availability Status: $availabilityStatus");
+
+    try {
+      // Check if all lists have the same length
+      if (sizes.length != prices.length ||
+          sizes.length != minWeights.length ||
+          sizes.length != maxWeights.length ||
+          sizes.length != availabilityStatus.length) {
+        throw Exception('All input lists must have the same length.');
+      }
+
+      // Prepare a list to hold the data for bulk insertion
+      final List<Map<String, dynamic>> insertData = [];
+
+      // Loop through the sizes and create a separate map for each size
+      for (int i = 0; i < sizes.length; i++) {
+        insertData.add({
+          'sp_id': serviceProviderId,
+          'service_id': serviceId,
+          'availability_status':
+              availabilityStatus[i], // This should be a valid string
+          'size': sizes[i], // Assume sizes[i] is guaranteed to be non-null
+          'price': prices[i], // Corresponding price (int)
+          'min_weight': minWeights[i], // Corresponding minimum weight (int)
+          'max_weight': maxWeights[i], // Corresponding maximum weight (int)
+        });
+      }
+
+      // Perform the bulk insert
+      final insertResponse =
+          await _supabase.from('serviceprovider_service').insert(insertData);
+
+      // Check if the insertResponse is null or has an error
+      if (insertResponse == null) {
+        throw Exception(
+            'Insert response is null. Check your Supabase client initialization.');
+      } else if (insertResponse.error != null) {
+        throw Exception(
+            'Failed to insert service provider services: ${insertResponse.error!.message}');
+      }
+
+      print('Insert successful: ${insertResponse.data}'); // Log success
+    } catch (e) {
+      print('Error occurred: $e'); // Log the error
+      // Optionally, show an error dialog or a snackbar to the user
+    }
 
     return serviceId;
   }

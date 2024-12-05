@@ -32,9 +32,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   //Controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descController = TextEditingController();
-  // final TextEditingController priceController = TextEditingController();
-  // final TextEditingController minWeightController = TextEditingController();
-  // final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
 
   // Dynamic controllers for price, size, and weight
@@ -47,91 +44,113 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   // Add new entry for price, size, and weight
   void addEntry() {
     setState(() {
+      // Check if any fields are empty before adding a new entry
+      for (int i = 0; i < sizeList.length; i++) {
+        if (priceControllers[i].text.trim().isEmpty ||
+            minWeightControllers[i].text.trim().isEmpty ||
+            maxWeightControllers[i].text.trim().isEmpty) {
+          showErrorDialog(context,
+              "Please complete all fields for size ${sizeList[i]} before adding a new size.");
+          return; // Exit if any fields are not filled
+        }
+      }
+
+      // Ensure the new minimum weight is greater than the previous maximum weight
+      if (sizeList.length > 1) {
+        // Only check if there is more than one size
+        // Get the previous size's maximum weight
+        int prevMaxWeight = int.tryParse(
+                maxWeightControllers[sizeList.length - 2].text.trim()) ??
+            0;
+
+        // Initialize new min weight as 0 and set when creating the new controller
+        int newMinWeight = 0;
+
+        // Only set newMinWeight if there's a valid last entry
+        if (minWeightControllers.last.text.isNotEmpty) {
+          newMinWeight =
+              int.tryParse(minWeightControllers.last.text.trim()) ?? 0;
+        }
+
+        // Validate newMinWeight against the previous max weight
+        if (newMinWeight <= prevMaxWeight) {
+          showErrorDialog(context,
+              "New size's Min Weight must be greater than the previous size's Max Weight (${prevMaxWeight}kg)!");
+          return; // Exit if the new min weight is not valid
+        }
+      }
+
+      // Add new size
       if (sizeList.isEmpty) {
         sizeList.add("S");
       } else if (sizeList.length < 4) {
         sizeList.add(["M", "L", "XL"][sizeList.length - 1]);
       } else {
-        showErrorDialog(
-          context,
-          "You can't add more than 4 sizes!",
-        );
-
+        showErrorDialog(context, "You can't add more than 4 sizes!");
         return;
       }
 
+      // Add new controllers for the new size
       priceControllers.add(TextEditingController());
       minWeightControllers.add(TextEditingController());
       maxWeightControllers.add(TextEditingController());
       availabilityMap[sizeList.last] = 'Available'; // Set default availability
     });
+  }
 
-    // Check if adding a new entry still maintains the constraints
-    if (sizeList.length > 2) {
-      try {
-        // Check if the list has at least one previous entry to validate against
-        if (sizeList.length > 1) {
-          // Parse the previous size values
-          int prevPrice =
-              int.tryParse(priceControllers[sizeList.length - 2].text.trim()) ??
-                  -1;
-          int prevMinWeight = int.tryParse(
-                  minWeightControllers[sizeList.length - 2].text.trim()) ??
-              -1;
-          int prevMaxWeight = int.tryParse(
-                  maxWeightControllers[sizeList.length - 2].text.trim()) ??
-              -1;
-
-          // Parse the current size values
-          int currPrice = int.tryParse(priceControllers.last.text.trim()) ?? -1;
-          int currMinWeight =
-              int.tryParse(minWeightControllers.last.text.trim()) ?? -1;
-          int currMaxWeight =
-              int.tryParse(maxWeightControllers.last.text.trim()) ?? -1;
-
-          // Validate all parsed values
-          if (prevPrice < 0 ||
-              prevMinWeight < 0 ||
-              prevMaxWeight < 0 ||
-              currPrice < 0 ||
-              currMinWeight < 0 ||
-              currMaxWeight < 0) {
-            throw FormatException();
-          }
-
-          // Ensure current size is not less than the previous size
-          if (currPrice < prevPrice ||
-              currMinWeight < prevMinWeight ||
-              currMaxWeight < prevMaxWeight) {
-            showErrorDialog(
-              context,
-              "New size values must not be lesser than the previous size!",
-            );
-
-            // Remove the newly added entry if validation fails
-            setState(() {
-              sizeList.removeLast();
-              priceControllers.removeLast();
-              minWeightControllers.removeLast();
-              maxWeightControllers.removeLast();
-            });
-          }
-        }
-      } catch (e) {
-        showErrorDialog(
-          context,
-          "Invalid input detected. Please ensure all fields contain valid numeric values.",
-        );
-
-        // Remove the last entry in case of invalid input
-        setState(() {
-          sizeList.removeLast();
-          priceControllers.removeLast();
-          minWeightControllers.removeLast();
-          maxWeightControllers.removeLast();
-        });
+// Validate all fields when ready to submit
+  void validateAndSubmit() {
+    // Check if all fields for each size are filled
+    for (int i = 0; i < sizeList.length; i++) {
+      if (priceControllers[i].text.trim().isEmpty ||
+          minWeightControllers[i].text.trim().isEmpty ||
+          maxWeightControllers[i].text.trim().isEmpty) {
+        showErrorDialog(context,
+            "Please complete all fields for size ${sizeList[i]} before submitting.");
+        return; // Exit if any fields are not filled
       }
     }
+
+    // Now that all fields are filled, you can perform your existing checks
+    for (int i = 1; i < sizeList.length; i++) {
+      try {
+        // Parse values for the previous size
+        int prevPrice = int.parse(priceControllers[i - 1].text.trim());
+        int prevMinWeight = int.parse(minWeightControllers[i - 1].text.trim());
+        int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text.trim());
+
+        // Parse values for the current size
+        int currPrice = int.parse(priceControllers[i].text.trim());
+        int currMinWeight = int.parse(minWeightControllers[i].text.trim());
+        int currMaxWeight = int.parse(maxWeightControllers[i].text.trim());
+
+        // Validate all parsed values
+        if (prevPrice < 0 ||
+            prevMinWeight < 0 ||
+            prevMaxWeight < 0 ||
+            currPrice < 0 ||
+            currMinWeight < 0 ||
+            currMaxWeight < 0) {
+          showErrorDialog(context, "Values must be non-negative.");
+          return;
+        }
+
+        // Ensure current size is not less than the previous size
+        if (currPrice < prevPrice ||
+            currMinWeight < prevMinWeight ||
+            currMaxWeight < prevMaxWeight) {
+          showErrorDialog(context,
+              "New size values must not be smaller than the previous size values!");
+          return; // Exit if the new size values are invalid
+        }
+      } catch (e) {
+        showErrorDialog(context,
+            "Invalid input detected. Please ensure all fields contain valid numeric values.");
+        return;
+      }
+    }
+
+    // Proceed with the next steps (e.g., saving the data)
   }
 
   // Remove an entry for price, size, and weight
@@ -180,16 +199,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     print("prices: $prices");
     print("weights: $weights");
 
-    // Ensure prices and weights are unique
-    if (prices.length != priceControllers.length ||
-        weights.length != minWeightControllers.length) {
-      showErrorDialog(
-        context,
-        "Prices and weights must be unique!",
-      );
-      return false;
-    }
-
     // Validate the price for increasing values as size increases
     for (int i = 1; i < priceControllers.length; i++) {
       try {
@@ -205,33 +214,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         }
       } catch (e) {
         showErrorDialog(context, "Invalid price format!");
-        return false;
-      }
-    }
-
-    // Validate the weights for increasing values as size increases
-    for (int i = 0; i < minWeightControllers.length; i++) {
-      try {
-        // Clean the input before parsing
-        int minWeight = int.parse(minWeightControllers[i].text);
-        int maxWeight = int.parse(maxWeightControllers[i].text);
-
-        if (i > 0) {
-          int prevMinWeight = int.parse(minWeightControllers[i - 1].text);
-          int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text);
-
-          if (minWeight < prevMinWeight || maxWeight < prevMaxWeight) {
-            showErrorDialog(
-              context,
-              "Weight for larger sizes should not be lesser!",
-            );
-            print(
-                "weights: $minWeight $maxWeight prev: $prevMinWeight $prevMaxWeight ");
-            return false;
-          }
-        }
-      } catch (e) {
-        showErrorDialog(context, "Invalid weight format!");
         return false;
       }
     }
@@ -262,8 +244,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   List<String> petTypeOptions = ['dog', 'cat', 'bunny'];
   List<String> selectedPetTypes = [];
   final List<String> petType = ['dog', 'cat', 'bunny'];
-  String? availability = 'Available';
-  String? sizes = 'S';
 
   void updateAvailability(String size, String status) {
     setState(() {
@@ -279,29 +259,35 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
     try {
       // Attempt to parse input values
-      int price;
-      int minWeight;
-      int maxWeight;
+      List<int> prices = [];
+      List<int> minWeights = [];
+      List<int> maxWeights = [];
 
       try {
-        price = int.parse(priceControllers[0].text.trim());
+        prices = priceControllers
+            .map((controller) => int.parse(controller.text.trim()))
+            .toList();
       } catch (e) {
         throw Exception(
-            "Invalid price format. Received: '${priceControllers[0].text}'. Please enter a valid integer.");
+            "Invalid price format in one or more fields. Please ensure all prices are valid integers.");
       }
 
       try {
-        minWeight = int.parse(minWeightControllers[0].text);
+        minWeights = minWeightControllers
+            .map((controller) => int.parse(controller.text.trim()))
+            .toList();
       } catch (e) {
         throw Exception(
-            'Invalid maximum weight format. Received: \'${maxWeightControllers[0].text}\'. Please enter a valid integer.');
+            "Invalid minimum weight format in one or more fields. Please ensure all minimum weights are valid integers.");
       }
 
       try {
-        maxWeight = int.parse(maxWeightControllers[0].text);
+        maxWeights = maxWeightControllers
+            .map((controller) => int.parse(controller.text.trim()))
+            .toList();
       } catch (e) {
         throw Exception(
-            'Invalid maximum weight format. Please enter a valid integer.');
+            "Invalid maximum weight format in one or more fields. Please ensure all maximum weights are valid integers.");
       }
 
       // Validate input fields before proceeding
@@ -311,21 +297,25 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       if (descController.text.isEmpty) {
         throw Exception('Service description cannot be empty');
       }
-      if (priceControllers[0].text.isEmpty) {
-        throw Exception('Price cannot be empty');
+      if (prices.isEmpty) {
+        throw Exception('Prices cannot be empty');
       }
-      if (sizes == null) {
-        throw Exception('Size must be selected');
+      if (minWeights.isEmpty) {
+        throw Exception('Minimum weights cannot be empty');
       }
-      if (minWeightControllers[0].text.isEmpty) {
-        throw Exception('Minimum weight cannot be empty');
+      if (maxWeights.isEmpty) {
+        throw Exception('Maximum weights cannot be empty');
       }
       if (serviceTypeOptions.isEmpty) {
         throw Exception('At least one service type must be selected');
       }
-      if (availability == null) {
-        throw Exception('Availability must be specified');
-      }
+
+      print("Prices, min w, max w: $prices, $minWeights, $maxWeights");
+
+      print('Sizes length: ${sizeList.length}');
+      print('Prices length: ${prices.length}');
+      print('Min Weights length: ${minWeights.length}');
+      print('Max Weights length: ${maxWeights.length}');
 
       // Upload image if provided
       String imageUrl = '';
@@ -343,13 +333,13 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         imageUrl: imageUrl,
         serviceName: nameController.text,
         serviceDesc: descController.text,
-        petsToCater: petsList,
+        petsToCater: selectedPetTypes,
         serviceType: selectedServiceTypes,
-        price: price,
-        size: sizes ?? '',
-        minWeight: minWeight,
-        maxWeight: maxWeight,
-        availability: availability == 'Available',
+        prices: prices,
+        sizes: sizeList,
+        minWeights: minWeights,
+        maxWeights: maxWeights,
+        availability: availabilityMap,
         serviceCategory: widget.serviceCategory,
       );
 
@@ -398,6 +388,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     super.initState();
     fetchServices();
     sizeList.add("S");
+    availabilityMap["S"] = "Available";
     priceControllers.add(TextEditingController());
     minWeightControllers.add(TextEditingController());
     maxWeightControllers.add(TextEditingController());
@@ -419,7 +410,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     return Stack(
       children: [
         Scaffold(
-          appBar: customAppBarWithTitle(context, 'Add service'),
+          appBar: customAppBarWithTitle(context, 'Add Service'),
           backgroundColor: Colors.white,
           body: ListView(
             physics: BouncingScrollPhysics(),
@@ -572,6 +563,40 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: sizeList.length,
                 itemBuilder: (context, index) {
+                  // Variable to hold the default min weight and price
+                  String? defaultMinWeight;
+                  String? defaultPrice;
+
+                  // Set default values based on previous entry
+                  if (index > 0) {
+                    // Get the previous size's max weight
+                    int prevMaxWeight = int.tryParse(
+                            maxWeightControllers[index - 1].text.trim()) ??
+                        0;
+                    defaultMinWeight = (prevMaxWeight + 1)
+                        .toString(); // Default to prev max + 1
+
+                    // Get the previous size's price
+                    int prevPrice =
+                        int.tryParse(priceControllers[index - 1].text.trim()) ??
+                            0;
+                    defaultPrice =
+                        prevPrice.toString(); // Default to the previous price
+                  }
+
+                  // If it's a new entry, create new controllers for minWeight and price
+                  if (defaultMinWeight != null &&
+                      minWeightControllers[index].text.isEmpty) {
+                    minWeightControllers[index] =
+                        TextEditingController(text: defaultMinWeight);
+                  }
+
+                  if (defaultPrice != null &&
+                      priceControllers[index].text.isEmpty) {
+                    priceControllers[index] =
+                        TextEditingController(text: defaultPrice);
+                  }
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -599,10 +624,14 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: "Price",
                                 prefixText: "₱ ",
-                                border: OutlineInputBorder(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      secondaryBorderRadius),
+                                ),
+                                labelStyle: const TextStyle(fontSize: 13),
                               ),
                             ),
                           ),
@@ -615,10 +644,14 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: "Min Weight",
                                 suffixText: "kg",
-                                border: OutlineInputBorder(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      secondaryBorderRadius),
+                                ),
+                                labelStyle: const TextStyle(fontSize: 12),
                               ),
                             ),
                           ),
@@ -631,10 +664,14 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: "Max Weight",
                                 suffixText: "kg",
-                                border: OutlineInputBorder(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      secondaryBorderRadius),
+                                ),
+                                labelStyle: const TextStyle(fontSize: 12),
                               ),
                             ),
                           ),
@@ -664,8 +701,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      secondaryBorderRadius)),
+                                borderRadius: BorderRadius.circular(
+                                    secondaryBorderRadius),
+                              ),
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
                                           'Available'
@@ -678,7 +716,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                       : Colors.black,
                             ),
                             onPressed: () async {
-                              // Show the confirmation dialog
                               bool? confirmed = await ConfirmationDialog.show(
                                 context,
                                 title: 'Change Availability',
@@ -686,7 +723,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                     'Are you sure you want to mark this as Available?',
                               );
 
-                              // If the user confirms, update the availability
                               if (confirmed == true) {
                                 setState(() {
                                   availabilityMap[sizeList[index]] =
@@ -701,12 +737,13 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      secondaryBorderRadius)),
+                                borderRadius: BorderRadius.circular(
+                                    secondaryBorderRadius),
+                              ),
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
                                           'Not Available'
-                                      ? primaryColor
+                                      ? secondaryColor
                                       : Colors.grey.shade300,
                               foregroundColor:
                                   availabilityMap[sizeList[index]] ==
@@ -715,7 +752,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                       : Colors.black,
                             ),
                             onPressed: () async {
-                              // Show the confirmation dialog
                               bool? confirmed = await ConfirmationDialog.show(
                                 context,
                                 title: 'Change Availability',
@@ -723,7 +759,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                     'Are you sure you want to mark this as Not Available?',
                               );
 
-                              // If the user confirms, update the availability
                               if (confirmed == true) {
                                 setState(() {
                                   availabilityMap[sizeList[index]] =
@@ -744,7 +779,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 text: 'Add more',
                 onPressed: addEntry,
                 leadingIcon: Icons.add,
-                backgroundColor: Colors.green,
+                backgroundColor: primaryColor,
               ),
               const SizedBox(height: 20),
               RichText(
@@ -793,7 +828,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(secondaryBorderRadius)),
-                      backgroundColor: primaryColor,
+                      backgroundColor: Color.fromRGBO(244, 67, 54, 1.0),
                       foregroundColor: Colors.white,
                     ),
                     onPressed: () {
