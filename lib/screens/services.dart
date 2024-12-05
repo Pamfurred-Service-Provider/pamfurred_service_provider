@@ -82,9 +82,6 @@ class ServicesScreenState extends State<ServicesScreen> {
               )
               ''').eq('sp_id', serviceProviderId);
 
-      print(
-          "Supabase response FOR FETCHSERVICES: $response"); // Debugging response
-
       if (response is List && response.isNotEmpty) {
         setState(() {
           services = response.map((item) {
@@ -108,8 +105,7 @@ class ServicesScreenState extends State<ServicesScreen> {
               'availability': item['availability_status'] == 'Available'
                   ? 'Available'
                   : 'Unavailable',
-              'category':
-                  selectedCategory ?? service['category_name'] ?? 'Unknown',
+              'category': selectedCategory ?? service['category_name'] ?? '',
             };
           }).toList();
         });
@@ -119,8 +115,7 @@ class ServicesScreenState extends State<ServicesScreen> {
         });
       }
     } catch (error, stackTrace) {
-      print("Error fetching services: $error");
-      print("Stack trace: $stackTrace");
+      print('Error fetching services: $error\n$stackTrace');
     } finally {
       setState(() {
         isLoading = false;
@@ -262,14 +257,26 @@ class ServicesScreenState extends State<ServicesScreen> {
       packages = []; // Reset packages to avoid stale data
       isLoading = true;
     });
-
-    final response = await supabase
+    var query = supabase
         .from('service_package_with_category')
         .select('*')
-        .eq('sp_id', serviceProviderId)
-        .eq('category_name', category);
+        .eq('sp_id', serviceProviderId);
 
-    print("Response from service_package_with_category: $response");
+    // Apply category filter only if the category is not 'All'
+    if (category != 'All') {
+      query = query.eq('category_name', category);
+    }
+
+    final response = await query;
+
+    print("Response data: $response");
+    // final response = await supabase
+    //     .from('service_package_with_category')
+    //     .select('*')
+    //     .eq('sp_id', serviceProviderId)
+    //     .eq('category_name', category);
+
+    // print("Response from service_package_with_category: $response");
 
     if (response is List && response.isNotEmpty) {
       setState(() {
@@ -281,14 +288,16 @@ class ServicesScreenState extends State<ServicesScreen> {
             'price': item['price'] ?? 0,
             'image': item['package_image'] ?? 'assets/images/default_image.png',
             'sizes': item['size'] ?? 'Unknown',
-            'availability': item['availability_status'] == 'Available'
-                ? 'Available'
-                : 'Unavailable',
+            'availability': item['availability_status'] != null
+                ? (item['availability_status'] == 'Available'
+                    ? 'Available'
+                    : 'Unavailable')
+                : 'Unknown',
             'pets': (item['pet_type'] as List?)?.join(', ') ?? 'Unknown',
             'minWeight': item['min_weight'] ?? 0,
             'maxWeight': item['max_weight'] ?? 0,
             'type': (item['package_type'] as List?)?.join(', ') ?? 'Unknown',
-            'category': item['category_name'] ?? 'Unknown',
+            'category': item['category_name'] ?? '',
           };
         }));
         isLoading = false;
@@ -405,7 +414,7 @@ class ServicesScreenState extends State<ServicesScreen> {
               'availability': package['availability_status'] == true
                   ? 'Available'
                   : 'Unavailable',
-              'category': category['category_name'] ?? 'Unknown',
+              'category': category['category_name'] ?? '',
               'pets': package['pet_type'] is List
                   ? (package['pet_type'] as List).join(', ')
                   : package['pet_type'] ?? 'Unknown',
@@ -494,6 +503,9 @@ class ServicesScreenState extends State<ServicesScreen> {
                 setState(() {
                   selectedCategory = 'All';
                 });
+                Navigator.pop(context);
+                _fetchServicesByCategory('All');
+                _fetchPackagesByCategory('All');
               },
             ),
             ListTile(
@@ -543,13 +555,26 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
 
     // Fetch services from the service_with_category view
-    final response = await supabase
+    // final response = await supabase
+    //     .from('service_with_category')
+    //     .select('*')
+    //     .eq('sp_id', serviceProviderId) // Filter by service provider ID
+    //     .eq('category_name', category); // Filter by category name
+
+    // print("Response data: $response");
+    var query = supabase
         .from('service_with_category')
         .select('*')
-        .eq('sp_id', serviceProviderId) // Filter by service provider ID
-        .eq('category_name', category); // Filter by category name
+        .eq('sp_id', serviceProviderId);
 
-    print("Response from service_with_category: $response");
+    // Apply category filter only if the category is not 'All'
+    if (category != 'All') {
+      query = query.eq('category_name', category);
+    }
+
+    final response = await query;
+
+    print("Response data: $response");
 
     if (response is List && response.isNotEmpty) {
       print("Fetched services: ${response.length} services found.");
@@ -565,7 +590,9 @@ class ServicesScreenState extends State<ServicesScreen> {
             'image': item['service_image'] ?? 'assets/images/default_image.png',
             'description': item['service_desc'] ?? 'No description available',
             'availability': item['availability_status'] != null
-                ? (item['availability_status'] ? 'Available' : 'Unavailable')
+                ? (item['availability_status'] == 'Available'
+                    ? 'Available'
+                    : 'Unavailable')
                 : 'Unknown',
             'type': item['service_type'] != null && item['service_type'] is List
                 ? (item['service_type'] as List).join(', ')
@@ -573,7 +600,7 @@ class ServicesScreenState extends State<ServicesScreen> {
             'pets': item['pet_type'] != null && item['pet_type'] is List
                 ? (item['pet_type'] as List).join(', ')
                 : item['pet_type'] ?? 'Unknown',
-            'category': item['category_name'] ?? 'Unknown',
+            'category': item['category_name'] ?? '',
           };
         }));
       });
@@ -693,16 +720,23 @@ class ServicesScreenState extends State<ServicesScreen> {
                                     child: ListTile(
                                       leading: SizedBox(
                                         width: 50,
-                                        child:
-                                            service['image'].startsWith('http')
-                                                ? Image.network(
-                                                    service['image'],
-                                                    fit: BoxFit.cover,
-                                                  )
-                                                : Image.asset(
-                                                    service['image'],
-                                                    fit: BoxFit.cover,
-                                                  ),
+                                        child: service['image'] != null &&
+                                                service['image'].isNotEmpty &&
+                                                service['image']
+                                                    .startsWith('http')
+                                            ? Image.network(
+                                                service['image'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.cover,
+                                              )
+                                            : Image.asset(
+                                                service['image']?.isNotEmpty ??
+                                                        false
+                                                    ? service['image']
+                                                    : 'assets/pamfurred_secondarylogo.png',
+                                                fit: BoxFit.cover,
+                                              ),
                                       ),
                                       title: Text(
                                           service['name'] ?? 'Unknown Name'),
@@ -771,14 +805,22 @@ class ServicesScreenState extends State<ServicesScreen> {
                                     margin: const EdgeInsets.only(right: 10),
                                     child: ListTile(
                                       leading: package['image'] != null &&
-                                              package['image'].isNotEmpty
+                                              package['image'].isNotEmpty &&
+                                              package['image']
+                                                  .startsWith('http')
                                           ? Image.network(
                                               package['image'],
                                               width: 50,
                                               height: 50,
                                               fit: BoxFit.cover,
                                             )
-                                          : const Icon(Icons.image, size: 50),
+                                          : Image.asset(
+                                              package['image']?.isNotEmpty ??
+                                                      false
+                                                  ? package['image']
+                                                  : 'assets/pamfurred_secondarylogo.png',
+                                              fit: BoxFit.cover,
+                                            ),
                                       title: Text(
                                           package['name'] ?? 'Unknown Name'),
                                       trailing: Row(
