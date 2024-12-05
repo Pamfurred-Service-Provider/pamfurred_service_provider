@@ -707,7 +707,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
                                           'Available'
-                                      ? Colors.green
+                                      ? Colors.blue
                                       : Colors.grey.shade300,
                               foregroundColor:
                                   availabilityMap[sizeList[index]] ==
@@ -854,7 +854,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(secondaryBorderRadius)),
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                     ),
                     child: const Text(
