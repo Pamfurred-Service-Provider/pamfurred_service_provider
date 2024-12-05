@@ -464,10 +464,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                       text: 'Description ', // Regular text
                       style: const TextStyle(color: Colors.black),
                     ),
-                    TextSpan(
-                      text: '*', // Asterisk in red
-                      style: const TextStyle(color: Colors.red),
-                    ),
                   ],
                 ),
               ),
