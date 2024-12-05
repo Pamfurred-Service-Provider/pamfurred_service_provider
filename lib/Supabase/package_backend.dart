@@ -7,7 +7,8 @@ class PackageBackend {
 
   Future<String?> addPackage({
     required String packageName,
-    required List<int> price,
+    required String packageDesc,
+    required List<int> prices,
     required List<String?> size,
     required List<int> minWeight,
     required List<int> maxWeight,
@@ -23,7 +24,7 @@ class PackageBackend {
 
     print('--- Package Data to be Inserted ---');
     print('Package Name: $packageName');
-    print('Price: $price');
+    print('Price: $prices');
     print('Size: $size');
     print('Min Weight: $minWeight');
     print('Max Weight: $maxWeight');
@@ -56,6 +57,7 @@ class PackageBackend {
         .from('package')
         .insert({
           'package_name': packageName,
+          'package_desc': packageDesc,
           'pet_type': petsToCater,
           'package_type': packageType,
           'inclusions': inclusionList,
@@ -77,7 +79,7 @@ class PackageBackend {
 
     try {
       // Check if all lists have the same length
-      if (size.length != price.length ||
+      if (size.length != prices.length ||
           size.length != minWeight.length ||
           size.length != maxWeight.length ||
           size.length != availabilityStatus.length) {
@@ -89,15 +91,18 @@ class PackageBackend {
       for (int i = 0; i < size.length; i++) {
         insertData.add({
           'sp_id': packageProviderId,
-          'pcakege_id': packageId,
+          'package_id': packageId,
           'availability_status':
               availabilityStatus[i], // This should be a valid string
           'size': size[i], // Assume size[i] is guaranteed to be non-null
-          'price': price[i], // Corresponding price (int)
+          'price': prices[i], // Corresponding price (int)
           'min_weight': minWeight[i], // Corresponding minimum weight (int)
           'max_weight': maxWeight[i], // Corresponding maximum weight (int)
         });
       }
+
+      print("inserData: $insertData");
+
       final insertResponse =
           await _supabase.from('serviceprovider_package').insert(insertData);
 
@@ -117,6 +122,19 @@ class PackageBackend {
     }
 
     return packageId;
+  }
+
+  Future<List<String>> fetchServiceName() async {
+    final response =
+        await _supabase.from('distinct_services').select('service_name');
+    print("Services list: $response");
+
+    // Extract only the 'service_name' values
+    final services = (response as List)
+        .map((service) => service['service_name'] as String)
+        .toList();
+
+    return services;
   }
 
   Future<String?> addServiceProviderPackage({
@@ -175,18 +193,6 @@ class PackageBackend {
         .from('service_provider_images')
         .getPublicUrl(filePath);
     return publicUrl;
-  }
-
-  Future<List<String>> fetchServiceName() async {
-    final response = await _supabase.from('service').select('service_name');
-    print("Services list: $response");
-
-    // Extract only the 'service_name' values
-    final services = (response as List)
-        .map((service) => service['service_name'] as String)
-        .toList();
-
-    return services;
   }
 
   Future<List<dynamic>> getpackageProviderpackages({
