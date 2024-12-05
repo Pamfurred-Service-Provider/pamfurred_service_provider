@@ -160,10 +160,13 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         index < minWeightControllers.length &&
         index < maxWeightControllers.length) {
       setState(() {
+        final sizeToRemove = sizeList[index];
+
         sizeList.removeAt(index);
         priceControllers.removeAt(index);
         minWeightControllers.removeAt(index);
         maxWeightControllers.removeAt(index);
+        availabilityMap.remove(sizeToRemove);
       });
     } else {
       showErrorDialog(
@@ -336,9 +339,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         petsToCater: selectedPetTypes,
         serviceType: selectedServiceTypes,
         prices: prices,
-        sizes: sizeList,
-        minWeights: minWeights,
-        maxWeights: maxWeights,
+        size: sizeList,
+        minWeight: minWeights,
+        maxWeight: maxWeights,
         availability: availabilityMap,
         serviceCategory: widget.serviceCategory,
       );

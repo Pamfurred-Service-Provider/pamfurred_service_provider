@@ -14,9 +14,9 @@ class ServiceBackend {
     required String serviceProviderId,
     String? serviceCategory,
     required List<int> prices,
-    required List<String?> sizes,
-    required List<int> minWeights,
-    required List<int> maxWeights,
+    required List<String?> size,
+    required List<int> minWeight,
+    required List<int> maxWeight,
   }) async {
     // Fetch service package category details that match the serviceCategory
     final servicePackageCategory = await _supabase
@@ -68,10 +68,10 @@ class ServiceBackend {
 
     try {
       // Check if all lists have the same length
-      if (sizes.length != prices.length ||
-          sizes.length != minWeights.length ||
-          sizes.length != maxWeights.length ||
-          sizes.length != availabilityStatus.length) {
+      if (size.length != prices.length ||
+          size.length != minWeight.length ||
+          size.length != maxWeight.length ||
+          size.length != availabilityStatus.length) {
         throw Exception('All input lists must have the same length.');
       }
 
@@ -79,16 +79,16 @@ class ServiceBackend {
       final List<Map<String, dynamic>> insertData = [];
 
       // Loop through the sizes and create a separate map for each size
-      for (int i = 0; i < sizes.length; i++) {
+      for (int i = 0; i < size.length; i++) {
         insertData.add({
           'sp_id': serviceProviderId,
           'service_id': serviceId,
           'availability_status':
               availabilityStatus[i], // This should be a valid string
-          'size': sizes[i], // Assume sizes[i] is guaranteed to be non-null
+          'size': size[i], // Assume sizes[i] is guaranteed to be non-null
           'price': prices[i], // Corresponding price (int)
-          'min_weight': minWeights[i], // Corresponding minimum weight (int)
-          'max_weight': maxWeights[i], // Corresponding maximum weight (int)
+          'min_weight': minWeight[i], // Corresponding minimum weight (int)
+          'max_weight': maxWeight[i], // Corresponding maximum weight (int)
         });
       }
 

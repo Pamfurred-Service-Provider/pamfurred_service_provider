@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,10 +9,10 @@ import 'package:service_provider/Widgets/add_service_dialog.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
+import 'package:service_provider/components/capitalize_first_letter.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
-import 'package:service_provider/screens/services.dart';
 
 class AddPackageScreen extends StatefulWidget {
   final String packageProviderId;
@@ -29,6 +30,7 @@ class AddPackageScreen extends StatefulWidget {
 
 class _AddPackageScreenState extends State<AddPackageScreen> {
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController? descController = TextEditingController();
   final TextEditingController inclusionsController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
 
@@ -91,6 +93,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     });
   }
 
+  // Validate all fields when ready to submit
   void validateAndSubmit() {
     // Check if all fields for each size are filled
     for (int i = 0; i < sizeList.length; i++) {
@@ -105,48 +108,60 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
     // Now that all fields are filled, you can perform your existing checks
     for (int i = 1; i < sizeList.length; i++) {
-      int prevPrice = int.parse(priceControllers[i - 1].text.trim());
-      int prevMinWeight = int.parse(minWeightControllers[i - 1].text.trim());
-      int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text.trim());
+      try {
+        // Parse values for the previous size
+        int prevPrice = int.parse(priceControllers[i - 1].text.trim());
+        int prevMinWeight = int.parse(minWeightControllers[i - 1].text.trim());
+        int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text.trim());
 
-      // Parse the current size values
-      int currPrice = int.parse(priceControllers[i].text.trim());
-      int currMinWeight = int.parse(minWeightControllers[i].text.trim());
-      int currMaxWeight = int.parse(maxWeightControllers[i].text.trim());
+        // Parse values for the current size
+        int currPrice = int.parse(priceControllers[i].text.trim());
+        int currMinWeight = int.parse(minWeightControllers[i].text.trim());
+        int currMaxWeight = int.parse(maxWeightControllers[i].text.trim());
 
-      // Validate all parsed values
-      if (prevPrice < 0 ||
-          prevMinWeight < 0 ||
-          prevMaxWeight < 0 ||
-          currPrice < 0 ||
-          currMinWeight < 0 ||
-          currMaxWeight < 0) {
-        showErrorDialog(context, "Values must be non-negative.");
+        // Validate all parsed values
+        if (prevPrice < 0 ||
+            prevMinWeight < 0 ||
+            prevMaxWeight < 0 ||
+            currPrice < 0 ||
+            currMinWeight < 0 ||
+            currMaxWeight < 0) {
+          showErrorDialog(context, "Values must be non-negative.");
+          return;
+        }
+
+        // Ensure current size is not less than the previous size
+        if (currPrice < prevPrice ||
+            currMinWeight < prevMinWeight ||
+            currMaxWeight < prevMaxWeight) {
+          showErrorDialog(context,
+              "New size values must not be smaller than the previous size values!");
+          return; // Exit if the new size values are invalid
+        }
+      } catch (e) {
+        showErrorDialog(context,
+            "Invalid input detected. Please ensure all fields contain valid numeric values.");
         return;
       }
-
-      // Ensure current size is not less than the previous size
-      if (currPrice < prevPrice ||
-          currMinWeight < prevMinWeight ||
-          currMaxWeight < prevMaxWeight) {
-        showErrorDialog(
-          context,
-          "New size values must not be lesser than the previous size!",
-        );
-      }
     }
+
+    // Proceed with the next steps (e.g., saving the data)
   }
 
+  // Remove an entry for price, size, and weight
   void removeEntry(int index) {
     if (index < sizeList.length &&
         index < priceControllers.length &&
         index < minWeightControllers.length &&
         index < maxWeightControllers.length) {
       setState(() {
+        final sizeToRemove = sizeList[index];
+
         sizeList.removeAt(index);
         priceControllers.removeAt(index);
         minWeightControllers.removeAt(index);
         maxWeightControllers.removeAt(index);
+        availabilityMap.remove(sizeToRemove);
       });
     } else {
       showErrorDialog(
@@ -232,7 +247,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     });
   }
 
-  void addPackage() async {
+  Future<void> addPackage() async {
     final backend = PackageBackend();
     setState(() {
       isLoading = true; // Start loading
@@ -243,19 +258,19 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       imageUrl = await backend
           .uploadImage(_image!); // Get the image URL after uploading
     }
-    List<int> price = [];
-    List<int> minWeight = [];
-    List<int> maxWeight = [];
+    List<int> prices = [];
+    List<int> minWeights = [];
+    List<int> maxWeights = [];
     try {
-      price = priceControllers
+      prices = priceControllers
           .map((controller) => int.parse(controller.text.trim()))
           .toList();
     } catch (e) {
       throw Exception(
-          "Invalid price format in one or more fields. Please ensure all price are valid integers.");
+          "Invalid price format in one or more fields. Please ensure all prices are valid integers.");
     }
     try {
-      minWeight = minWeightControllers
+      minWeights = minWeightControllers
           .map((controller) => int.parse(controller.text.trim()))
           .toList();
     } catch (e) {
@@ -263,7 +278,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           "Invalid minimum weight format in one or more fields. Please ensure all minimum weights are valid integers.");
     }
     try {
-      maxWeight = maxWeightControllers
+      maxWeights = maxWeightControllers
           .map((controller) => int.parse(controller.text.trim()))
           .toList();
     } catch (e) {
@@ -290,14 +305,23 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       throw Exception('Availability must be specified');
     }
 
+    print("Prices, min w, max w: $prices, $minWeights, $maxWeights");
+
+    print('Sizes length: ${sizeList.length}');
+    print('Prices length: ${prices.length}');
+    print('Min Weights length: ${minWeights.length}');
+    print('Max Weights length: ${maxWeights.length}');
+    print('availability length: ${availabilityMap.length}');
+
     final packageId = await backend.addPackage(
       packageProviderId: widget.packageProviderId, // petsToCater:
       packageName: nameController.text,
+      packageDesc: descController?.text ?? '',
       imageUrl: imageUrl,
       size: sizeList,
-      price: price,
-      minWeight: minWeight,
-      maxWeight: maxWeight,
+      prices: prices,
+      minWeight: minWeights,
+      maxWeight: maxWeights,
       petsToCater: selectedPetTypes,
       packageType: packageType!,
       availability: availabilityMap,
@@ -305,10 +329,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       packageCategory: widget.packageCategory, // Pass package category here
     );
     if (packageId != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ServicesScreen()),
-      );
+      Navigator.pop(context);
     } else {
       throw Exception('Failed to add package');
     }
@@ -328,9 +349,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
   void selectService(String service) {
     setState(() {
-      if (!selectedServices.contains(service)) {
-        selectedServices.add(service); // Add selected service to the list
-      }
+      selectedService = service;
+      nameController.text = service;
     });
   }
 
@@ -345,6 +365,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     super.initState();
     fetchServices();
     sizeList.add("S");
+    availabilityMap["S"] = "Available";
     priceControllers.add(TextEditingController());
     minWeightControllers.add(TextEditingController());
     maxWeightControllers.add(TextEditingController());
@@ -433,6 +454,46 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                     borderRadius: BorderRadius.all(Radius.circular(12.0)),
                   ),
                 ),
+              ),
+              const SizedBox(height: tertiarySizedBox),
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 16),
+                  children: [
+                    TextSpan(
+                      text: 'Description ', // Regular text
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: secondarySizedBox),
+              SizedBox(
+                height: 90,
+                child: TextFormField(
+                    minLines: 3,
+                    maxLines: 5,
+                    controller: descController,
+                    cursorColor: Colors.black,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.all(10.0),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(secondaryBorderRadius),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: primaryColor),
+                        borderRadius:
+                            BorderRadius.circular(secondaryBorderRadius),
+                      ),
+                    ),
+                    inputFormatters: [
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final newText = capitalizeFirstLetter(
+                            newValue.text); // Capitalize only the first letter
+                        return newValue.copyWith(text: newText);
+                      }),
+                    ]),
               ),
               const SizedBox(height: tertiarySizedBox),
               RichText(
@@ -574,22 +635,231 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 ),
               ),
               const SizedBox(height: tertiarySizedBox),
+
+// OLD
+
+              // ListView.builder(
+              //   shrinkWrap: true,
+              //   physics: const NeverScrollableScrollPhysics(),
+              //   itemCount: sizeList.length,
+              //   itemBuilder: (context, index) {
+              //     return Column(
+              //       crossAxisAlignment: CrossAxisAlignment.start,
+              //       children: [
+              //         Text(
+              //           "Size: ${sizeList[index]}",
+              //           style: const TextStyle(
+              //             fontSize: 16,
+              //             fontWeight: FontWeight.bold,
+              //           ),
+              //         ),
+              //         const SizedBox(height: 10),
+              //         Row(
+              //           children: [
+              //             // Price
+              //             Expanded(
+              //               child: TextField(
+              //                 controller: priceControllers[index],
+              //                 keyboardType: TextInputType.number,
+              //                 inputFormatters: [
+              //                   FilteringTextInputFormatter.digitsOnly,
+              //                 ],
+              //                 decoration: const InputDecoration(
+              //                   labelText: "Price",
+              //                   prefixText: "₱ ",
+              //                   border: OutlineInputBorder(),
+              //                 ),
+              //               ),
+              //             ),
+              //             const SizedBox(width: 10),
+              //             // Min Weight
+              //             Expanded(
+              //               child: TextField(
+              //                 controller: minWeightControllers[index],
+              //                 keyboardType: TextInputType.number,
+              //                 inputFormatters: [
+              //                   FilteringTextInputFormatter.digitsOnly,
+              //                 ],
+              //                 decoration: const InputDecoration(
+              //                   labelText: "Min Weight",
+              //                   suffixText: "kg",
+              //                   border: OutlineInputBorder(),
+              //                 ),
+              //               ),
+              //             ),
+              //             const SizedBox(width: 10),
+              //             // Max Weight
+              //             Expanded(
+              //               child: TextField(
+              //                 controller: maxWeightControllers[index],
+              //                 keyboardType: TextInputType.number,
+              //                 inputFormatters: [
+              //                   FilteringTextInputFormatter.digitsOnly,
+              //                 ],
+              //                 decoration: const InputDecoration(
+              //                   labelText: "Max Weight",
+              //                   suffixText: "kg",
+              //                   border: OutlineInputBorder(),
+              //                 ),
+              //               ),
+              //             ),
+              //             const SizedBox(width: 10),
+              //             IconButton(
+              //               icon: const Icon(Icons.delete, color: primaryColor),
+              //               onPressed: () {
+              //                 showDialog(
+              //                   context: context,
+              //                   builder: (BuildContext context) {
+              //                     return ShowDeleteDialog(
+              //                       title: 'Confirm Deletion',
+              //                       content:
+              //                           'Are you sure you want to delete this?',
+              //                       onDelete: () => removeEntry(index),
+              //                     );
+              //                   },
+              //                 );
+              //               },
+              //             ),
+              //           ],
+              //         ),
+              //         const SizedBox(height: 10),
+              //         Row(
+              //           children: [
+              //             ElevatedButton(
+              //               style: ElevatedButton.styleFrom(
+              //                 elevation: 0,
+              //                 shape: RoundedRectangleBorder(
+              //                     borderRadius: BorderRadius.circular(
+              //                         secondaryBorderRadius)),
+              //                 backgroundColor:
+              //                     availabilityMap[sizeList[index]] ==
+              //                             'Available'
+              //                         ? Colors.green
+              //                         : Colors.grey.shade300,
+              //                 foregroundColor:
+              //                     availabilityMap[sizeList[index]] ==
+              //                             'Available'
+              //                         ? Colors.white
+              //                         : Colors.black,
+              //               ),
+              //               onPressed: () async {
+              //                 // Show the confirmation dialog
+              //                 bool? confirmed = await ConfirmationDialog.show(
+              //                   context,
+              //                   title: 'Change Availability',
+              //                   content:
+              //                       'Are you sure you want to mark this as Available?',
+              //                 );
+
+              //                 // If the user confirms, update the availability
+              //                 if (confirmed == true) {
+              //                   setState(() {
+              //                     availabilityMap[sizeList[index]] =
+              //                         'Available';
+              //                   });
+              //                 }
+              //               },
+              //               child: const Text('Available'),
+              //             ),
+              //             const SizedBox(width: 10),
+              //             ElevatedButton(
+              //               style: ElevatedButton.styleFrom(
+              //                 elevation: 0,
+              //                 shape: RoundedRectangleBorder(
+              //                     borderRadius: BorderRadius.circular(
+              //                         secondaryBorderRadius)),
+              //                 backgroundColor:
+              //                     availabilityMap[sizeList[index]] ==
+              //                             'Not Available'
+              //                         ? primaryColor
+              //                         : Colors.grey.shade300,
+              //                 foregroundColor:
+              //                     availabilityMap[sizeList[index]] ==
+              //                             'Not Available'
+              //                         ? Colors.white
+              //                         : Colors.black,
+              //               ),
+              //               onPressed: () async {
+              //                 // Show the confirmation dialog
+              //                 bool? confirmed = await ConfirmationDialog.show(
+              //                   context,
+              //                   title: 'Change Availability',
+              //                   content:
+              //                       'Are you sure you want to mark this as Not Available?',
+              //                 );
+
+              //                 // If the user confirms, update the availability
+              //                 if (confirmed == true) {
+              //                   setState(() {
+              //                     availabilityMap[sizeList[index]] =
+              //                         'Not Available';
+              //                   });
+              //                 }
+              //               },
+              //               child: const Text('Not Available'),
+              //             ),
+              //           ],
+              //         ),
+              //       ],
+              //     );
+              //   },
+              // ),
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: sizeList.length,
                 itemBuilder: (context, index) {
+                  // Variable to hold the default min weight and price
+                  String? defaultMinWeight;
+                  String? defaultPrice;
+
+                  // Set default values based on previous entry
+                  if (index > 0) {
+                    // Get the previous size's max weight
+                    int prevMaxWeight = int.tryParse(
+                            maxWeightControllers[index - 1].text.trim()) ??
+                        0;
+                    defaultMinWeight = (prevMaxWeight + 1)
+                        .toString(); // Default to prev max + 1
+
+                    // Get the previous size's price
+                    int prevPrice =
+                        int.tryParse(priceControllers[index - 1].text.trim()) ??
+                            0;
+                    defaultPrice =
+                        prevPrice.toString(); // Default to the previous price
+                  }
+
+                  // If it's a new entry, create new controllers for minWeight and price
+                  if (defaultMinWeight != null &&
+                      minWeightControllers[index].text.isEmpty) {
+                    minWeightControllers[index] =
+                        TextEditingController(text: defaultMinWeight);
+                  }
+
+                  if (defaultPrice != null &&
+                      priceControllers[index].text.isEmpty) {
+                    priceControllers[index] =
+                        TextEditingController(text: defaultPrice);
+                  }
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Size: ${sizeList[index]}",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const SizedBox(height: tertiarySizedBox),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Size: ${sizeList[index]}",
+                            style: const TextStyle(
+                              fontSize: regularText,
+                              fontWeight: boldWeight,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: tertiarySizedBox),
                       Row(
                         children: [
                           // Price
@@ -600,10 +870,14 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: "Price",
                                 prefixText: "₱ ",
-                                border: OutlineInputBorder(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      secondaryBorderRadius),
+                                ),
+                                labelStyle: const TextStyle(fontSize: 13),
                               ),
                             ),
                           ),
@@ -616,10 +890,14 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: "Min Weight",
                                 suffixText: "kg",
-                                border: OutlineInputBorder(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      secondaryBorderRadius),
+                                ),
+                                labelStyle: const TextStyle(fontSize: 12),
                               ),
                             ),
                           ),
@@ -632,10 +910,14 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: "Max Weight",
                                 suffixText: "kg",
-                                border: OutlineInputBorder(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      secondaryBorderRadius),
+                                ),
+                                labelStyle: const TextStyle(fontSize: 12),
                               ),
                             ),
                           ),
@@ -649,7 +931,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                                   return ShowDeleteDialog(
                                     title: 'Confirm Deletion',
                                     content:
-                                        'Are you sure you want to delete this?',
+                                        'Are you sure you want to delete this service?',
                                     onDelete: () => removeEntry(index),
                                   );
                                 },
@@ -658,19 +940,20 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: tertiarySizedBox),
                       Row(
                         children: [
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      secondaryBorderRadius)),
+                                borderRadius: BorderRadius.circular(
+                                    secondaryBorderRadius),
+                              ),
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
                                           'Available'
-                                      ? Colors.green
+                                      ? Colors.blue
                                       : Colors.grey.shade300,
                               foregroundColor:
                                   availabilityMap[sizeList[index]] ==
@@ -679,7 +962,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                                       : Colors.black,
                             ),
                             onPressed: () async {
-                              // Show the confirmation dialog
                               bool? confirmed = await ConfirmationDialog.show(
                                 context,
                                 title: 'Change Availability',
@@ -687,7 +969,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                                     'Are you sure you want to mark this as Available?',
                               );
 
-                              // If the user confirms, update the availability
                               if (confirmed == true) {
                                 setState(() {
                                   availabilityMap[sizeList[index]] =
@@ -702,12 +983,13 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      secondaryBorderRadius)),
+                                borderRadius: BorderRadius.circular(
+                                    secondaryBorderRadius),
+                              ),
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
                                           'Not Available'
-                                      ? primaryColor
+                                      ? secondaryColor
                                       : Colors.grey.shade300,
                               foregroundColor:
                                   availabilityMap[sizeList[index]] ==
@@ -716,7 +998,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                                       : Colors.black,
                             ),
                             onPressed: () async {
-                              // Show the confirmation dialog
                               bool? confirmed = await ConfirmationDialog.show(
                                 context,
                                 title: 'Change Availability',
@@ -724,7 +1005,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                                     'Are you sure you want to mark this as Not Available?',
                               );
 
-                              // If the user confirms, update the availability
                               if (confirmed == true) {
                                 setState(() {
                                   availabilityMap[sizeList[index]] =
@@ -745,7 +1025,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 text: 'Add more',
                 onPressed: addEntry,
                 leadingIcon: Icons.add,
-                backgroundColor: Colors.green,
+                backgroundColor: primaryColor,
               ),
               const SizedBox(height: 20),
               RichText(
@@ -794,7 +1074,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(secondaryBorderRadius)),
-                      backgroundColor: primaryColor,
+                      backgroundColor: Color.fromRGBO(244, 67, 54, 1.0),
                       foregroundColor: Colors.white,
                     ),
                     onPressed: () {
@@ -820,7 +1100,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(secondaryBorderRadius)),
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                     ),
                     child: const Text(
