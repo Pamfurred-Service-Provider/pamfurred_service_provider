@@ -26,6 +26,8 @@ class ServiceBackend {
             serviceCategory) // Ensure we fetch the correct category
         .single();
 
+    print("service package category: $servicePackageCategory");
+
     // Check if a category was found
     if (servicePackageCategory == null) {
       throw Exception('Service category not found: $serviceCategory');
@@ -172,7 +174,8 @@ class ServiceBackend {
   }
 
   Future<List<String>> fetchServiceName() async {
-    final response = await _supabase.from('service').select('service_name');
+    final response =
+        await _supabase.from('distinct_services').select('service_name');
     print("Services list: $response");
 
     // Extract only the 'service_name' values

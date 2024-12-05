@@ -61,8 +61,10 @@ class AddNewServiceDialog extends StatelessWidget {
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(
-                                Radius.circular(secondaryBorderRadius))),
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(secondaryBorderRadius),
+                          ),
+                        ),
                       ),
                       onChanged: (text) => newServiceName = text,
                     ),
@@ -75,7 +77,27 @@ class AddNewServiceDialog extends StatelessWidget {
                         onPressed: () {
                           if (newServiceName != null &&
                               newServiceName!.isNotEmpty) {
-                            Navigator.pop(context, newServiceName);
+                            if (serviceNames.contains(newServiceName)) {
+                              // Show error dialog if service already exists
+                              showDialog<void>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text('Error'),
+                                    content: const Text(
+                                        'This service name already exists. Please choose a different name.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            } else {
+                              Navigator.pop(context, newServiceName);
+                            }
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -103,8 +125,9 @@ class AddNewServiceDialog extends StatelessWidget {
           },
           decoration: const InputDecoration(
             border: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.all(Radius.circular(secondaryBorderRadius))),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(secondaryBorderRadius)),
+            ),
           ),
         ),
       ],
