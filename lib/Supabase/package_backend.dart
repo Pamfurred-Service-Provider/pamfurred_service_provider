@@ -103,19 +103,7 @@ class PackageBackend {
 
       print("inserData: $insertData");
 
-      final insertResponse =
-          await _supabase.from('serviceprovider_package').insert(insertData);
-
-      // Check if the insertResponse is null or has an error
-      if (insertResponse == null) {
-        throw Exception(
-            'Insert response is null. Check your Supabase client initialization.');
-      } else if (insertResponse.error != null) {
-        throw Exception(
-            'Failed to insert service provider services: ${insertResponse}');
-      }
-
-      print('Insert successful: ${insertResponse}'); // Log success
+      await _supabase.from('serviceprovider_package').insert(insertData);
     } catch (e) {
       print('Error occurred: $e'); // Log the error
       // Optionally, show an error dialog or a snackbar to the user
