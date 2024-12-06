@@ -21,6 +21,7 @@ class AppointmentDetailScreen extends StatefulWidget {
 class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   late String dropdownValue;
   final List<String> statusOptions = ['Done', 'Cancelled', 'Upcoming'];
+  final List<String> appointmentStatus = ['Accept', 'Reject'];
   final SupabaseClient supabase = Supabase.instance.client;
 
   @override
@@ -160,7 +161,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                       ),
                     ),
                     child: const Text(
-                      'Cancelled',
+                      'Cancel',
                       style: TextStyle(fontSize: 16),
                     ),
                   ),

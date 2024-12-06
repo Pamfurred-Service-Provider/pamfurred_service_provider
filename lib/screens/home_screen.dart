@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:badges/badges.dart' as badges;
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/revenue_chart.dart';
 import 'package:service_provider/components/most_availed_chart.dart';
@@ -61,21 +60,6 @@ class HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> mostAvailedData =
       []; // Initialize as an empty list
 
-  // final List<Map<String, dynamic>> revenueData = [
-  //   {'month': 'Jan', 'value': 2500.00},
-  //   {'month': 'Feb', 'value': 5000.00},
-  //   {'month': 'Mar', 'value': 1000.00},
-  //   {'month': 'Apr', 'value': 2000.00},
-  //   {'month': 'May', 'value': 3000.00},
-  //   {'month': 'Jun', 'value': 4080.00},
-  //   {'month': 'Jul', 'value': 5480.00},
-  //   {'month': 'Aug', 'value': 5050.00},
-  //   {'month': 'Sep', 'value': 6540.00},
-  //   {'month': 'Oct', 'value': 7000.00},
-  //   {'month': 'Nov', 'value': 8000.00},
-  //   {'month': 'Dec', 'value': 3152.00},
-  // ];
-
   final List<String> cardTitles = [
     'Pending \nAppointments',
     'Upcoming \nAppointments',
@@ -84,8 +68,6 @@ class HomeScreenState extends State<HomeScreen> {
     'Services/ \nPackages',
     'Feedback'
   ];
-
-  final List<int> notificationCounts = [5, 2, 0, 3, 1, 4];
 
   @override
   void initState() {
@@ -174,8 +156,7 @@ class HomeScreenState extends State<HomeScreen> {
       int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
 
       for (var feedback in feedbacks) {
-        double compoundScore = feedback['compound_score'] as double;
-
+        double compoundScore = feedback['compound_score'] ?? 0.0;
         // Update thresholds based on compound_score ranges for satisfaction
         if (compoundScore >= 0.05) {
           satisfiedCount++;
@@ -540,24 +521,6 @@ class HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    //for the norification number.
-                    if (notificationCounts[index] > 0)
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: badges.Badge(
-                          badgeContent: Text(
-                            notificationCounts[index].toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          badgeStyle:
-                              const badges.BadgeStyle(badgeColor: Colors.red),
-                        ),
-                      ),
                   ],
                 ),
               );
