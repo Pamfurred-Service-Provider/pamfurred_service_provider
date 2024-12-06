@@ -30,139 +30,41 @@ class ServicesScreenState extends State<ServicesScreen> {
   }
 
   Future<void> _initializeSession() async {
-    final serviceSession = supabase.auth.currentSession;
-    if (serviceSession == null) {
-      throw Exception("User not logged in");
-    }
-    final userId = serviceSession.user.id;
-    print('User ID: $userId');
-
-// Fetch the service provider ID (sp_id) using user_id
-    final spResponse = await supabase
-        .from('service_provider')
-        .select('sp_id')
-        .eq('sp_id', userId)
-        .single();
-
-    if (spResponse == null || spResponse['sp_id'] == null) return;
-
-    // Assign the retrieved sp_id
-    serviceProviderId = spResponse['sp_id'];
-
-    // Now fetch the services and packages
-    await _fetchServices();
-    await _fetchPackages();
-  }
-
-  Future<void> _fetchServices() async {
-    if (serviceProviderId == null) return;
-
     setState(() {
       isLoading = true;
     });
 
     try {
-      final response = await supabase.from('serviceprovider_service').select('''
-              sp_id,
-              service_id,
-              price,
-              size,
-              min_weight,
-              max_weight,
-              availability_status,
-              service(
-                service_id,
-                service_name,
-                service_image,
-                service_type,
-                pet_type,
-                service_package_category(
-                  category_name
-                )
-              )
-              ''').eq('sp_id', serviceProviderId);
-
-      if (response is List && response.isNotEmpty) {
-        setState(() {
-          services = response.map((item) {
-            final service = item['service'] as Map<String, dynamic>? ?? {};
-            return {
-              'id': item['service_id'] ?? 'N/A',
-              'name': service['service_name'] ?? 'Unknown',
-              'price': item['price'] ?? 0,
-              'image': (service['service_image'] ?? '').isNotEmpty
-                  ? service['service_image']
-                  : 'assets/pamfurred_secondarylogo.png',
-              'type': service['service_type'] is List
-                  ? (service['service_type'] as List).join(', ')
-                  : service['service_type'] ?? 'Unknown',
-              'pets': service['pet_type'] is List
-                  ? (service['pet_type'] as List).join(', ')
-                  : service['pet_type'] ?? 'Unknown',
-              'size': item['size'] ?? 'Unknown',
-              'minWeight': item['min_weight'] ?? 0,
-              'maxWeight': item['max_weight'] ?? 0,
-              'availability': item['availability_status'] == 'Available'
-                  ? 'Available'
-                  : 'Unavailable',
-              'category': selectedCategory ?? service['category_name'] ?? '',
-            };
-          }).toList();
-        });
-      } else {
-        setState(() {
-          services = [];
-        });
+      final serviceSession = supabase.auth.currentSession;
+      if (serviceSession == null) {
+        throw Exception("User not logged in");
       }
-    } catch (error, stackTrace) {
-      print('Error fetching services: $error\n$stackTrace');
+      final userId = serviceSession.user.id;
+      print('User ID: $userId');
+
+      // Fetch the service provider ID (sp_id) using user_id
+      final spResponse = await supabase
+          .from('service_provider')
+          .select('sp_id')
+          .eq('sp_id', userId)
+          .single();
+
+      if (spResponse == null || spResponse['sp_id'] == null) {
+        throw Exception("Service provider ID not found for user");
+      }
+
+      // Assign the retrieved sp_id
+      serviceProviderId = spResponse['sp_id'];
+      print('Service Provider ID: $serviceProviderId');
+
+      // Fetch the services and packages
+      await _fetchCategoryData(selectedCategory!);
+    } catch (e) {
+      print('Error during session initialization: $e');
     } finally {
       setState(() {
         isLoading = false;
       });
-    }
-  }
-
-  Future<void> _createService(Map<String, dynamic> newService) async {
-    try {
-      // Prepare the service provider service data
-      final serviceData = {
-        'sp_id': serviceProviderId,
-        'service_category': [selectedCategory],
-        'service_id': newService['service_id'],
-        'size': newService['size'] ?? 'Unknown', // Ensure 'size' is included
-        'price': newService['price'] ?? 0,
-        'min_weight': newService['min_weight'] ?? 0, // Handle min_weight
-        'max_weight': newService['max_weight'] ?? 0, // Handle max_weight
-      };
-
-      // Insert into the 'serviceprovider_service' table
-      final response = await supabase
-          .from('serviceprovider_service')
-          .insert(serviceData)
-          .select();
-
-      if (response is List && response.isNotEmpty) {
-        // Fetch services by category after successful insertion
-        await _fetchServicesByCategory(selectedCategory!);
-
-        setState(() {
-          services.add({
-            'id': response.first['service_id'],
-            'name': newService['name'],
-            'price': newService['price'],
-            'size': newService['size'],
-            'minWeight': newService['min_weight'],
-            'maxWeight': newService['max_weight'],
-            'category': selectedCategory,
-          });
-        });
-      } else {
-        throw Exception('Failed to create service.');
-      }
-    } catch (error) {
-      print("Error creating service: $error");
-      throw Exception('Error creating service');
     }
   }
 
@@ -184,6 +86,18 @@ class ServicesScreenState extends State<ServicesScreen> {
       });
     }
   }
+
+// TO BE CONTINUED:
+
+  // Future<Map<String, dynamic>> fetchServiceDetails(String serviceId) async {
+  //   final response = await Supabase.instance.client.rpc(
+  //     'fetch_service_details', // The name of your RPC function
+  //     params: {'service_id_param': serviceId}, // Parameter as a named argument
+  //   );
+
+  //   // Assuming the response is a single item since service details are usually fetched for one service
+  //   return (response as List).first as Map<String, dynamic>;
+  // }
 
   void _navigateToServiceDetails(
       BuildContext context, Map<String, dynamic> serviceData) {
@@ -250,88 +164,6 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-  Future<void> _fetchPackagesByCategory(String category) async {
-    if (serviceProviderId == null) return;
-
-    setState(() {
-      packages = []; // Reset packages to avoid stale data
-      isLoading = true;
-    });
-    var query = supabase
-        .from('service_package_with_category')
-        .select('*')
-        .eq('sp_id', serviceProviderId);
-
-    // Apply category filter only if the category is not 'All'
-    if (category != 'All') {
-      query = query.eq('category_name', category);
-    }
-
-    final response = await query;
-
-    print("Response data: $response");
-    // final response = await supabase
-    //     .from('service_package_with_category')
-    //     .select('*')
-    //     .eq('sp_id', serviceProviderId)
-    //     .eq('category_name', category);
-
-    // print("Response from service_package_with_category: $response");
-
-    if (response is List && response.isNotEmpty) {
-      setState(() {
-        packages = List<Map<String, dynamic>>.from(response.map((item) {
-          print("Fetched Packages: ${response.length} services found.");
-          return {
-            'id': item['serviceprovider_package_id'],
-            'name': item['package_name'] ?? 'Unknown',
-            'price': item['price'] ?? 0,
-            'image':
-                item['package_image'] ?? 'assets/pamfurred_secondarylogo.png',
-            'sizes': item['size'] ?? 'Unknown',
-            'availability': item['availability_status'] != null
-                ? (item['availability_status'] == 'Available'
-                    ? 'Available'
-                    : 'Unavailable')
-                : 'Unknown',
-            'pets': item['pet_type'] is List
-                ? (item['pet_type'] as List).join(', ')
-                : item['pet_type'] ?? 'Unknown',
-            'minWeight': item['min_weight'] ?? 0,
-            'maxWeight': item['max_weight'] ?? 0,
-            'type': item['package_type'] is List
-                ? (item['package_type'] as List).join(', ')
-                : item['package_type'] ?? 'Unknown',
-            'category': item['category_name'] ?? '',
-          };
-        }));
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        packages = [];
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _createPackage(Map<String, dynamic> newPackage) async {
-    final response = await supabase.from('serviceprovider_package').insert({
-      'sp_id': serviceProviderId,
-      'package_id': newPackage['package_id'],
-      'package_category': [selectedCategory],
-      'price': newPackage['price'],
-    });
-
-    if (response != null) {
-      throw Exception('Failed to create package: ${response.message}');
-    }
-    await _fetchPackagesByCategory(selectedCategory!);
-    setState(() {
-      packages.add(newPackage);
-    });
-  }
-
   void _navigateToAddPackage(BuildContext context) async {
     if (serviceProviderId != null) {
       // Check if it's non-null
@@ -368,82 +200,6 @@ class ServicesScreenState extends State<ServicesScreen> {
             serviceProviderId: serviceProviderId!, packageData: packageData),
       ),
     );
-  }
-
-  Future<void> _fetchPackages() async {
-    if (serviceProviderId == null) return;
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      final response = await supabase.from('serviceprovider_package').select('''
-        serviceprovider_package_id,
-        price,
-        size,
-        min_weight,
-        max_weight,
-        package_id,
-        availability_status,
-        package(
-          package_name,
-          package_image,
-          package_type,
-          pet_type,
-          service_package_category(
-            category_name
-          )
-        )
-      ''').eq('sp_id', serviceProviderId);
-
-      print(
-          "Supabase response for fetchPackages: $response"); // Debugging output
-
-      if (response is List && response.isNotEmpty) {
-        setState(() {
-          packages = response.map((item) {
-            final package = item['package'] as Map<String, dynamic>? ?? {};
-            final category =
-                package['service_package_category'] as Map<String, dynamic>? ??
-                    {};
-
-            return {
-              'id': item['package_id'] ?? 'N/A',
-              'name': package['package_name'] ?? 'Unknown',
-              'price': item['price'] ?? 0,
-              'image': (package['package_image'] ?? '').isNotEmpty
-                  ? package['package_image']
-                  : 'assets/pamfurred_secondarylogo.png',
-              'size': item['size'] ?? 'Unknown',
-              'availability': package['availability_status'] == true
-                  ? 'Available'
-                  : 'Unavailable',
-              'category': category['category_name'] ?? '',
-              'pets': package['pet_type'] is List
-                  ? (package['pet_type'] as List).join(', ')
-                  : package['pet_type'] ?? 'Unknown',
-              'minWeight': item['min_weight'] ?? 0,
-              'maxWeight': item['max_weight'] ?? 0,
-              'type': package['package_type'] is List
-                  ? (package['package_type'] as List).join(', ')
-                  : package['package_type'] ?? 'Unknown',
-            };
-          }).toList();
-        });
-      } else {
-        setState(() {
-          packages = [];
-        });
-      }
-    } catch (error, stackTrace) {
-      print("Error fetching packages: $error");
-      print("Stack trace: $stackTrace");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
   }
 
 // Delete package from Supabase
@@ -504,47 +260,30 @@ class ServicesScreenState extends State<ServicesScreen> {
           children: [
             ListTile(
               title: const Text('All'),
-              onTap: () {
-                setState(() {
-                  selectedCategory = 'All';
-                });
+              onTap: () async {
                 Navigator.pop(context);
-                _fetchServicesByCategory('All');
-                _fetchPackagesByCategory('All');
+                await _fetchCategoryData('All'); // Fetch services for "All"
               },
             ),
             ListTile(
               title: const Text('Pet Grooming'),
-              onTap: () {
-                setState(() {
-                  selectedCategory = 'pet grooming';
-                });
+              onTap: () async {
                 Navigator.pop(context);
-                _fetchServicesByCategory('pet grooming');
-                _fetchPackagesByCategory('pet grooming'); // Fetch packages too
+                await _fetchCategoryData('pet grooming');
               },
             ),
             ListTile(
               title: const Text('Pet Boarding'),
-              onTap: () {
-                setState(() {
-                  selectedCategory = 'pet boarding';
-                });
+              onTap: () async {
                 Navigator.pop(context);
-                _fetchServicesByCategory('pet boarding');
-                _fetchPackagesByCategory('pet boarding'); // Fetch packages too
+                await _fetchCategoryData('pet boarding');
               },
             ),
             ListTile(
               title: const Text('Veterinary Service'),
-              onTap: () {
-                setState(() {
-                  selectedCategory = 'veterinary service';
-                });
+              onTap: () async {
                 Navigator.pop(context);
-                _fetchServicesByCategory('veterinary service');
-                _fetchPackagesByCategory(
-                    'veterinary service'); // Fetch packages t
+                await _fetchCategoryData('veterinary service');
               },
             ),
           ],
@@ -553,69 +292,48 @@ class ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
-  Future<void> _fetchServicesByCategory(String category) async {
-    if (serviceProviderId == null) {
-      print("No service provider ID provided.");
-      return;
-    }
+  Future<void> _fetchCategoryData(String category) async {
+    setState(() {
+      selectedCategory = category;
+    });
 
-    // Fetch services from the service_with_category view
-    // final response = await supabase
-    //     .from('service_with_category')
-    //     .select('*')
-    //     .eq('sp_id', serviceProviderId) // Filter by service provider ID
-    //     .eq('category_name', category); // Filter by category name
-
-    // print("Response data: $response");
-    var query = supabase
-        .from('service_with_category')
-        .select('*')
-        .eq('sp_id', serviceProviderId);
-
-    // Apply category filter only if the category is not 'All'
-    if (category != 'All') {
-      query = query.eq('category_name', category);
-    }
-
-    final response = await query;
-
-    print("Response data: $response");
-
-    if (response is List && response.isNotEmpty) {
-      print("Fetched services: ${response.length} services found.");
+    try {
+      // Fetch services for the selected category
+      final fetchedServices = await fetchServicesByCategory(category);
+      print("response for fetched services w/ filter: $fetchedServices");
       setState(() {
-        services = List<Map<String, dynamic>>.from(response.map((item) {
-          return {
-            'id': item['serviceprovider_service_id'],
-            'name': item['service_name'] ?? 'Unknown',
-            'price': item['price'] ?? 0,
-            'size': item['size'] ?? 'Unknown',
-            'minWeight': item['min_weight'] ?? 0,
-            'maxWeight': item['max_weight'] ?? 0,
-            'image':
-                item['service_image'] ?? 'assets/pamfurred_secondarylogo.png',
-            'description': item['service_desc'] ?? 'No description available',
-            'availability': item['availability_status'] != null
-                ? (item['availability_status'] == 'Available'
-                    ? 'Available'
-                    : 'Unavailable')
-                : 'Unknown',
-            'type': item['service_type'] != null && item['service_type'] is List
-                ? (item['service_type'] as List).join(', ')
-                : item['service_type'] ?? 'Unknown',
-            'pets': item['pet_type'] != null && item['pet_type'] is List
-                ? (item['pet_type'] as List).join(', ')
-                : item['pet_type'] ?? 'Unknown',
-            'category': item['category_name'] ?? '',
-          };
-        }));
+        services =
+            fetchedServices; // Update your state with the fetched services
       });
-    } else {
-      print("No services found or the response is empty.");
+
+      // // Fetch packages for the selected category
+      final fetchedPackages = await fetchPackagesByCategory(category);
+      print("response for fetched packages w/ filter: $fetchedPackages");
       setState(() {
-        services = [];
+        packages = fetchedPackages; // Assuming you have a variable for packages
       });
+    } catch (e) {
+      // Handle any errors
+      print('Error fetching data: $e');
     }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchServicesByCategory(
+      String category) async {
+    final response = await Supabase.instance.client
+        .rpc('fetch_services_by_category', params: {'category': category});
+
+    // Return the data as a list of maps
+    return (response as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchPackagesByCategory(
+      String category) async {
+    final response = await Supabase.instance.client
+        .rpc('fetch_packages_by_category', params: {'category': category});
+
+    // Return the data as a list of maps
+    return (response as List).cast<Map<String, dynamic>>();
   }
 
   @override
@@ -726,26 +444,29 @@ class ServicesScreenState extends State<ServicesScreen> {
                                     child: ListTile(
                                       leading: SizedBox(
                                         width: 50,
-                                        child: service['image'] != null &&
-                                                service['image'].isNotEmpty &&
-                                                service['image']
+                                        child: service['service_image'] !=
+                                                    null &&
+                                                service['service_image']
+                                                    .isNotEmpty &&
+                                                service['service_image']
                                                     .startsWith('http')
                                             ? Image.network(
-                                                service['image'],
+                                                service['service_image'],
                                                 width: 50,
                                                 height: 50,
                                                 fit: BoxFit.cover,
                                               )
                                             : Image.asset(
-                                                service['image']?.isNotEmpty ??
+                                                service['service_image']
+                                                            ?.isNotEmpty ??
                                                         false
-                                                    ? service['image']
+                                                    ? service['service_image']
                                                     : 'assets/pamfurred_secondarylogo.png',
                                                 fit: BoxFit.cover,
                                               ),
                                       ),
-                                      title: Text(
-                                          service['name'] ?? 'Unknown Name'),
+                                      title: Text(service['service_name'] ??
+                                          'Unknown Name'),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -810,25 +531,28 @@ class ServicesScreenState extends State<ServicesScreen> {
                                   child: Card(
                                     margin: const EdgeInsets.only(right: 10),
                                     child: ListTile(
-                                      leading: package['image'] != null &&
-                                              package['image'].isNotEmpty &&
-                                              package['image']
-                                                  .startsWith('http')
-                                          ? Image.network(
-                                              package['image'],
-                                              width: 50,
-                                              height: 50,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Image.asset(
-                                              package['image']?.isNotEmpty ??
-                                                      false
-                                                  ? package['image']
-                                                  : 'assets/pamfurred_secondarylogo.png',
-                                              fit: BoxFit.cover,
-                                            ),
-                                      title: Text(
-                                          package['name'] ?? 'Unknown Name'),
+                                      leading:
+                                          package['package_image'] != null &&
+                                                  package['package_image']
+                                                      .isNotEmpty &&
+                                                  package['package_image']
+                                                      .startsWith('http')
+                                              ? Image.network(
+                                                  package['package_image'],
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : Image.asset(
+                                                  package['package_image']
+                                                              ?.isNotEmpty ??
+                                                          false
+                                                      ? package['package_image']
+                                                      : 'assets/pamfurred_secondarylogo.png',
+                                                  fit: BoxFit.cover,
+                                                ),
+                                      title: Text(package['package_name'] ??
+                                          'Unknown Name'),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [

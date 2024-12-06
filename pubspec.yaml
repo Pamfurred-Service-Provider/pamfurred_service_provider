@@ -109,6 +109,8 @@ dependencies:
   printing: ^5.13.4
   pull_to_refresh_flutter3: ^2.0.2
 
+  url_launcher: any
+  pdf: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
