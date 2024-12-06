@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:service_provider/components/globals.dart';
+import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase package
 import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
@@ -431,22 +432,14 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await _saveToSupabase();
-                  },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white),
-                  child: isLoading
-                      ? const CircularProgressIndicator(
-                          color: Colors.white,
-                        )
-                      : const Text('Save',
-                          style: TextStyle(color: Colors.white)),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: CustomWideButton(
+                  text: 'Save',
+                  onPressed: _saveToSupabase,
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ],
         ),

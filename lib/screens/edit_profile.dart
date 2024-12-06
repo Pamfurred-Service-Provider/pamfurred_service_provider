@@ -131,8 +131,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .select(
               'address:address_id(floor_unit_room, street, city, barangay, latitude, longitude)') // Using relation with foreign key
           .eq('user_id', userId) // Fetch the data  for the logged-in user
-          .single()
-          .execute();
+          .single();
 // Helper method to convert time to 24-hour format
 
       if (serviceProviderResponse != null) {
@@ -158,24 +157,18 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       if (addressResponse != null) {
         setState(() {
           var addressData =
-              addressResponse.data['address']; // Address data from the response
+              addressResponse['address']; // Address data from the response
           pinnedLatitude = addressData['latitude'];
           pinnedLongitude = addressData['longitude'];
-          pinnedAddress = '${addressData['street']}, '
-              '${addressData['barangay']}, '
-              '${addressData['city']}';
+          pinnedAddress =
+              '${addressData['street']}, ${addressData['barangay']}, ${addressData['city']}';
 
           // Prefill the address data
           floorNoController.text = addressData['floor_unit_room'] ?? '';
           streetController.text = addressData['street'] ?? '';
+          barangayController.text = addressData['barangay'] ?? '';
           cityController.text = addressData['city'] ?? '';
           exactAddressController.text = pinnedAddress!;
-
-          exactAddressController.text = '${addressData['city']}, '
-              '${addressData['barangay']}, '
-              '${addressData['street']}, '
-              '${addressData['latitude']}, '
-              '${addressData['longitude']}';
         });
       } else {
         print('Error fetching address data: ${addressResponse}');
@@ -193,12 +186,16 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         .eq('user_id', userId)
         .single();
 
-    if (userResponse != null) {
-      print('Error fetching user address ID: ${userResponse}');
-      return;
-    }
+    // if (userResponse != null) {
+    //   print('Error fetching user address ID: ${userResponse}');
+    //   return;
+    // }
     // Check if data is null
-    if (userResponse == null) {
+    // if (userResponse == null) {
+    //   print('No address ID found for the user');
+    //   return;
+    // }
+    if (userResponse == null || userResponse['address_id'] == null) {
       print('No address ID found for the user');
       return;
     }
@@ -271,6 +268,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         barangayController.text =
             addressParts.length > 1 ? addressParts[1] : '';
         cityController.text = addressParts.length > 2 ? addressParts[2] : '';
+        exactAddressController.text = pinnedAddress!;
       });
     } else {
       // Handle the case when no location is selected
@@ -282,14 +280,12 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   bool validateFields() {
     final street = streetController.text.trim();
     final barangay = barangayController.text.trim();
-    final city = cityController.text.trim();
 
     return pinnedLatitude != null &&
         pinnedLongitude != null &&
         pinnedAddress != null &&
         street.isNotEmpty &&
-        barangay.isNotEmpty &&
-        city.isNotEmpty;
+        barangay.isNotEmpty;
   }
 
   @override
@@ -391,7 +387,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Maximum number of pets to cater per days",
+                  "Maximum number of pets to cater per day",
                   style: TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
@@ -654,33 +650,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "City",
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  textCapitalization: TextCapitalization.words,
-                  controller: cityController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(12.0),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
               ],
             ),
           ),
