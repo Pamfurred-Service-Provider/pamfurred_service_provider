@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:service_provider/Widgets/dropdown_decoration.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/screens/appointment_time_slot.dart';
 import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
-import 'package:animated_custom_dropdown/custom_dropdown.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, this.profileData});
@@ -42,6 +40,11 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController barangayController = TextEditingController();
   final TextEditingController streetController = TextEditingController();
   final TextEditingController floorNoController = TextEditingController();
+
+// Variables for selected location
+  double? pinnedLatitude;
+  double? pinnedLongitude;
+  String? pinnedAddress;
 
   Future<void> _selectTime(
       BuildContext context, TextEditingController controller) async {
@@ -119,46 +122,54 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .select('name, time_open, time_close, number_of_pets')
           .eq('sp_id',
               userId) // Assuming 'sp_id' is the field that corresponds to the user ID
-          .single()
-          .execute();
+          .single();
+      print('Service Provider Raw Response: $serviceProviderResponse');
 
       // Fetch the address data based on the logged-in user's ID
       final addressResponse = await supabase
           .from('user')
           .select(
               'address:address_id(floor_unit_room, street, city, barangay, latitude, longitude)') // Using relation with foreign key
-          .eq('user_id', userId) // Fetch the data for the logged-in user
+          .eq('user_id', userId) // Fetch the data  for the logged-in user
           .single()
           .execute();
 // Helper method to convert time to 24-hour format
 
-      if (serviceProviderResponse == null && serviceProviderResponse != null) {
+      if (serviceProviderResponse != null) {
+        print(
+            'Service Provider Data: ${serviceProviderResponse}'); // Print the actual data
+
         setState(() {
           // Prefill the service provider data
           establishmentNameController.text =
-              serviceProviderResponse.data['name'] ?? '';
+              serviceProviderResponse['name'] ?? '';
           // Convert time_open to 12-hour format (HH:mm) AM/PM
-          timeOpenController.text = convertTo12HourFormat(
-              serviceProviderResponse.data['time_open'] ?? '');
+          timeOpenController.text =
+              convertTo12HourFormat(serviceProviderResponse['time_open'] ?? '');
           timeCloseController.text = convertTo12HourFormat(
-              serviceProviderResponse.data['time_close'] ?? '');
-          dropdownValue =
-              serviceProviderResponse.data['number_of_pets'].toString();
+              serviceProviderResponse['time_close'] ?? '');
+          dropdownValue = serviceProviderResponse['number_of_pets'].toString();
         });
       } else {
         print(
             'Error fetching service provider data: ${serviceProviderResponse}');
       }
 
-      if (addressResponse == null && addressResponse.data != null) {
+      if (addressResponse != null) {
         setState(() {
           var addressData =
               addressResponse.data['address']; // Address data from the response
+          pinnedLatitude = addressData['latitude'];
+          pinnedLongitude = addressData['longitude'];
+          pinnedAddress = '${addressData['street']}, '
+              '${addressData['barangay']}, '
+              '${addressData['city']}';
 
           // Prefill the address data
           floorNoController.text = addressData['floor_unit_room'] ?? '';
           streetController.text = addressData['street'] ?? '';
           cityController.text = addressData['city'] ?? '';
+          exactAddressController.text = pinnedAddress!;
 
           exactAddressController.text = '${addressData['city']}, '
               '${addressData['barangay']}, '
@@ -180,15 +191,19 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         .from('user')
         .select('address_id')
         .eq('user_id', userId)
-        .single()
-        .execute();
+        .single();
 
-    if (userResponse != null || userResponse.data == null) {
+    if (userResponse != null) {
       print('Error fetching user address ID: ${userResponse}');
       return;
     }
-
-    final addressId = userResponse.data['address_id'];
+    // Check if data is null
+    if (userResponse == null) {
+      print('No address ID found for the user');
+      return;
+    }
+    final addressId = userResponse['address_id'];
+    print('Fetched Address ID: $addressId');
 
     // 2. Prepare the updated profile data (service provider)
     final updatedProfile = {
@@ -203,8 +218,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       final response = await supabase
           .from('service_provider')
           .update(updatedProfile)
-          .eq('sp_id', userId) // Match the sp_id with userId
-          .execute();
+          .eq('sp_id', userId); // Match the sp_id with userId
 
       if (response == null) {
         print('Service provider profile updated successfully');
@@ -224,8 +238,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       final addressResponse = await supabase
           .from('address')
           .update(updatedAddress)
-          .eq('address_id', addressId)
-          .execute();
+          .eq('address_id', addressId);
 
       if (addressResponse == null) {
         // Address updated successfully
@@ -239,33 +252,44 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> navigateToPinAddress() async {
-    // Navigate to PinAddress and wait for the result
-    final Map<String, dynamic>? selectedLocation = await Navigator.push(
+  Future<void> navigateToPinLocation() async {
+    final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const PinLocationNew(),
-      ),
+      MaterialPageRoute(builder: (context) => const PinLocationNew()),
     );
 
-    // If a location is returned, set it in the controller
-    if (selectedLocation != null) {
+    if (result != null) {
       setState(() {
-        cityController.text = selectedLocation['city'] ?? 'Not Found';
-        barangayController.text = selectedLocation['barangay'] ?? 'Not Found';
-        streetController.text =
-            selectedLocation['streetAddress'] ?? 'Not Found';
-        exactAddressController.text =
-            'Floor: ${selectedLocation['floor_unit_room'] ?? "Not Available"}, '
-            'City: ${selectedLocation['city'] ?? "Not Available"}, '
-            'Barangay: ${selectedLocation['barangay'] ?? "Not Available"}, '
-            'Province: ${selectedLocation['province'] ?? "Not Available"}, '
-            'Street: ${selectedLocation['streetAddress'] ?? "Not Available"}, '
-            'Latitude: ${selectedLocation['latitude']}, '
-            'Longitude: ${selectedLocation['longitude']}'; // Set location text
+        pinnedLatitude = result['latitude'];
+        pinnedLongitude = result['longitude'];
+        pinnedAddress = result['address'];
+
+        List<String> addressParts = pinnedAddress!.split(', ');
+
+        // Populate form fields with address components
+        streetController.text = addressParts.isNotEmpty ? addressParts[0] : '';
+        barangayController.text =
+            addressParts.length > 1 ? addressParts[1] : '';
+        cityController.text = addressParts.length > 2 ? addressParts[2] : '';
       });
+    } else {
+      // Handle the case when no location is selected
+      print('No location selected');
     }
-    print('selectedLocation: $selectedLocation');
+  }
+
+  // Validate the form fields and location data
+  bool validateFields() {
+    final street = streetController.text.trim();
+    final barangay = barangayController.text.trim();
+    final city = cityController.text.trim();
+
+    return pinnedLatitude != null &&
+        pinnedLongitude != null &&
+        pinnedAddress != null &&
+        street.isNotEmpty &&
+        barangay.isNotEmpty &&
+        city.isNotEmpty;
   }
 
   @override
@@ -573,7 +597,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                         Icons.location_searching,
                         color: Color(0xFFA03E06),
                       ),
-                      onPressed: navigateToPinAddress,
+                      onPressed: navigateToPinLocation,
                     ),
                   ),
                 ),
