@@ -156,8 +156,7 @@ class HomeScreenState extends State<HomeScreen> {
       int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
 
       for (var feedback in feedbacks) {
-        double compoundScore = feedback['compound_score'] as double;
-
+        double compoundScore = feedback['compound_score'] ?? 0.0;
         // Update thresholds based on compound_score ranges for satisfaction
         if (compoundScore >= 0.05) {
           satisfiedCount++;
