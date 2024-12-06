@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:service_provider/Widgets/dropdown_decoration.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/screens/appointment_time_slot.dart';
 import 'package:service_provider/screens/pin_location.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:service_provider/components/date_and_time_formatter.dart';
-import 'package:animated_custom_dropdown/custom_dropdown.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, this.profileData});
@@ -132,24 +129,9 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .execute();
 // Helper method to convert time to 24-hour format
 
-      if (serviceProviderResponse == null && serviceProviderResponse != null) {
-        setState(() {
-          // Prefill the service provider data
-          establishmentNameController.text =
-              serviceProviderResponse.data['name'] ?? '';
-          // Convert time_open to 12-hour format (HH:mm) AM/PM
-          timeOpenController.text = convertTo12HourFormat(
-              serviceProviderResponse.data['time_open'] ?? '');
-          timeCloseController.text = convertTo12HourFormat(
-              serviceProviderResponse.data['time_close'] ?? '');
-          dropdownValue =
-              serviceProviderResponse.data['number_of_pets'].toString();
-        });
-      } else {
-        print(
-            'Error fetching service provider data: ${serviceProviderResponse}');
-      }
-
+      print(
+          'Error fetching service provider data: ${serviceProviderResponse}');
+    
       if (addressResponse == null && addressResponse.data != null) {
         setState(() {
           var addressData =
@@ -206,12 +188,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .eq('sp_id', userId) // Match the sp_id with userId
           .execute();
 
-      if (response == null) {
-        print('Service provider profile updated successfully');
-      } else {
-        print('Error updating service provider profile: ${response}');
-      }
-
+      print('Error updating service provider profile: ${response}');
+    
       // 4. Update the address table with the new address details
       final updatedAddress = {
         'city': cityController.text,
@@ -227,14 +205,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .eq('address_id', addressId)
           .execute();
 
-      if (addressResponse == null) {
-        // Address updated successfully
-        print('Address updated successfully');
-        Navigator.pop(context, updatedProfile); // Return updated profile
-      } else {
-        print('Error updating address: ${addressResponse}');
-      }
-    } catch (error) {
+      print('Error updating address: ${addressResponse}');
+        } catch (error) {
       print('Error saving profile: $error');
     }
   }

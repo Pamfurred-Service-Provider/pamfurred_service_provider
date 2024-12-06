@@ -236,7 +236,6 @@ class MostAvailedChartState extends State<MostAvailedChart> {
       }
     }
     return peakService; // Return the name of the service with the highest count
-      return '';
   }
 
 // Custom method to display peak service name at the top
