@@ -93,7 +93,45 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 // Display "Upcoming", "Done", or "Cancelled" as text
-                if (dropdownValue == 'Upcoming') ...[
+                if (dropdownValue == 'Pending') ...[
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          await showConfirmationDialog('Accept');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[100],
+                          foregroundColor: Colors.green[800],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Accept',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await showConfirmationDialog('Reject');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[100],
+                          foregroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Reject',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else if (dropdownValue == 'Upcoming') ...[
                   const Text(
                     'Upcoming',
                     style: TextStyle(fontSize: 16),

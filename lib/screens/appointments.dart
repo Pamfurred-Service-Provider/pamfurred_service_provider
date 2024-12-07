@@ -139,18 +139,31 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
             Navigator.pop(context);
           },
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            _buildTab('Pending'),
-            _buildTab('Today'),
-            _buildTab('Upcoming'),
-            _buildTab('Done'),
-            _buildTab('Cancelled'),
-            _buildTab('All'),
-          ],
-          indicatorColor: const Color.fromRGBO(160, 62, 6, 1),
-          labelPadding: const EdgeInsets.symmetric(horizontal: 1),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(50.0),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Flexible(
+                  child: TabBar(
+                    isScrollable: true,
+                    controller: _tabController,
+                    tabs: [
+                      _buildTab('Pending'),
+                      _buildTab('Today'),
+                      _buildTab('Upcoming'),
+                      _buildTab('Done'),
+                      _buildTab('Cancelled'),
+                      _buildTab('All'),
+                    ],
+                    indicatorColor: const Color.fromRGBO(160, 62, 6, 1),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       body: serviceProviderId == null
