@@ -83,6 +83,7 @@ dependencies:
 
   #dropdown
   animated_custom_dropdown: ^3.1.1
+  field_suggestion: ^0.2.6
   #backend
   supabase_flutter: ^1.10.25
   firebase_core: ^3.7.0

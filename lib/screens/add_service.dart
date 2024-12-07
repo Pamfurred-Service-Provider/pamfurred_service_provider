@@ -363,10 +363,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
       if (serviceId != null) {
         // Navigate to ServicesScreen after successful service addition
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ServicesScreen()),
-        );
+        Navigator.pop(context);
       } else {
         throw Exception('Failed to add service, please try again.');
       }
@@ -471,7 +468,21 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: tertiarySizedBox),
+              RichText(
+                  text: TextSpan(
+                style: const TextStyle(fontSize: 16),
+                children: [
+                  TextSpan(
+                    text: 'Service Name ', // Regular text
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                  TextSpan(
+                    text: '*', // Asterisk in red
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
+              )),
               AddNewServiceDialog(
                 nameController: nameController,
                 serviceNames: serviceNames,
@@ -487,10 +498,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                     TextSpan(
                       text: 'Description ', // Regular text
                       style: const TextStyle(color: Colors.black),
-                    ),
-                    TextSpan(
-                      text: '*', // Asterisk in red
-                      style: const TextStyle(color: Colors.red),
                     ),
                   ],
                 ),
