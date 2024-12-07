@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/components/screen_transitions.dart';
+import 'package:service_provider/providers/service_details_provider.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/add_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
@@ -8,14 +10,14 @@ import 'package:service_provider/screens/package_details.dart';
 import 'package:service_provider/screens/service_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ServicesScreen extends StatefulWidget {
+class ServicesScreen extends ConsumerStatefulWidget {
   const ServicesScreen({super.key});
 
   @override
-  State<ServicesScreen> createState() => ServicesScreenState();
+  ConsumerState<ServicesScreen> createState() => ServicesScreenState();
 }
 
-class ServicesScreenState extends State<ServicesScreen> {
+class ServicesScreenState extends ConsumerState<ServicesScreen> {
   final supabase = Supabase.instance.client;
   String? serviceProviderId; // Nullable to allow dynamic assignment
   List<Map<String, dynamic>> services = [];
@@ -87,38 +89,7 @@ class ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-// TO BE CONTINUED:
-
-  // Future<Map<String, dynamic>> fetchServiceDetails(String serviceId) async {
-  //   final response = await Supabase.instance.client.rpc(
-  //     'fetch_service_details', // The name of your RPC function
-  //     params: {'service_id_param': serviceId}, // Parameter as a named argument
-  //   );
-
-  //   // Assuming the response is a single item since service details are usually fetched for one service
-  //   return (response as List).first as Map<String, dynamic>;
-  // }
-
-  void _navigateToServiceDetails(
-      BuildContext context, Map<String, dynamic> serviceData) {
-    if (serviceProviderId == null) {
-      print("Error: Service Provider ID is null. Unable to navigate.");
-      return; // Prevent navigation if the ID is missing
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ServiceDetails(
-          serviceProviderId:
-              serviceProviderId!, // Safely pass the non-null value
-          serviceData: serviceData, // Passing the service data
-        ),
-      ),
-    );
-  }
 // Delete service from Supabase
-
   Future<void> _deleteService(Map<String, dynamic> service) async {
     final serviceId = service['id'];
     final imageUrl = service['image'];
@@ -478,8 +449,26 @@ class ServicesScreenState extends State<ServicesScreen> {
                                         ],
                                       ),
                                       onTap: () async {
-                                        _navigateToServiceDetails(
-                                            context, service);
+                                        print(
+                                            "Service map: $service"); // Print the whole service map
+
+                                        print(
+                                            "Selected Service ID: ${service['service_id']}");
+
+                                        // Set the service ID in the Riverpod provider
+                                        ref
+                                            .read(
+                                                selectedServiceServiceIdProvider
+                                                    .notifier)
+                                            .state = service['service_id'];
+
+                                        // Navigate to the ServiceDetailsScreen
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ServiceDetails()),
+                                        );
                                       },
                                     ),
                                   ),

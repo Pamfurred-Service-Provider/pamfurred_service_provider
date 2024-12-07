@@ -1,174 +1,190 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:service_provider/providers/service_details_provider.dart';
 import 'package:service_provider/screens/update_service.dart';
 
-class ServiceDetails extends StatefulWidget {
-  final Map<String, dynamic> serviceData;
-  final String serviceProviderId; // Added required serviceProviderId
-
-  const ServiceDetails({
-    super.key,
-    required this.serviceData,
-    required this.serviceProviderId,
-  });
+class ServiceDetails extends ConsumerWidget {
+  const ServiceDetails({super.key});
 
   @override
-  ServiceDetailsState createState() => ServiceDetailsState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get the selected service ID from the provider
+    final serviceId = ref.watch(selectedServiceServiceIdProvider);
+    print("Service ID: $serviceId");
 
-class ServiceDetailsState extends State<ServiceDetails> {
-  late Map<String, dynamic> serviceData;
+    // Check if serviceId is null
+    if (serviceId == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Service Details')),
+        body: const Center(child: Text('No service selected')),
+      );
+    }
 
-  @override
-  void initState() {
-    super.initState();
-    serviceData = widget.serviceData; // Initialize with the provided data
-  }
+    // Fetch service details using the service ID
+    final serviceDetails = ref.watch(fetchServiceDetailsProvider(serviceId));
+    print("service details: $serviceDetails");
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(serviceData['name'] ?? 'Service Details'),
+        title: serviceDetails.when(
+          data: (data) {
+            // Check if data is not empty and return the service name
+            return data.isNotEmpty
+                ? Text(data.first['service_name'] ?? 'Service Details')
+                : const Text('Service Details');
+          },
+          loading: () => const Text('Loading...'),
+          error: (error, stack) => const Text('Error'),
+        ),
         actions: [
-          TextButton(
-            onPressed: () async {
-              print("Navigating to UpdateServiceScreen with serviceData: ${widget.serviceData}");
-              print("Navigating to UpdateServiceScreen with serviceProviderId: ${widget.serviceProviderId}");
+          serviceDetails.when(
+            data: (data) {
+              final firstItem = data.isNotEmpty ? data.first : null;
 
-              // Extract required parameters from widget and serviceData
-              final String serviceProviderId = widget.serviceProviderId; // Directly from widget
-              final String serviceId = serviceData['id'] ?? '';
-              final String serviceCategory = serviceData['category'] ?? '';
-
-              // Validate serviceProviderId and serviceId before navigating
-              if (serviceProviderId.isEmpty) {
-                print("Error: Service Provider ID is null or empty");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Service Provider ID is missing. Unable to proceed.")),
-                );
-                return;
-              }
-              if (serviceId.isEmpty) {
-                print("Error: Service ID is null or empty");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Service ID is missing. Unable to proceed.")),
-                );
-                return;
+              if (firstItem == null) {
+                return const SizedBox();
               }
 
-              try {
-                // Navigate to UpdateServiceScreen with required parameters
-                final updatedService = await Navigator.push<Map<String, dynamic>>(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UpdateServiceScreen(
-                      serviceProviderId: serviceProviderId, // Pass serviceProviderId
-                      serviceId: serviceId, // Pass serviceId
-                      serviceCategory: serviceCategory, // Pass serviceCategory
-                      serviceData: widget.serviceData, // Pass serviceData
-                    ),
-                  ),
-                );
+              return TextButton(
+                onPressed: () async {
+                  final String serviceCategory =
+                      firstItem['service_desc'] ?? '';
 
-                // Check if updatedService is not null and update serviceData
-                if (updatedService != null) {
-                  print("Updated Service: $updatedService");
-                  setState(() {
-                    serviceData = updatedService; // Update the service data with the new values
-                  });
-                } else {
-                  print("No updates made to the service.");
-                }
-              } catch (e) {
-                print("Error navigating to UpdateServiceScreen: $e");
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Failed to navigate: $e")),
-                );
-              }
+                  // Navigate to UpdateServiceScreen
+                  try {
+                    final updatedService =
+                        await Navigator.push<Map<String, dynamic>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UpdateServiceScreen(
+                          serviceProviderId: '', // Update this field if needed
+                          serviceId: serviceId,
+                          serviceCategory: serviceCategory,
+                          serviceData: firstItem,
+                        ),
+                      ),
+                    );
+
+                    // Refresh data if updates are made
+                    if (updatedService != null) {
+                      ref.invalidate(fetchServiceDetailsProvider(serviceId));
+                    }
+                  } catch (e) {
+                    print("Error navigating to UpdateServiceScreen: $e");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to navigate: $e")),
+                    );
+                  }
+                },
+                child: const Text(
+                  'Edit',
+                  style: TextStyle(color: Color.fromARGB(255, 108, 12, 12)),
+                ),
+              );
             },
-            child: const Text(
-              "Edit",
-              style: TextStyle(color: Color.fromARGB(255, 108, 12, 12)),
-            ),
+            loading: () => const SizedBox(),
+            error: (error, stack) => const SizedBox(),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: serviceData['image'] != null &&
-                      serviceData['image'] is String &&
-                      serviceData['image'] != '' &&
-                      Uri.tryParse(serviceData['image']) != null &&
-                      Uri.tryParse(serviceData['image'])!.hasAbsolutePath
-                  ? Image.network(
-                      serviceData['image'],
-                      width: 200,
-                      height: 200,
-                      fit: BoxFit.cover,
-                    )
-                  : const Icon(Icons.image, size: 200),
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              'Pet Specific Service:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              serviceData['pets'] ?? 'No Specified Pet Type',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Availability:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              serviceData['availability'] ?? 'Unknown',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Size:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              serviceData['size'] ?? 'Unknown',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Weight:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              '${serviceData['minWeight']?.toString() ?? 'N/A'} - ${serviceData['maxWeight']?.toString() ?? 'N/A'}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Price:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              serviceData['price']?.toString() ?? 'Unknown',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Service Type:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              serviceData['type'] ?? 'No Service Type Info',
-              style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
+      body: serviceDetails.when(
+        data: (data) {
+          // Ensure data is a list
+          if (data.isEmpty || !(data is List)) {
+            return const Center(
+                child: Text('No details available for this service.'));
+          }
+
+          // Extract general service information (assuming it's the first item in the list)
+          final serviceInfo = data.isNotEmpty ? data.first : {};
+          final variants = data; // Use the entire list for variants
+
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              Center(
+                child: serviceInfo['service_image'] != null &&
+                        serviceInfo['service_image'] is String &&
+                        serviceInfo['service_image'].isNotEmpty &&
+                        Uri.tryParse(serviceInfo['service_image']) != null &&
+                        Uri.tryParse(serviceInfo['service_image'])!
+                            .hasAbsolutePath
+                    ? Image.network(
+                        serviceInfo['service_image'],
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.cover,
+                      )
+                    : const Icon(Icons.image, size: 200),
+              ),
+              const SizedBox(height: 30),
+              _buildTextRow(
+                  'Service Description:', serviceInfo['service_desc']),
+              const SizedBox(height: 20),
+              const Text(
+                'Service Variants:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ...variants.map((variant) {
+                if (variant is Map<String, dynamic>) {
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTextRow('Size:', variant['size']),
+                          _buildTextRow(
+                            'Weight:',
+                            '${variant['min_weight'] ?? 'N/A'} - ${variant['max_weight'] ?? 'N/A'} kg',
+                          ),
+                          _buildTextRow(
+                              'Price:', '₱${variant['price'] ?? 'Unknown'}'),
+                          _buildTextRow(
+                            'Pet Types:',
+                            (variant['pet_type'] as List<dynamic>?)?.join(', '),
+                          ),
+                          _buildTextRow(
+                              'Availability:', variant['availability_status']),
+                          _buildTextRow(
+                            'Service Type:',
+                            (variant['service_type'] as List<dynamic>?)
+                                ?.join(', '),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                } else {
+                  return const SizedBox(); // Handle unexpected format
+                }
+              }).toList(),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
+    );
+  }
+
+  // Helper widget for rows
+  Widget _buildTextRow(String title, String? value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          value ?? 'Unknown',
+          style: const TextStyle(fontSize: 16),
+        ),
+        const SizedBox(height: 10),
+      ],
     );
   }
 }
