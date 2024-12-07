@@ -41,7 +41,7 @@ class ProfileScreenState extends State<ProfileScreen> {
 
       final serviceProviderResponse = await Supabase.instance.client
           .from('service_provider')
-          .select('name, image, time_open, time_close, number_of_pets')
+          .select('name, image, time_open, time_close')
           .eq('sp_id', spId)
           .single();
 
@@ -310,11 +310,6 @@ class ProfileScreenState extends State<ProfileScreen> {
                         'Closing Time:',
                         formatTimeToAMPM(profileData?['time_close'] ?? ''),
                       ),
-                      const SizedBox(height: 20),
-                      const Divider(),
-                      const SizedBox(height: 20),
-                      _buildDetailRow("Number of Pets Catered per day:",
-                          profileData?['number_of_pets']?.toString() ?? ''),
                       const SizedBox(height: 20),
                       const Divider(),
                       const SizedBox(height: 20),

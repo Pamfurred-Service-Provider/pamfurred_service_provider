@@ -15,7 +15,6 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 //Static Data
-const List<String> number = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 Map<DateTime, bool> _availability =
     {}; // Track availability (fully booked or not)
 List<String> petsList = ['dog'];
@@ -24,7 +23,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   // Initialize Supabase and user session variables
   final supabase = Supabase.instance.client;
   late final String userId;
-  String dropdownValue = number.first; //dropdown for # of pets catered per day
 
   // Controllers
   final TextEditingController establishmentNameController =
@@ -32,8 +30,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController timeOpenController = TextEditingController();
   final TextEditingController timeCloseController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
-  final TextEditingController numberOfPetsCaterController =
-      TextEditingController();
   final TextEditingController datePickerController = TextEditingController();
   final TextEditingController exactAddressController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
@@ -119,7 +115,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       // Fetch the service provider data based on the logged-in user's ID
       final serviceProviderResponse = await supabase
           .from('service_provider')
-          .select('name, time_open, time_close, number_of_pets')
+          .select('name, time_open, time_close')
           .eq('sp_id',
               userId) // Assuming 'sp_id' is the field that corresponds to the user ID
           .single();
@@ -147,7 +143,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               convertTo12HourFormat(serviceProviderResponse['time_open'] ?? '');
           timeCloseController.text = convertTo12HourFormat(
               serviceProviderResponse['time_close'] ?? '');
-          dropdownValue = serviceProviderResponse['number_of_pets'].toString();
         });
       } else {
         print(
@@ -186,15 +181,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         .eq('user_id', userId)
         .single();
 
-    // if (userResponse != null) {
-    //   print('Error fetching user address ID: ${userResponse}');
-    //   return;
-    // }
-    // Check if data is null
-    // if (userResponse == null) {
-    //   print('No address ID found for the user');
-    //   return;
-    // }
     if (userResponse == null || userResponse['address_id'] == null) {
       print('No address ID found for the user');
       return;
@@ -207,7 +193,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       'name': establishmentNameController.text,
       'time_open': timeOpenController.text,
       'time_close': timeCloseController.text,
-      'number_of_pets': dropdownValue,
     };
 
     try {
@@ -376,41 +361,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Maximum number of pets to cater per day",
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 20),
-                DropdownButtonFormField<String>(
-                  value: dropdownValue, // Default value
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(12.0),
-                      ),
-                    ),
-                  ),
-                  items: number.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      dropdownValue = newValue!;
-                    });
-                  },
                 ),
               ],
             ),
