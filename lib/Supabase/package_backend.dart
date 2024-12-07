@@ -14,7 +14,7 @@ class PackageBackend {
     required List<int> maxWeight,
     required List<String> petsToCater,
     required List<String> inclusionList,
-    required String packageType,
+    required List<String> packageType,
     required Map<String, String> availability,
     required String? imageUrl,
     required String? packageCategory,
@@ -173,7 +173,7 @@ class PackageBackend {
 
   Future<String> uploadImage(File image) async {
     final filePath = 'package_images/${image.uri.pathSegments.last}';
-    final response = await _supabase.storage
+    await _supabase.storage
         .from('service_provider_images')
         .upload(filePath, image);
 // If the upload is successful, get the public URL

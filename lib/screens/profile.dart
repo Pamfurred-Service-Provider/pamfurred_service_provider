@@ -108,7 +108,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             'profile_pic/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
         // Upload image to Supabase Storage
-        final response = await Supabase.instance.client.storage
+        await Supabase.instance.client.storage
             .from('service_provider_images')
             .uploadBinary(fileName, bytes);
 

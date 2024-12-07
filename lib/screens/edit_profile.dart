@@ -202,12 +202,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .update(updatedProfile)
           .eq('sp_id', userId); // Match the sp_id with userId
 
-      if (response == null) {
-        print('Service provider profile updated successfully');
-      } else {
-        print('Error updating service provider profile: ${response}');
-      }
-
+      print('Error updating service provider profile: ${response}');
+    
       // 4. Update the address table with the new address details
       final updatedAddress = {
         'city': cityController.text,
@@ -222,14 +218,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .update(updatedAddress)
           .eq('address_id', addressId);
 
-      if (addressResponse == null) {
-        // Address updated successfully
-        print('Address updated successfully');
-        Navigator.pop(context, updatedProfile); // Return updated profile
-      } else {
-        print('Error updating address: ${addressResponse}');
-      }
-    } catch (error) {
+      print('Error updating address: ${addressResponse}');
+        } catch (error) {
       print('Error saving profile: $error');
     }
   }

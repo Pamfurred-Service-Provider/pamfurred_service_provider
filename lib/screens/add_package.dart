@@ -43,7 +43,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
   void addEntry() {
     setState(() {
-      // Check if any fields are empty before adding a new entry
+      // Check if any fields are empty or invalid before adding a new entry
       for (int i = 0; i < sizeList.length; i++) {
         if (priceControllers[i].text.trim().isEmpty ||
             minWeightControllers[i].text.trim().isEmpty ||
@@ -52,31 +52,42 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
               "Please complete all fields for size ${sizeList[i]} before adding a new size.");
           return; // Exit if any fields are not filled
         }
+
+        // Validate price > 0
+        int price = int.tryParse(priceControllers[i].text.trim()) ?? 0;
+        if (price <= 0) {
+          showErrorDialog(context,
+              "Price for size ${sizeList[i]} must be greater than zero.");
+          return; // Exit if price is zero or negative
+        }
+
+        // Validate max weight >= min weight
+        int minWeight = int.tryParse(minWeightControllers[i].text.trim()) ?? 0;
+        int maxWeight = int.tryParse(maxWeightControllers[i].text.trim()) ?? 0;
+
+        if (maxWeight < minWeight) {
+          showErrorDialog(context,
+              "Max Weight for size ${sizeList[i]} cannot be less than Min Weight.");
+          return; // Exit if the max weight is invalid
+        }
       }
+
       // Ensure the new minimum weight is greater than the previous maximum weight
       if (sizeList.length > 1) {
-        // Only check if there is more than one size
-        // Get the previous size's maximum weight
         int prevMaxWeight = int.tryParse(
                 maxWeightControllers[sizeList.length - 2].text.trim()) ??
             0;
 
-        // Initialize new min weight as 0 and set when creating the new controller
-        int newMinWeight = 0;
+        int newMinWeight =
+            int.tryParse(minWeightControllers.last.text.trim()) ?? 0;
 
-        // Only set newMinWeight if there's a valid last entry
-        if (minWeightControllers.last.text.isNotEmpty) {
-          newMinWeight =
-              int.tryParse(minWeightControllers.last.text.trim()) ?? 0;
-        }
-
-        // Validate newMinWeight against the previous max weight
         if (newMinWeight <= prevMaxWeight) {
           showErrorDialog(context,
               "New size's Min Weight must be greater than the previous size's Max Weight (${prevMaxWeight}kg)!");
           return; // Exit if the new min weight is not valid
         }
       }
+
       // Add new size
       if (sizeList.isEmpty) {
         sizeList.add("S");
@@ -86,6 +97,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
         showErrorDialog(context, "You can't add more than 4 sizes!");
         return;
       }
+
+      // Add new controllers for the new size
       priceControllers.add(TextEditingController());
       minWeightControllers.add(TextEditingController());
       maxWeightControllers.add(TextEditingController());
@@ -93,7 +106,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     });
   }
 
-  // Validate all fields when ready to submit
+// Validate all fields when ready to submit
   void validateAndSubmit() {
     // Check if all fields for each size are filled
     for (int i = 0; i < sizeList.length; i++) {
@@ -104,22 +117,29 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
             "Please complete all fields for size ${sizeList[i]} before submitting.");
         return; // Exit if any fields are not filled
       }
+
+      // Validate max weight >= min weight
+      int minWeight = int.tryParse(minWeightControllers[i].text.trim()) ?? 0;
+      int maxWeight = int.tryParse(maxWeightControllers[i].text.trim()) ?? 0;
+
+      if (maxWeight < minWeight) {
+        showErrorDialog(context,
+            "Max Weight for size ${sizeList[i]} cannot be less than Min Weight.");
+        return; // Exit if the max weight is invalid
+      }
     }
 
-    // Now that all fields are filled, you can perform your existing checks
+    // Existing checks for size constraints
     for (int i = 1; i < sizeList.length; i++) {
       try {
-        // Parse values for the previous size
         int prevPrice = int.parse(priceControllers[i - 1].text.trim());
         int prevMinWeight = int.parse(minWeightControllers[i - 1].text.trim());
         int prevMaxWeight = int.parse(maxWeightControllers[i - 1].text.trim());
 
-        // Parse values for the current size
         int currPrice = int.parse(priceControllers[i].text.trim());
         int currMinWeight = int.parse(minWeightControllers[i].text.trim());
         int currMaxWeight = int.parse(maxWeightControllers[i].text.trim());
 
-        // Validate all parsed values
         if (prevPrice < 0 ||
             prevMinWeight < 0 ||
             prevMaxWeight < 0 ||
@@ -130,7 +150,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           return;
         }
 
-        // Ensure current size is not less than the previous size
         if (currPrice < prevPrice ||
             currMinWeight < prevMinWeight ||
             currMaxWeight < prevMaxWeight) {
@@ -323,7 +342,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       minWeight: minWeights,
       maxWeight: maxWeights,
       petsToCater: selectedPetTypes,
-      packageType: packageType!,
+      packageType: selectedServiceTypes,
       availability: availabilityMap,
       inclusionList: inclusions,
       packageCategory: widget.packageCategory, // Pass package category here
