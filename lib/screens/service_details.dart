@@ -9,7 +9,7 @@ class ServiceDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Get the selected service ID from the provider
-    final serviceId = ref.watch(selectedServiceServiceIdProvider);
+    final serviceId = ref.watch(selectedServiceIdProvider);
     print("Service ID: $serviceId");
 
     // Check if serviceId is null
@@ -90,7 +90,7 @@ class ServiceDetails extends ConsumerWidget {
       body: serviceDetails.when(
         data: (data) {
           // Ensure data is a list
-          if (data.isEmpty || !(data is List)) {
+          if (data.isEmpty) {
             return const Center(
                 child: Text('No details available for this service.'));
           }
@@ -127,7 +127,7 @@ class ServiceDetails extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               ...variants.map((variant) {
-                if (variant is Map<String, dynamic>) {
+                {
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Padding(
@@ -157,8 +157,6 @@ class ServiceDetails extends ConsumerWidget {
                       ),
                     ),
                   );
-                } else {
-                  return const SizedBox(); // Handle unexpected format
                 }
               }).toList(),
             ],

@@ -2,13 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Provider to store the selected service ID
-final selectedServiceIdProvider = StateProvider<String?>((ref) => null);
+final selectedPackageIdProvider = StateProvider<String?>((ref) => null);
 
 // Function to fetch service details
-Future<List<Map<String, dynamic>>> fetchServiceDetails(String serviceId) async {
+Future<List<Map<String, dynamic>>> fetchPackageDetails(String packageId) async {
   final response = await Supabase.instance.client.rpc(
-    'fetch_service_details', // The name of your RPC function
-    params: {'service_id_param': serviceId}, // Parameter as a named argument
+    'fetch_package_details', // The name of your RPC function
+    params: {'package_id_param': packageId}, // Parameter as a named argument
   );
 
   // Return the response as a List of Maps
@@ -18,8 +18,8 @@ Future<List<Map<String, dynamic>>> fetchServiceDetails(String serviceId) async {
 }
 
 // Provider to fetch service details based on service ID
-final fetchServiceDetailsProvider =
+final fetchPackageDetailsProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>(
-        (ref, serviceId) async {
-  return await fetchServiceDetails(serviceId);
+        (ref, packageId) async {
+  return await fetchPackageDetails(packageId);
 });

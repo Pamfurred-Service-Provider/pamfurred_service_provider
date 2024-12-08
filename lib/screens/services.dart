@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/components/screen_transitions.dart';
+import 'package:service_provider/providers/package_details_provider.dart';
 import 'package:service_provider/providers/service_details_provider.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/add_service.dart';
@@ -157,20 +158,6 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
     } else {
       showErrorDialog(context, "Service Provider ID is missing.");
     }
-  }
-
-  void _navigateToPackageDetails(
-      BuildContext context, Map<String, dynamic> packageData) {
-    if (serviceProviderId == null) {
-      return;
-    }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PackageDetails(
-            serviceProviderId: serviceProviderId!, packageData: packageData),
-      ),
-    );
   }
 
 // Delete package from Supabase
@@ -449,17 +436,10 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
                                         ],
                                       ),
                                       onTap: () async {
-                                        print(
-                                            "Service map: $service"); // Print the whole service map
-
-                                        print(
-                                            "Selected Service ID: ${service['service_id']}");
-
                                         // Set the service ID in the Riverpod provider
                                         ref
-                                            .read(
-                                                selectedServiceServiceIdProvider
-                                                    .notifier)
+                                            .read(selectedServiceIdProvider
+                                                .notifier)
                                             .state = service['service_id'];
 
                                         // Navigate to the ServiceDetailsScreen
@@ -549,8 +529,25 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
                                         ],
                                       ),
                                       onTap: () async {
-                                        _navigateToPackageDetails(
-                                            context, package);
+                                        print(
+                                            "Package map: $package"); // Print the whole service map
+
+                                        print(
+                                            "Selected Package ID: ${package['package_id']}");
+
+                                        // Set the service ID in the Riverpod provider
+                                        ref
+                                            .read(selectedPackageIdProvider
+                                                .notifier)
+                                            .state = package['package_id'];
+
+                                        // Navigate to the ServiceDetailsScreen
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  PackageDetails()),
+                                        );
                                       },
                                     ),
                                   ),
