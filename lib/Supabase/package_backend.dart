@@ -101,8 +101,6 @@ class PackageBackend {
         });
       }
 
-      print("inserData: $insertData");
-
       await _supabase.from('serviceprovider_package').insert(insertData);
     } catch (e) {
       print('Error occurred: $e'); // Log the error
@@ -112,14 +110,18 @@ class PackageBackend {
     return packageId;
   }
 
-  Future<List<String>> fetchServiceName() async {
-    final response =
-        await _supabase.from('distinct_services').select('service_name');
+  Future<List<Map<String, String>>> fetchServiceNamesWithCategories() async {
+    final response = await _supabase
+        .from('distinct_services')
+        .select('service_name, category_name');
     print("Services list: $response");
 
-    // Extract only the 'service_name' values
+    // Extract both 'service_name' and 'category_name'
     final services = (response as List)
-        .map((service) => service['service_name'] as String)
+        .map((service) => {
+              'service_name': service['service_name'] as String,
+              'category_name': service['category_name'] as String,
+            })
         .toList();
 
     return services;

@@ -362,8 +362,13 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       );
 
       if (serviceId != null) {
-        // Navigate to ServicesScreen after successful service addition
-        Navigator.pop(context);
+        // Return the newly added service data
+        Navigator.pop(context, {
+          'service_id': serviceId,
+          'service_name': nameController.text,
+          'service_image': imageUrl, // or another appropriate property
+          'price': prices.isNotEmpty ? prices.first : null,
+        });
       } else {
         throw Exception('Failed to add service, please try again.');
       }
@@ -380,12 +385,12 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   }
 
   final serviceBackend = ServiceBackend();
-  List<String> serviceNames = [];
+  List<Map<String, String>> serviceNamesWithCategories = [];
   String? selectedService;
 
   void addNewService(String newService) {
     setState(() {
-      serviceNames.add(newService);
+      serviceNamesWithCategories.add({'service_name': newService}); // Add a map
       selectedService = newService;
       nameController.text = newService;
     });
@@ -411,9 +416,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
   Future<void> fetchServices() async {
     try {
-      final services = await serviceBackend.fetchServiceName();
+      final services = await serviceBackend.fetchServiceNamesWithCategories();
       setState(() {
-        serviceNames = services;
+        serviceNamesWithCategories = services;
       });
     } catch (error) {
       print('Error fetching services: $error');
@@ -485,7 +490,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               )),
               AddNewServiceDialog(
                 nameController: nameController,
-                serviceNames: serviceNames,
+                serviceNamesWithCategories: serviceNamesWithCategories,
+                serviceCategory: widget.serviceCategory,
                 selectedService: selectedService,
                 onServiceSelected: selectService,
                 onNewServiceAdded: addNewService,

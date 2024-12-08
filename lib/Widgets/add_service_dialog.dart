@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 
 class AddNewServiceDialog extends StatefulWidget {
   final TextEditingController nameController;
-  final List<String> serviceNames;
+  final List<Map<String, String>> serviceNamesWithCategories; // List of Maps
   final String? selectedService;
   final ValueChanged<String> onServiceSelected;
   final ValueChanged<String> onNewServiceAdded;
+  final String? serviceCategory; // Service category
 
   const AddNewServiceDialog({
     super.key,
     required this.nameController,
-    required this.serviceNames,
+    required this.serviceNamesWithCategories,
     required this.selectedService,
     required this.onServiceSelected,
     required this.onNewServiceAdded,
+    required this.serviceCategory,
   });
 
   @override
@@ -21,12 +23,12 @@ class AddNewServiceDialog extends StatefulWidget {
 }
 
 class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
-  late List<String> filteredServices;
+  late List<Map<String, String>> filteredServices;
 
   @override
   void initState() {
     super.initState();
-    filteredServices = widget.serviceNames;
+    filteredServices = widget.serviceNamesWithCategories;
     widget.nameController.addListener(_filterServices);
   }
 
@@ -39,13 +41,21 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
   void _filterServices() {
     final query = widget.nameController.text.toLowerCase();
     setState(() {
-      filteredServices = widget.serviceNames
-          .where((service) => service.toLowerCase().contains(query))
-          .toList();
+      filteredServices = widget.serviceNamesWithCategories.where((service) {
+        final matchesCategory = widget.serviceCategory == null ||
+            service['category_name'] == widget.serviceCategory;
+        final matchesQuery =
+            service['service_name']!.toLowerCase().contains(query);
+        return matchesCategory &&
+            matchesQuery; // Both category and query must match
+      }).toList();
+
       if (query.isNotEmpty && filteredServices.isEmpty) {
         filteredServices = [
-          'Add New Service'
-        ]; // Only show Add New Service if no matches found
+          {
+            'service_name': 'Add New Service'
+          } // Only show Add New Service if no matches found
+        ];
       }
     });
   }
@@ -60,7 +70,9 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
           controller: widget.nameController,
           decoration: InputDecoration(
             hintText: 'Search or Add Service',
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             suffixIcon: const Icon(Icons.search),
           ),
           onChanged: (_) {
@@ -87,23 +99,26 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
                   return ListTile(
                     title: Row(
                       children: [
-                        if (service == 'Add New Service')
+                        if (service['service_name'] == 'Add New Service')
                           const Icon(Icons.add, size: 18),
                         const SizedBox(
                             width:
                                 8), // Add some space between the icon and the text
-                        Text(service),
+                        Text(service[
+                            'service_name']!), // Access the service_name
                       ],
                     ),
                     onTap: () {
-                      if (service == 'Add New Service') {
+                      if (service['service_name'] == 'Add New Service') {
                         // Automatically add the new service
                         _addNewService();
                       } else {
-                        widget.nameController.text = service;
+                        widget.nameController.text = service['service_name']!;
                         setState(() {
                           filteredServices = [];
                         });
+                        widget.onServiceSelected(service[
+                            'service_name']!); // Call the onServiceSelected callback
                       }
                     },
                   );
@@ -118,10 +133,15 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
   void _addNewService() {
     final newServiceName = widget.nameController.text.trim();
     if (newServiceName.isNotEmpty &&
-        !widget.serviceNames.any((service) =>
-            service.toLowerCase() == newServiceName.toLowerCase())) {
+        !widget.serviceNamesWithCategories.any((service) =>
+            service['service_name']!.toLowerCase() ==
+            newServiceName.toLowerCase())) {
       setState(() {
-        widget.serviceNames.add(newServiceName);
+        widget.serviceNamesWithCategories.add({
+          'service_name': newServiceName,
+          'category_name': widget.serviceCategory ??
+              'Uncategorized', // Use the provided category or default
+        });
         widget.onNewServiceAdded(newServiceName);
         widget.nameController.text = newServiceName;
         filteredServices = []; // Hide the dropdown after adding the new service

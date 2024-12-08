@@ -29,6 +29,7 @@ class AddPackageScreen extends StatefulWidget {
 
 class _AddPackageScreenState extends State<AddPackageScreen> {
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
   final TextEditingController? descController = TextEditingController();
   final TextEditingController inclusionsController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
@@ -346,19 +347,24 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       packageCategory: widget.packageCategory, // Pass package category here
     );
     if (packageId != null) {
-      Navigator.pop(context);
+      Navigator.pop(context, {
+        'package_id': packageId,
+        'package_name': nameController.text,
+        'package_image': imageUrl, // or another appropriate property
+        'price': prices.isNotEmpty ? prices.first : null,
+      });
     } else {
       throw Exception('Failed to add package');
     }
   }
 
   final serviceBackend = PackageBackend();
-  List<String> serviceNames = [];
+  List<Map<String, String>> serviceNamesWithCategories = [];
   String? selectedService;
 
   void addNewService(String newService) {
     setState(() {
-      serviceNames.add(newService);
+      serviceNamesWithCategories.add({'service_name': newService});
       selectedService = newService;
       nameController.text = newService;
     });
@@ -390,9 +396,10 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
   Future<void> fetchServices() async {
     try {
-      final services = await serviceBackend.fetchServiceName();
+      final services = await serviceBackend.fetchServiceNamesWithCategories();
       setState(() {
-        serviceNames = services;
+        serviceNamesWithCategories = services;
+        print("service names with category: $serviceNamesWithCategories");
       });
     } catch (error) {
       print('Error fetching services: $error');
@@ -566,8 +573,9 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 ),
               ),
               AddNewPackageDialog(
-                nameController: nameController,
-                serviceNames: serviceNames,
+                searchController: searchController,
+                serviceNamesWithCategories: serviceNamesWithCategories,
+                packageCategory: widget.packageCategory,
                 selectedServices:
                     inclusions, // Pass the selected services list here
                 onServicesSelected: (List<String> updatedServices) {
@@ -577,7 +585,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 },
                 onNewServiceAdded: (String newService) {
                   setState(() {
-                    serviceNames.add(newService); // Add the new service
+                    serviceNamesWithCategories.add(
+                        {'service_name': newService}); // Add the new service
                     inclusions.add(newService); // Optionally add to inclusions
                   });
                 },
@@ -651,175 +660,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 ),
               ),
               const SizedBox(height: tertiarySizedBox),
-
-// OLD
-
-              // ListView.builder(
-              //   shrinkWrap: true,
-              //   physics: const NeverScrollableScrollPhysics(),
-              //   itemCount: sizeList.length,
-              //   itemBuilder: (context, index) {
-              //     return Column(
-              //       crossAxisAlignment: CrossAxisAlignment.start,
-              //       children: [
-              //         Text(
-              //           "Size: ${sizeList[index]}",
-              //           style: const TextStyle(
-              //             fontSize: 16,
-              //             fontWeight: FontWeight.bold,
-              //           ),
-              //         ),
-              //         const SizedBox(height: 10),
-              //         Row(
-              //           children: [
-              //             // Price
-              //             Expanded(
-              //               child: TextField(
-              //                 controller: priceControllers[index],
-              //                 keyboardType: TextInputType.number,
-              //                 inputFormatters: [
-              //                   FilteringTextInputFormatter.digitsOnly,
-              //                 ],
-              //                 decoration: const InputDecoration(
-              //                   labelText: "Price",
-              //                   prefixText: "₱ ",
-              //                   border: OutlineInputBorder(),
-              //                 ),
-              //               ),
-              //             ),
-              //             const SizedBox(width: 10),
-              //             // Min Weight
-              //             Expanded(
-              //               child: TextField(
-              //                 controller: minWeightControllers[index],
-              //                 keyboardType: TextInputType.number,
-              //                 inputFormatters: [
-              //                   FilteringTextInputFormatter.digitsOnly,
-              //                 ],
-              //                 decoration: const InputDecoration(
-              //                   labelText: "Min Weight",
-              //                   suffixText: "kg",
-              //                   border: OutlineInputBorder(),
-              //                 ),
-              //               ),
-              //             ),
-              //             const SizedBox(width: 10),
-              //             // Max Weight
-              //             Expanded(
-              //               child: TextField(
-              //                 controller: maxWeightControllers[index],
-              //                 keyboardType: TextInputType.number,
-              //                 inputFormatters: [
-              //                   FilteringTextInputFormatter.digitsOnly,
-              //                 ],
-              //                 decoration: const InputDecoration(
-              //                   labelText: "Max Weight",
-              //                   suffixText: "kg",
-              //                   border: OutlineInputBorder(),
-              //                 ),
-              //               ),
-              //             ),
-              //             const SizedBox(width: 10),
-              //             IconButton(
-              //               icon: const Icon(Icons.delete, color: primaryColor),
-              //               onPressed: () {
-              //                 showDialog(
-              //                   context: context,
-              //                   builder: (BuildContext context) {
-              //                     return ShowDeleteDialog(
-              //                       title: 'Confirm Deletion',
-              //                       content:
-              //                           'Are you sure you want to delete this?',
-              //                       onDelete: () => removeEntry(index),
-              //                     );
-              //                   },
-              //                 );
-              //               },
-              //             ),
-              //           ],
-              //         ),
-              //         const SizedBox(height: 10),
-              //         Row(
-              //           children: [
-              //             ElevatedButton(
-              //               style: ElevatedButton.styleFrom(
-              //                 elevation: 0,
-              //                 shape: RoundedRectangleBorder(
-              //                     borderRadius: BorderRadius.circular(
-              //                         secondaryBorderRadius)),
-              //                 backgroundColor:
-              //                     availabilityMap[sizeList[index]] ==
-              //                             'Available'
-              //                         ? Colors.green
-              //                         : Colors.grey.shade300,
-              //                 foregroundColor:
-              //                     availabilityMap[sizeList[index]] ==
-              //                             'Available'
-              //                         ? Colors.white
-              //                         : Colors.black,
-              //               ),
-              //               onPressed: () async {
-              //                 // Show the confirmation dialog
-              //                 bool? confirmed = await ConfirmationDialog.show(
-              //                   context,
-              //                   title: 'Change Availability',
-              //                   content:
-              //                       'Are you sure you want to mark this as Available?',
-              //                 );
-
-              //                 // If the user confirms, update the availability
-              //                 if (confirmed == true) {
-              //                   setState(() {
-              //                     availabilityMap[sizeList[index]] =
-              //                         'Available';
-              //                   });
-              //                 }
-              //               },
-              //               child: const Text('Available'),
-              //             ),
-              //             const SizedBox(width: 10),
-              //             ElevatedButton(
-              //               style: ElevatedButton.styleFrom(
-              //                 elevation: 0,
-              //                 shape: RoundedRectangleBorder(
-              //                     borderRadius: BorderRadius.circular(
-              //                         secondaryBorderRadius)),
-              //                 backgroundColor:
-              //                     availabilityMap[sizeList[index]] ==
-              //                             'Not Available'
-              //                         ? primaryColor
-              //                         : Colors.grey.shade300,
-              //                 foregroundColor:
-              //                     availabilityMap[sizeList[index]] ==
-              //                             'Not Available'
-              //                         ? Colors.white
-              //                         : Colors.black,
-              //               ),
-              //               onPressed: () async {
-              //                 // Show the confirmation dialog
-              //                 bool? confirmed = await ConfirmationDialog.show(
-              //                   context,
-              //                   title: 'Change Availability',
-              //                   content:
-              //                       'Are you sure you want to mark this as Not Available?',
-              //                 );
-
-              //                 // If the user confirms, update the availability
-              //                 if (confirmed == true) {
-              //                   setState(() {
-              //                     availabilityMap[sizeList[index]] =
-              //                         'Not Available';
-              //                   });
-              //                 }
-              //               },
-              //               child: const Text('Not Available'),
-              //             ),
-              //           ],
-              //         ),
-              //       ],
-              //     );
-              //   },
-              // ),
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),

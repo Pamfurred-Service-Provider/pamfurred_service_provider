@@ -93,19 +93,7 @@ class ServiceBackend {
       }
 
       // Perform the bulk insert
-      final insertResponse =
-          await _supabase.from('serviceprovider_service').insert(insertData);
-
-      // Check if the insertResponse is null or has an error
-      if (insertResponse == null) {
-        throw Exception(
-            'Insert response is null. Check your Supabase client initialization.');
-      } else if (insertResponse.error != null) {
-        throw Exception(
-            'Failed to insert service provider services: ${insertResponse.error!.message}');
-      }
-
-      print('Insert successful: ${insertResponse.data}'); // Log success
+      await _supabase.from('serviceprovider_service').insert(insertData);
     } catch (e) {
       print('Error occurred: $e'); // Log the error
       // Optionally, show an error dialog or a snackbar to the user
@@ -173,14 +161,18 @@ class ServiceBackend {
     return publicUrl;
   }
 
-  Future<List<String>> fetchServiceName() async {
-    final response =
-        await _supabase.from('distinct_services').select('service_name');
+  Future<List<Map<String, String>>> fetchServiceNamesWithCategories() async {
+    final response = await _supabase
+        .from('distinct_services')
+        .select('service_name, category_name');
     print("Services list: $response");
 
-    // Extract only the 'service_name' values
+    // Extract both 'service_name' and 'category_name'
     final services = (response as List)
-        .map((service) => service['service_name'] as String)
+        .map((service) => {
+              'service_name': service['service_name'] as String,
+              'category_name': service['category_name'] as String,
+            })
         .toList();
 
     return services;
