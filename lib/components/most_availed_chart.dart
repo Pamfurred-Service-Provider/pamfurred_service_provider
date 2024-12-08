@@ -239,7 +239,7 @@ class MostAvailedChartState extends State<MostAvailedChart> {
   }
 
 // Custom method to display peak service name at the top
-  Widget _topTitles(double value, TitleMeta meta) {
+  Widget topTitles(double value, TitleMeta meta) {
     const style = TextStyle(fontSize: 10);
     String text = _getPeakServiceName(value.toInt());
 

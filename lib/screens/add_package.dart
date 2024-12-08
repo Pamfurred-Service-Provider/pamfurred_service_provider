@@ -1,11 +1,10 @@
 import 'dart:io';
-
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/package_backend.dart';
-import 'package:service_provider/Widgets/add_service_dialog.dart';
+import 'package:service_provider/Widgets/add_package_dialog.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
@@ -163,7 +162,6 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
         return;
       }
     }
-
     // Proceed with the next steps (e.g., saving the data)
   }
 
@@ -567,21 +565,20 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                   ],
                 ),
               ),
-              AddNewServiceDialog(
+              AddNewPackageDialog(
                 nameController: nameController,
                 serviceNames: serviceNames,
-                selectedService: selectedService,
-                onServiceSelected: (String service) {
+                selectedServices:
+                    inclusions, // Pass the selected services list here
+                onServicesSelected: (List<String> updatedServices) {
                   setState(() {
-                    if (!inclusions.contains(service)) {
-                      inclusions.add(service);
-                    }
+                    inclusions = updatedServices; // Update selected services
                   });
                 },
                 onNewServiceAdded: (String newService) {
                   setState(() {
-                    serviceNames.add(newService);
-                    inclusions.add(newService);
+                    serviceNames.add(newService); // Add the new service
+                    inclusions.add(newService); // Optionally add to inclusions
                   });
                 },
               ),
