@@ -4,6 +4,7 @@ import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/providers/package_details_provider.dart';
 import 'package:service_provider/providers/service_details_provider.dart';
+import 'package:service_provider/providers/sp_details_provider.dart';
 import 'package:service_provider/screens/add_package.dart';
 import 'package:service_provider/screens/add_service.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
@@ -42,26 +43,12 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
       if (serviceSession == null) {
         throw Exception("User not logged in");
       }
-      final userId = serviceSession.user.id;
-      print('User ID: $userId');
 
-      // Fetch the service provider ID (sp_id) using user_id
-      final spResponse = await supabase
-          .from('service_provider')
-          .select('sp_id')
-          .eq('sp_id', userId)
-          .single();
-
-      if (spResponse == null || spResponse['sp_id'] == null) {
-        throw Exception("Service provider ID not found for user");
-      }
-
-      // Assign the retrieved sp_id
-      serviceProviderId = spResponse['sp_id'];
-      print('Service Provider ID: $serviceProviderId');
+      final spId = serviceSession.user.id;
+      print('Service provider ID: $userId');
 
       // Fetch the services and packages
-      await _fetchCategoryData(selectedCategory!);
+      await _fetchCategoryData(selectedCategory!, spId);
     } catch (e) {
       print('Error during session initialization: $e');
     } finally {
@@ -210,6 +197,12 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
   // Method to show a modal to select category
 
   void _showCategoryModal(BuildContext context) {
+    final serviceSession = supabase.auth.currentSession;
+    if (serviceSession == null) {
+      throw Exception("User not logged in");
+    }
+
+    final spId = serviceSession.user.id;
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -220,28 +213,29 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
               title: const Text('All'),
               onTap: () async {
                 Navigator.pop(context);
-                await _fetchCategoryData('All'); // Fetch services for "All"
+                await _fetchCategoryData(
+                    'All', spId); // Fetch services for "All"
               },
             ),
             ListTile(
               title: const Text('Pet Grooming'),
               onTap: () async {
                 Navigator.pop(context);
-                await _fetchCategoryData('pet grooming');
+                await _fetchCategoryData('pet grooming', spId);
               },
             ),
             ListTile(
               title: const Text('Pet Boarding'),
               onTap: () async {
                 Navigator.pop(context);
-                await _fetchCategoryData('pet boarding');
+                await _fetchCategoryData('pet boarding', spId);
               },
             ),
             ListTile(
               title: const Text('Veterinary Service'),
               onTap: () async {
                 Navigator.pop(context);
-                await _fetchCategoryData('veterinary service');
+                await _fetchCategoryData('veterinary service', spId);
               },
             ),
           ],
@@ -250,14 +244,14 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
     );
   }
 
-  Future<void> _fetchCategoryData(String category) async {
+  Future<void> _fetchCategoryData(String category, String spId) async {
     setState(() {
       selectedCategory = category;
     });
 
     try {
       // Fetch services for the selected category
-      final fetchedServices = await fetchServicesByCategory(category);
+      final fetchedServices = await fetchServicesByCategory(category, spId);
       print("response for fetched services w/ filter: $fetchedServices");
       setState(() {
         services =
@@ -265,7 +259,7 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
       });
 
       // // Fetch packages for the selected category
-      final fetchedPackages = await fetchPackagesByCategory(category);
+      final fetchedPackages = await fetchPackagesByCategory(category, spId);
       print("response for fetched packages w/ filter: $fetchedPackages");
       setState(() {
         packages = fetchedPackages; // Assuming you have a variable for packages
@@ -277,18 +271,32 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
   }
 
   Future<List<Map<String, dynamic>>> fetchServicesByCategory(
-      String category) async {
-    final response = await Supabase.instance.client
-        .rpc('fetch_services_by_category', params: {'category': category});
+      String category, String s) async {
+    final serviceSession = supabase.auth.currentSession;
+    if (serviceSession == null) {
+      throw Exception("User not logged in");
+    }
+
+    final spId = serviceSession.user.id;
+    final response = await Supabase.instance.client.rpc(
+        'fetch_services_by_category',
+        params: {'category': category, 'sp_id_param': spId});
 
     // Return the data as a list of maps
     return (response as List).cast<Map<String, dynamic>>();
   }
 
   Future<List<Map<String, dynamic>>> fetchPackagesByCategory(
-      String category) async {
-    final response = await Supabase.instance.client
-        .rpc('fetch_packages_by_category', params: {'category': category});
+      String category, String s) async {
+    final serviceSession = supabase.auth.currentSession;
+    if (serviceSession == null) {
+      throw Exception("User not logged in");
+    }
+
+    final spId = serviceSession.user.id;
+    final response = await Supabase.instance.client.rpc(
+        'fetch_packages_by_category',
+        params: {'category': category, 'sp_id_param': spId});
 
     // Return the data as a list of maps
     return (response as List).cast<Map<String, dynamic>>();
