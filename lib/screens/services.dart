@@ -47,6 +47,21 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
       final spId = serviceSession.user.id;
       print('Service provider ID: $userId');
 
+      // Fetch the service provider ID (sp_id) using user_id
+      final spResponse = await supabase
+          .from('service_provider')
+          .select('sp_id')
+          .eq('sp_id', userId)
+          .single();
+
+      if (spResponse == null || spResponse['sp_id'] == null) {
+        throw Exception("Service provider ID not found for user");
+      }
+
+      // Assign the retrieved sp_id
+      serviceProviderId = spResponse['sp_id'];
+      print('Service Provider ID: $serviceProviderId');
+
       // Fetch the services and packages
       await _fetchCategoryData(selectedCategory!, spId);
     } catch (e) {
