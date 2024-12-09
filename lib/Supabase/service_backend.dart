@@ -196,7 +196,7 @@ class ServiceBackend {
           .update(updatedData)
           .eq('service_id', serviceId);
     } catch (error) {
-      throw Exception("Failed to update service: $error");
+      throw Exception("Failed to update service");
     }
   }
 
@@ -218,7 +218,7 @@ class ServiceBackend {
           .update(updatedData)
           .eq('service_id', serviceId);
     } catch (error) {
-      throw Exception("Failed to update service: $error");
+      throw Exception("Failed to update service");
     }
   }
 

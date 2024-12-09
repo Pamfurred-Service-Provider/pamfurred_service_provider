@@ -94,10 +94,10 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
 
 // Delete service from Supabase
   Future<void> _deleteService(Map<String, dynamic> service) async {
-    final serviceId = service['id'];
+    final serviceId = service['service_id'];
     final imageUrl = service['image'];
 
-    print("Deleting service with ID: $service['id']");
+    print("Deleting service with ID: $service['service_id']");
     print("Service Provider ID: $serviceProviderId");
     if (serviceId == null) {
       showErrorDialog(context, 'Failed to delete service: Invalid service ID');
@@ -130,11 +130,12 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
 
       // Remove service from UI list if deletion is successful
       setState(() {
-        services.removeWhere((s) => s['id'] == service['id']);
+        services.removeWhere((s) => s['service_id'] == service['service_id']);
       });
     } catch (error) {
       // Show error dialog if deletion fails
-      showErrorDialog(context, 'Failed to delete service: ${error.toString()}');
+      showErrorDialog(context,
+          'Failed to delete the service. There are existing appointments associated with it');
     }
   }
 
@@ -164,9 +165,9 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
 
 // Delete package from Supabase
   Future<void> _deletePackage(Map<String, dynamic> package) async {
-    final packageId = package['id'];
+    final packageId = package['package_id'];
 
-    print("Deleting package with ID: $package['id']");
+    print("Deleting package with ID: $package['package_id']");
     print("Service Provider ID: $serviceProviderId");
     try {
       // First, delete from the bridge table
@@ -180,11 +181,12 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
 
       // Remove package from UI list if deletion is successful
       setState(() {
-        packages.removeWhere((p) => p['id'] == package['id']);
+        packages.removeWhere((p) => p['package_id'] == package['package_id']);
       });
     } catch (error) {
       // Show error dialog if deletion fails
-      showErrorDialog(context, 'Failed to delete package: ${error.toString()}');
+      showErrorDialog(context,
+          'Failed to delete packaghere are existing appointments associated with it');
     }
   }
 
