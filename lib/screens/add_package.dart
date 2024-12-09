@@ -226,7 +226,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           return false;
         }
       } catch (e) {
-        showErrorDialog(context, "Invalid price format!");
+        showErrorDialog(context,
+            "Price for larger sizes should not be lesser or equal to the previous price.");
         return false;
       }
     }
@@ -500,6 +501,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                     controller: descController,
                     cursorColor: Colors.black,
                     decoration: InputDecoration(
+                      hintText: 'Enter description',
                       contentPadding: const EdgeInsets.all(10.0),
                       border: OutlineInputBorder(
                         borderRadius:

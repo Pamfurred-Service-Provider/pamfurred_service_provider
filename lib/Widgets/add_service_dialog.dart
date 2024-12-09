@@ -24,6 +24,7 @@ class AddNewServiceDialog extends StatefulWidget {
 
 class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
   late List<Map<String, String>> filteredServices;
+  bool isDropdownVisible = true;
 
   @override
   void initState() {
@@ -80,7 +81,7 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
           },
         ),
         const SizedBox(height: 8),
-        if (filteredServices.isNotEmpty)
+        if (filteredServices.isNotEmpty && isDropdownVisible)
           Container(
             decoration: BoxDecoration(
               border: Border.all(
@@ -115,7 +116,9 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
                       } else {
                         widget.nameController.text = service['service_name']!;
                         setState(() {
-                          filteredServices = [];
+                          filteredServices =
+                              []; // Hide the dropdown after selection
+                          isDropdownVisible = false;
                         });
                         widget.onServiceSelected(service[
                             'service_name']!); // Call the onServiceSelected callback
@@ -145,6 +148,7 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
         widget.onNewServiceAdded(newServiceName);
         widget.nameController.text = newServiceName;
         filteredServices = []; // Hide the dropdown after adding the new service
+        isDropdownVisible = false;
       });
     } else if (newServiceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(

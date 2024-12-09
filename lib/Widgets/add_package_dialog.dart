@@ -26,7 +26,8 @@ class AddNewPackageDialog extends StatefulWidget {
 class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
   late List<Map<String, String>> filteredServices;
   late List<String> tempSelectedServices;
-
+  bool isDropdownVisible = false;
+  final FocusNode focusNode = FocusNode();
   @override
   void initState() {
     super.initState();
@@ -34,11 +35,23 @@ class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
         _filterServicesByCategory(widget.serviceNamesWithCategories);
     tempSelectedServices = List.from(widget.selectedServices);
     widget.searchController.addListener(_filterServices);
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        setState(() {
+          isDropdownVisible = true;
+        });
+      } else {
+        setState(() {
+          isDropdownVisible = false;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     widget.searchController.removeListener(_filterServices);
+    focusNode.dispose();
     super.dispose();
   }
 
@@ -66,6 +79,7 @@ class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
           .where((service) =>
               service['service_name']?.toLowerCase().contains(query) ?? false)
           .toList();
+      isDropdownVisible = filteredServices.isNotEmpty;
       if (query.isNotEmpty && filteredServices.isEmpty) {
         filteredServices = [
           {'service_name': 'Add New Service', 'category_name': ''}
@@ -90,6 +104,7 @@ class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
         widget.onNewServiceAdded(newServiceName);
         widget.searchController.text = newServiceName;
         filteredServices = []; // Hide dropdown after adding the new service
+        isDropdownVisible = false;
       });
     } else if (newServiceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -109,11 +124,13 @@ class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      behavior: HitTestBehavior.translucent,
+      // behavior: HitTestBehavior.opaque,
       onTap: () {
         // Hide the dropdown when clicking outside of it
+        FocusScope.of(context).unfocus();
         setState(() {
           filteredServices = [];
+          isDropdownVisible = false;
         });
       },
       child: Column(
@@ -122,6 +139,7 @@ class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
           const SizedBox(height: 8),
           TextFormField(
             controller: widget.searchController,
+            focusNode: focusNode,
             decoration: InputDecoration(
               hintText: 'Search or Add Service',
               border: OutlineInputBorder(
@@ -181,9 +199,16 @@ class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
                         if (serviceName == 'Add New Service') {
                           _addNewService();
                         } else {
-                          widget.searchController.text = serviceName;
                           setState(() {
-                            filteredServices = [];
+                            if (tempSelectedServices.contains(serviceName)) {
+                              // Remove the service if it is already selected
+                              tempSelectedServices.remove(serviceName);
+                            } else {
+                              // Add the service if it is not selected
+                              tempSelectedServices.add(serviceName);
+                            }
+                            // Notify the parent widget about the updated selection
+                            widget.onServicesSelected(tempSelectedServices);
                           });
                         }
                       },

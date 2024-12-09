@@ -111,9 +111,10 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   void validateAndSubmit() {
     // Check if all fields for each size are filled
     for (int i = 0; i < sizeList.length; i++) {
-      if (priceControllers[i].text.trim().isEmpty ||
-          minWeightControllers[i].text.trim().isEmpty ||
-          maxWeightControllers[i].text.trim().isEmpty) {
+      if (nameController.text.isEmpty ||
+          priceControllers.any((controller) => controller.text.isEmpty) ||
+          minWeightControllers.any((controller) => controller.text.isEmpty) ||
+          maxWeightControllers.any((controller) => controller.text.isEmpty)) {
         showErrorDialog(context,
             "Please complete all fields for size ${sizeList[i]} before submitting.");
         return; // Exit if any fields are not filled
@@ -222,7 +223,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       try {
         int prevPrice = int.parse(prices.elementAt(i - 1));
         int currPrice = int.parse(prices.elementAt(i));
-        if (currPrice < prevPrice) {
+        if (currPrice <= prevPrice) {
           showErrorDialog(
             context,
             "Price for larger sizes should not be lesser!",
@@ -231,12 +232,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
           return false;
         }
       } catch (e) {
-        showErrorDialog(context, "Invalid price format!");
+        showErrorDialog(context,
+            "Price for larger sizes should not be lesser or equal to the previous price.");
         return false;
       }
     }
-    print("VERY GOOD!");
-
     return true; // Return true if all validations pass
   }
 
@@ -311,9 +311,6 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       // Validate input fields before proceeding
       if (nameController.text.isEmpty) {
         throw Exception('Service name cannot be empty');
-      }
-      if (descController.text.isEmpty) {
-        throw Exception('Service description cannot be empty');
       }
       if (prices.isEmpty) {
         throw Exception('Prices cannot be empty');
@@ -517,6 +514,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                     controller: descController,
                     cursorColor: Colors.black,
                     decoration: InputDecoration(
+                      hintText: 'Enter Description',
                       contentPadding: const EdgeInsets.all(10.0),
                       border: OutlineInputBorder(
                         borderRadius:
