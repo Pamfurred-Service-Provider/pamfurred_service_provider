@@ -1,9 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/material.dart';
 import 'package:service_provider/Authentication/auth_redirect.dart';
-import 'package:service_provider/Supabase/realtime_service.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -38,11 +37,6 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmcmJ1dmpmbmxwZnFreWxibnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjgwMjM0NDgsImV4cCI6MjA0MzU5OTQ0OH0.JmDB012bA04pPoD64jqTTwZIPYowFl5jzIVql49bwx4',
   );
   await initializeNotifications(); // Initialize local notifications
-
-  final realtimeService = RealtimeService();
-
-  // Start listening to appointments
-  realtimeService.listenToAppointments();
 
   runApp(ProviderScope(child: const MyApp()));
 }
