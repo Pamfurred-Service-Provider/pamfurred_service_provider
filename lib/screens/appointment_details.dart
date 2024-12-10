@@ -37,16 +37,14 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         .update({'appointment_status': status}).eq(
             'appointment_id', widget.appointment['appointment_id']);
 
+    await supabase.from('notification').insert({
+      'appointment_id': widget.appointment['appointment_id'],
+      'appointment_notif_type': status, // Or any type based on your logic
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    });
+
     if (response != null) {
       print('Error updating appointment status: ${response.message}');
-
-      final supabase = Supabase.instance.client;
-
-      await supabase.from('notification').insert({
-        'appointment_id': widget.appointment['appointment_id'],
-        'appointment_notif_type': status, // Or any type based on your logic
-        'created_at': DateTime.now().toUtc().toIso8601String(),
-      });
     } else {
       widget.updateStatus(status);
     }
@@ -106,7 +104,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     children: [
                       ElevatedButton(
                         onPressed: () async {
-                          await showConfirmationDialog('Accept');
+                          await showConfirmationDialog('Upcoming');
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[100],
@@ -121,22 +119,6 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await showConfirmationDialog('Reject');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[100],
-                          foregroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Reject',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
                     ],
                   ),
                 ] else if (dropdownValue == 'Upcoming') ...[
