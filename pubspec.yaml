@@ -112,6 +112,7 @@ dependencies:
 
   url_launcher: any
   pdf: any
+  syncfusion_flutter_calendar: ^27.2.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/screens/appointment_time_slot.dart';
 import 'package:service_provider/screens/pin_location.dart';
@@ -18,6 +19,25 @@ class EditProfileScreen extends StatefulWidget {
 Map<DateTime, bool> _availability =
     {}; // Track availability (fully booked or not)
 List<String> petsList = ['dog'];
+final List<int> intervalOptions = [
+  15,
+  30,
+  45,
+  60,
+  75,
+  90
+]; // Available intervals
+int selectedInterval = 30;
+// Days of the week availability
+Map<String, bool> availability = {
+  'Monday': false,
+  'Tuesday': false,
+  'Wednesday': false,
+  'Thursday': false,
+  'Friday': false,
+  'Saturday': false,
+  'Sunday': false,
+};
 
 class EditProfileScreenState extends State<EditProfileScreen> {
   // Initialize Supabase and user session variables
@@ -29,6 +49,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       TextEditingController();
   final TextEditingController timeOpenController = TextEditingController();
   final TextEditingController timeCloseController = TextEditingController();
+  final TextEditingController intervalController = TextEditingController();
   final TextEditingController petsToCaterController = TextEditingController();
   final TextEditingController datePickerController = TextEditingController();
   final TextEditingController exactAddressController = TextEditingController();
@@ -55,6 +76,65 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       final time24Hour =
           "${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}";
       controller.text = time24Hour; // Store in 24-hour format
+    }
+  }
+
+  List<String> generateTimeSlots(
+      String timeOpen, String timeClose, int intervalMinutes, DateTime date) {
+    final List<String> timeSlots = [];
+    final DateFormat inputFormat = DateFormat('hh:mm a'); // Input format
+    final DateFormat outputFormat = DateFormat('HH:mm'); // Output format
+
+    final DateTime timeOpenDateTime = inputFormat.parse(timeOpen);
+    final DateTime timeCloseDateTime = inputFormat.parse(timeClose);
+
+    final int openHour = timeOpenDateTime.hour;
+    final int openMinute = timeOpenDateTime.minute;
+    final int closeHour = timeCloseDateTime.hour;
+    final int closeMinute = timeCloseDateTime.minute;
+
+    DateTime startTime =
+        DateTime(date.year, date.month, date.day, openHour, openMinute);
+    DateTime endTime =
+        DateTime(date.year, date.month, date.day, closeHour, closeMinute);
+
+    while (startTime.isBefore(endTime)) {
+      timeSlots.add(
+          "${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}");
+      startTime = startTime.add(Duration(minutes: intervalMinutes));
+    }
+
+    return timeSlots;
+  }
+
+  Future<void> saveTimeSlotsForDateRange(String timeOpen, String timeClose,
+      int intervalMinutes, DateTime startDate, DateTime endDate) async {
+    List<Map<String, dynamic>> records = [];
+
+    for (DateTime currentDate = startDate;
+        currentDate.isBefore(endDate);
+        currentDate = currentDate.add(Duration(days: 1))) {
+      final timeSlots =
+          generateTimeSlots(timeOpen, timeClose, intervalMinutes, currentDate);
+
+      records.add({
+        'availability_date': DateFormat('yyyy-MM-dd').format(currentDate),
+        'sp_id': userId,
+        'timeslots': timeSlots, // Store as JSON array
+        'is_fully_booked': false,
+      });
+    }
+
+    try {
+      if (records.isNotEmpty) {
+        // Batch insert records
+        await supabase.from('service_provider_availability').insert(records);
+        print("Time slots saved successfully.");
+      } else {
+        print("No time slots to save.");
+      }
+    } catch (e) {
+      print("Error saving time slots: $e");
     }
   }
 
@@ -174,6 +254,23 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> saveProfile() async {
+    String timeOpen = timeOpenController.text;
+    String timeClose = timeCloseController.text;
+    int intervalMinutes = selectedInterval;
+    DateTime startDate = DateTime.now();
+    DateTime endDate = startDate.add(Duration(days: 5));
+
+    print(
+        "Generated time slots for the next 30 days: ${generateTimeSlots(timeOpen, timeClose, intervalMinutes, startDate).length}");
+    print("Establishment Name: ${establishmentNameController.text}");
+    print("Time Open: ${timeOpenController.text}");
+    print("Time Close: ${timeCloseController.text}");
+    print("Interval: $selectedInterval minutes");
+    print("Selected Days for Availability: $availability");
+    // Save all time slots to the database in a single batch
+    await saveTimeSlotsForDateRange(
+        timeOpen, timeClose, intervalMinutes, startDate, endDate);
+
     // 1. Fetch the address_id of the user
     final userResponse = await supabase
         .from('user')
@@ -201,9 +298,9 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .from('service_provider')
           .update(updatedProfile)
           .eq('sp_id', userId); // Match the sp_id with userId
+    } catch (e) {
+      print('Error updating service provider profile:${e.toString()}');
 
-      print('Error updating service provider profile: ${response}');
-    
       // 4. Update the address table with the new address details
       final updatedAddress = {
         'city': cityController.text,
@@ -219,8 +316,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .eq('address_id', addressId);
 
       print('Error updating address: ${addressResponse}');
-        } catch (error) {
-      print('Error saving profile: $error');
     }
   }
 
@@ -355,6 +450,64 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Service Time Interval",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<int>(
+                  value: selectedInterval,
+                  items: intervalOptions.map((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text('$value minutes'),
+                    );
+                  }).toList(),
+                  onChanged: (int? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        selectedInterval = newValue;
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    hintText: 'Select interval',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Select Days for Availability",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...availability.keys.map((day) {
+            return CheckboxListTile(
+              title: Text(day),
+              value: availability[day],
+              onChanged: (bool? value) {
+                setState(() {
+                  availability[day] = value ?? false;
+                });
+              },
+            );
+          }).toList(),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
