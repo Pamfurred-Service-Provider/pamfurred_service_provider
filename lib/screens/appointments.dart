@@ -124,7 +124,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
     if (response == null) {
       print('Appointment status updated to: $status');
     } else {
-      print('Error updating appointment status: ${response.message}');
+      print('Error updating appointment status');
     }
   }
 

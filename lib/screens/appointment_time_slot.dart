@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase package
@@ -30,11 +31,34 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   bool isFullyBooked = false;
 
   final DateFormat dateFormat = DateFormat('MMMM d, y');
-
+  String? userTimeOpen; // User's opening time
+  String? userTimeClose; // User's closing time
   @override
   void initState() {
     super.initState();
+    fetchUserOpeningAndClosingTime();
     _loadTimeSlots();
+  }
+
+  Future<void> fetchUserOpeningAndClosingTime() async {
+    final response = await supabase
+        .from('service_provider')
+        .select('time_open, time_close')
+        .eq('sp_id', widget.spId)
+        .maybeSingle();
+
+    if (response != null) {
+      setState(() {
+        userTimeOpen = _formatTime(response['time_open']); // Format time
+        userTimeClose = _formatTime(response['time_close']); // Format time
+      });
+    }
+  }
+
+  String _formatTime(String? time) {
+    if (time == null) return '';
+    final parsedTime = DateFormat("HH:mm:ss").parse(time);
+    return DateFormat("HH:mm").format(parsedTime);
   }
 
   Future<void> _loadTimeSlots() async {
@@ -137,6 +161,12 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
   }
 
   void _showBulkAddDialog() {
+    if (userTimeOpen == null || userTimeClose == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Time preferences not loaded')),
+      );
+      return;
+    }
     final List<String> timeOptions = List.generate(
       24,
       (index) => "${index.toString().padLeft(2, '0')}:00",
@@ -144,8 +174,8 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
 
     final List<int> intervalOptions = [15, 30, 45, 60, 75, 90];
 
-    String? selectedStartTime = timeOptions.first;
-    String? selectedEndTime = timeOptions.last;
+    String? selectedStartTime = userTimeOpen;
+    String? selectedEndTime = userTimeClose;
     int? selectedInterval = intervalOptions.first;
 
     showDialog(
@@ -157,7 +187,9 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: selectedStartTime,
+                value: timeOptions.contains(selectedStartTime)
+                    ? selectedStartTime
+                    : null,
                 items: timeOptions
                     .map((time) =>
                         DropdownMenuItem(value: time, child: Text(time)))
@@ -171,7 +203,9 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedEndTime,
+                value: timeOptions.contains(selectedEndTime)
+                    ? selectedEndTime
+                    : null,
                 items: timeOptions
                     .map((time) =>
                         DropdownMenuItem(value: time, child: Text(time)))
@@ -410,7 +444,19 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
-                              _removeTimeSlot(index);
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return ShowDeleteDialog(
+                                    title: 'Delete Time Slot',
+                                    content:
+                                        'Are you sure you want to delete this time slot?',
+                                    onDelete: () {
+                                      _removeTimeSlot(index);
+                                    },
+                                  );
+                                },
+                              );
                             },
                           ),
                         ],
