@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:service_provider/components/globals.dart';
+import 'package:service_provider/providers/global_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:service_provider/screens/appointment_details.dart';
 import 'package:service_provider/components/date_and_time_formatter.dart';
 
-class AppointmentsScreen extends StatefulWidget {
+class AppointmentsScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
   const AppointmentsScreen({super.key, required this.initialTabIndex});
 
@@ -12,7 +14,7 @@ class AppointmentsScreen extends StatefulWidget {
   AppointmentsScreenState createState() => AppointmentsScreenState();
 }
 
-class AppointmentsScreenState extends State<AppointmentsScreen>
+class AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String? serviceProviderId; // Nullable service provider ID
@@ -85,6 +87,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
 
     for (var item in dataList) {
       final appointmentId = item['appointment_id'];
+      ref.read(appointmentIdProvider.notifier).state = appointmentId;
       if (!groupedData.containsKey(appointmentId)) {
         groupedData[appointmentId] = {
           ...item,
@@ -115,8 +118,7 @@ class AppointmentsScreenState extends State<AppointmentsScreen>
   // Function to handle appointment status update
   void _updateAppointmentStatus(String status) async {
     final supabase = Supabase.instance.client;
-    String appointmentId =
-        "some_appointment_id"; // Get this dynamically as needed
+    final appointmentId = ref.watch(appointmentIdProvider);
 
     final response = await supabase.from('appointment').update(
         {'appointment_status': status}).eq('appointment_id', appointmentId);

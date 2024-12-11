@@ -12,3 +12,5 @@ final reportEndDateProvider = StateProvider<String>((ref) {
   return DateFormat('yyyy-MM-dd')
       .format(DateTime.now().add(Duration(days: 30)));
 });
+
+final appointmentIdProvider = StateProvider<String?>((ref) => null);

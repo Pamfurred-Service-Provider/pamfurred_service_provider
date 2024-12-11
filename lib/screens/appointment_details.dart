@@ -36,12 +36,15 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         .from('appointment')
         .update({'appointment_status': status}).eq(
             'appointment_id', widget.appointment['appointment_id']);
+    print('Appointment ID: ${widget.appointment['appointment_id']}');
 
-    await supabase.from('notification').insert({
+    final addToNotifResponse = await supabase.from('notification').insert({
       'appointment_id': widget.appointment['appointment_id'],
       'appointment_notif_type': status, // Or any type based on your logic
       'created_at': DateTime.now().toUtc().toIso8601String(),
     });
+
+    print('add to notif response: $addToNotifResponse');
 
     if (response != null) {
       print('Error updating appointment status: ${response.message}');
