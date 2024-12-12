@@ -846,12 +846,12 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                               ),
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
-                                          'Not Available'
+                                          'Unavailable'
                                       ? secondaryColor
                                       : Colors.grey.shade300,
                               foregroundColor:
                                   availabilityMap[sizeList[index]] ==
-                                          'Not Available'
+                                          'Unavailable'
                                       ? Colors.white
                                       : Colors.black,
                             ),
@@ -866,7 +866,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                               if (confirmed == true) {
                                 setState(() {
                                   availabilityMap[sizeList[index]] =
-                                      'Not Available';
+                                      'Unavailable';
                                 });
                               }
                             },
