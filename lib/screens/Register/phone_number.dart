@@ -48,7 +48,7 @@ class PhoneNumberScreenState extends ConsumerState<PhoneNumberScreen> {
             buildSectionHeader("Phone number"),
             const SizedBox(height: secondarySizedBox),
             formDescription(context,
-                "Please provide your phone number so that service providers can contact you directly for any updates or important information related to your appointment."),
+                "Please provide your phone number so that pet owners can contact you directly for any updates or important information related to your service."),
             const SizedBox(height: tertiarySizedBox),
             RichText(
               text: const TextSpan(

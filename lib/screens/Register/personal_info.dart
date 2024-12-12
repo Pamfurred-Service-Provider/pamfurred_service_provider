@@ -44,7 +44,7 @@ class PersonalInformationScreenState
             buildSectionHeader("Business Information"),
             const SizedBox(height: secondaryBorderRadius),
             formDescription(context,
-                "Please enter your establishment's name to help us personalize your experience."),
+                "Please enter your establishment name to help us personalize your experience."),
             const SizedBox(height: tertiarySizedBox),
             Row(
               children: [
