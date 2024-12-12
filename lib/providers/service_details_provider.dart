@@ -19,7 +19,7 @@ Future<List<Map<String, dynamic>>> fetchServiceDetails(String serviceId) async {
 
 // Provider to fetch service details based on service ID
 final fetchServiceDetailsProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>(
+    FutureProvider.family<List<Map<String, dynamic>>, String?>(
         (ref, serviceId) async {
-  return await fetchServiceDetails(serviceId);
+  return await fetchServiceDetails(serviceId!);
 });
