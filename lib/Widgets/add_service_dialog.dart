@@ -7,6 +7,7 @@ class AddNewServiceDialog extends StatefulWidget {
   final ValueChanged<String> onServiceSelected;
   final ValueChanged<String> onNewServiceAdded;
   final String? serviceCategory; // Service category
+  final bool enabled;
 
   const AddNewServiceDialog({
     super.key,
@@ -16,6 +17,7 @@ class AddNewServiceDialog extends StatefulWidget {
     required this.onServiceSelected,
     required this.onNewServiceAdded,
     required this.serviceCategory,
+    this.enabled = true,
   });
 
   @override
@@ -68,6 +70,7 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
       children: [
         const SizedBox(height: 8),
         TextFormField(
+          enabled: widget.enabled,
           controller: widget.nameController,
           decoration: InputDecoration(
             hintText: 'Search or Add Service',
@@ -77,11 +80,14 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
             suffixIcon: const Icon(Icons.search),
           ),
           onChanged: (_) {
-            _filterServices();
+            if (widget.enabled) {
+              // Only filter if enabled
+              _filterServices();
+            }
           },
         ),
         const SizedBox(height: 8),
-        if (filteredServices.isNotEmpty && isDropdownVisible)
+        if (widget.enabled && filteredServices.isNotEmpty && isDropdownVisible)
           Container(
             decoration: BoxDecoration(
               border: Border.all(
