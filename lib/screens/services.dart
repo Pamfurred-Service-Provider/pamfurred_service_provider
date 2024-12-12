@@ -95,7 +95,7 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
 // Delete service from Supabase
   Future<void> _deleteService(Map<String, dynamic> service) async {
     final serviceId = service['service_id'];
-    final imageUrl = service['image'];
+    final imageUrl = service['service_images'];
 
     print("Deleting service with ID: $service['service_id']");
     print("Service Provider ID: $serviceProviderId");
@@ -109,9 +109,9 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
       if (imageUrl != null && imageUrl.isNotEmpty) {
         final fileName =
             imageUrl.split('/').last; // Get the file name from the URL
-        // final filePath =
-        //     'service_images/$fileName'; // Construct the full path for service images
-        final filePath = fileName;
+        // Construct the full path for service images
+        final filePath =
+            'service_images/$fileName'; // Construct the correct file path
 
         final response = await supabase.storage
             .from('service_provider_images')

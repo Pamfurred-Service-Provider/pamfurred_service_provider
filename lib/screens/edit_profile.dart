@@ -107,6 +107,129 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     return timeSlots;
   }
 
+  // Future<void> saveTimeSlotsForSelectedDays(
+  //     String timeOpen, String timeClose, int intervalMinutes) async {
+  //   List<Map<String, dynamic>> records = [];
+  //   final today = DateTime.now();
+
+  //   // Iterate through the next 30 days
+  //   for (int i = 0; i < 30; i++) {
+  //     DateTime currentDate = today.add(Duration(days: i));
+  //     String dayName = DateFormat('EEEE').format(currentDate);
+
+  //     // Check if the day is selected
+  //     if (availability[dayName] == true) {
+  //       final timeSlots = generateTimeSlots(
+  //           timeOpen, timeClose, intervalMinutes, currentDate);
+
+  //       records.add({
+  //         'availability_date': DateFormat('yyyy-MM-dd').format(currentDate),
+  //         'sp_id': userId,
+  //         'timeslots': timeSlots,
+  //         'is_fully_booked': false,
+  //       });
+  //     }
+  //   }
+
+  //   try {
+  //     if (records.isNotEmpty) {
+  //       // Batch insert into the database
+  //       await supabase.from('service_provider_availability').insert(records);
+  //       print("Time slots saved successfully.");
+  //     } else {
+  //       print("No days selected for availability.");
+  //     }
+  //   } catch (e) {
+  //     print("Error saving time slots: $e");
+  //   }
+  // }
+  // Future<void> saveTimeSlotsForSelectedDays(
+  //     String timeOpen, String timeClose, int intervalMinutes) async {
+  //   List<Map<String, dynamic>> records = [];
+  //   final today = DateTime.now();
+
+  //   // Iterate through the next 30 days
+  //   for (int i = 0; i < 30; i++) {
+  //     DateTime currentDate = today.add(Duration(days: i));
+  //     String dayName = DateFormat('EEEE').format(currentDate);
+
+  //     // Check if the day matches the selected days for availability
+  //     if (availability[dayName] == true) {
+  //       final timeSlots = generateTimeSlots(
+  //           timeOpen, timeClose, intervalMinutes, currentDate);
+
+  //       // Avoid duplicate entries
+  //       final existingRecord = await supabase
+  //           .from('service_provider_availability')
+  //           .select()
+  //           .eq('availability_date',
+  //               DateFormat('yyyy-MM-dd').format(currentDate))
+  //           .eq('sp_id', userId)
+  //           .maybeSingle();
+
+  //       if (existingRecord == null) {
+  //         records.add({
+  //           'availability_date': DateFormat('yyyy-MM-dd').format(currentDate),
+  //           'sp_id': userId,
+  //           'timeslots': timeSlots,
+  //           'is_fully_booked': false,
+  //         });
+  //       }
+  //     }
+  //   }
+
+  //   try {
+  //     if (records.isNotEmpty) {
+  //       // Batch insert into the database
+  //       await supabase.from('service_provider_availability').insert(records);
+  //       print("Time slots saved successfully.");
+  //     } else {
+  //       print("No valid days selected for availability.");
+  //     }
+  //   } catch (e) {
+  //     print("Error saving time slots: $e");
+  //   }
+  // }
+  Future<void> saveTimeSlotsForSelectedDays(
+      String timeOpen, String timeClose, int intervalMinutes) async {
+    List<Map<String, dynamic>> records = [];
+    final today = DateTime.now();
+
+    for (int i = 0; i < 30; i++) {
+      DateTime currentDate = today.add(Duration(days: i));
+      String dayName = DateFormat('EEEE').format(currentDate);
+
+      // Check if the day is selected
+      if (availability[dayName] == true) {
+        // Prevent duplicate entries
+        if (!records.any((record) =>
+            record['availability_date'] ==
+            DateFormat('yyyy-MM-dd').format(currentDate))) {
+          final timeSlots = generateTimeSlots(
+              timeOpen, timeClose, intervalMinutes, currentDate);
+
+          records.add({
+            'availability_date': DateFormat('yyyy-MM-dd').format(currentDate),
+            'sp_id': userId,
+            'timeslots': timeSlots,
+            'is_fully_booked': false,
+          });
+        }
+      }
+    }
+
+    try {
+      if (records.isNotEmpty) {
+        await supabase.from('service_provider_availability').insert(records);
+        print("Time slots saved successfully.");
+      } else {
+        print("No days selected for availability.");
+      }
+    } catch (e) {
+      print("Error saving time slots: $e");
+    }
+  }
+
   Future<void> saveTimeSlotsForDateRange(String timeOpen, String timeClose,
       int intervalMinutes, DateTime startDate, DateTime endDate) async {
     List<Map<String, dynamic>> records = [];
@@ -114,15 +237,20 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     for (DateTime currentDate = startDate;
         currentDate.isBefore(endDate);
         currentDate = currentDate.add(Duration(days: 1))) {
-      final timeSlots =
-          generateTimeSlots(timeOpen, timeClose, intervalMinutes, currentDate);
-
-      records.add({
-        'availability_date': DateFormat('yyyy-MM-dd').format(currentDate),
-        'sp_id': userId,
-        'timeslots': timeSlots, // Store as JSON array
-        'is_fully_booked': false,
-      });
+      String dayName = DateFormat('EEEE').format(currentDate);
+      if (availability[dayName] == true &&
+          !records.any((record) =>
+              record['availability_date'] ==
+              DateFormat('yyyy-MM-dd').format(currentDate))) {
+        final timeSlots = generateTimeSlots(
+            timeOpen, timeClose, intervalMinutes, currentDate);
+        records.add({
+          'availability_date': DateFormat('yyyy-MM-dd').format(currentDate),
+          'sp_id': userId,
+          'timeslots': timeSlots, // Store as JSON array
+          'is_fully_booked': false,
+        });
+      }
     }
 
     try {
@@ -134,7 +262,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         print("No time slots to save.");
       }
     } catch (e) {
-      print("Error saving time slots: $e");
+      print("Error saving time slots");
     }
   }
 
@@ -175,6 +303,20 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     setState(() {
       _availability[date] = isFullyBooked;
     });
+  }
+
+  void saveAvailability() {
+    // Gather the selected days, work hours, and interval
+    List<String> selectedDays =
+        availability.keys.where((day) => availability[day] == true).toList();
+    String startTime = timeOpenController.text;
+    String endTime = timeCloseController.text;
+
+    // Display the saved data (you can save this to your database)
+    print('Selected Days: $selectedDays');
+    print('Start Time: $startTime');
+    print('End Time: $endTime');
+    print('Interval: $selectedInterval minutes');
   }
 
   @override
@@ -270,6 +412,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     // Save all time slots to the database in a single batch
     await saveTimeSlotsForDateRange(
         timeOpen, timeClose, intervalMinutes, startDate, endDate);
+    await saveTimeSlotsForSelectedDays(timeOpen, timeClose, intervalMinutes);
 
     // 1. Fetch the address_id of the user
     final userResponse = await supabase
@@ -546,7 +689,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
                   );
                 }
               },
-
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, day, focusedDay) {
                   // Strip time component for proper day comparison

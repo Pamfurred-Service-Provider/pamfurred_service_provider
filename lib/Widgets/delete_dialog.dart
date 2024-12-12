@@ -49,8 +49,8 @@ class ShowDeleteDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(title),  // Use the dynamic title
-      content: Text(content),  // Use the dynamic content
+      title: Text(title), // Use the dynamic title
+      content: Text(content), // Use the dynamic content
       actions: [
         TextButton(
           onPressed: () {
