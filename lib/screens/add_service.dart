@@ -12,7 +12,6 @@ import 'package:service_provider/components/capitalize_first_letter.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
-import 'package:service_provider/screens/services.dart';
 
 class AddServiceScreen extends StatefulWidget {
   final String serviceProviderId;
@@ -492,6 +491,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 selectedService: selectedService,
                 onServiceSelected: selectService,
                 onNewServiceAdded: addNewService,
+                enabled: true,
               ),
               const SizedBox(height: tertiarySizedBox),
               RichText(
@@ -771,12 +771,12 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               ),
                               backgroundColor:
                                   availabilityMap[sizeList[index]] ==
-                                          'Not Available'
+                                          'Unavailable'
                                       ? secondaryColor
                                       : Colors.grey.shade300,
                               foregroundColor:
                                   availabilityMap[sizeList[index]] ==
-                                          'Not Available'
+                                          'Unavailable'
                                       ? Colors.white
                                       : Colors.black,
                             ),
@@ -791,7 +791,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               if (confirmed == true) {
                                 setState(() {
                                   availabilityMap[sizeList[index]] =
-                                      'Not Available';
+                                      'Unavailable';
                                 });
                               }
                             },
