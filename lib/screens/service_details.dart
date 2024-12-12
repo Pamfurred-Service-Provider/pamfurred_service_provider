@@ -48,7 +48,7 @@ class ServiceDetails extends ConsumerWidget {
               return TextButton(
                 onPressed: () async {
                   final String serviceCategory =
-                      firstItem['service_desc'] ?? '';
+                      firstItem['category_name'] ?? '';
 
                   // Navigate to UpdateServiceScreen
                   try {
