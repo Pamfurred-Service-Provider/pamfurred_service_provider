@@ -346,11 +346,15 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     print("Time Close: ${timeCloseController.text}");
     print("Interval: $selectedInterval minutes");
     print("Selected Days for Availability: $availability");
+    print('pinnedLatitude: $pinnedLatitude');
+    print('pinnedLongitude: $pinnedLongitude');
 
     // Save all time slots to the database in a single batch
     await saveTimeSlotsForDateRange(
         timeOpen, timeClose, intervalMinutes, startDate, endDate);
+    print('saveTimeSlotsForDateRange completed');
     await saveTimeSlotsForSelectedDays(timeOpen, timeClose, intervalMinutes);
+    print('saveTimeSlotsForSelectedDays completed');
 
     // 1. Fetch the address_id of the user
     final userResponse = await supabase
@@ -372,15 +376,14 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       'time_open': timeOpenController.text,
       'time_close': timeCloseController.text,
     };
-
+    print('updatedProfile: $updatedProfile');
     try {
       // 3. Update service provider information
       final response = await supabase
           .from('service_provider')
           .update(updatedProfile)
           .eq('sp_id', userId); // Match the sp_id with userId
-    } catch (e) {
-      print('Error updating service provider profile:${e.toString()}');
+      print('response: $response');
 
       // 4. Update the address table with the new address details
       final updatedAddress = {
@@ -396,7 +399,15 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .update(updatedAddress)
           .eq('address_id', addressId);
 
-      print('Error updating address: ${addressResponse}');
+      if (addressResponse == null) {
+        // Address updated successfully
+        print('Address updated successfully');
+        Navigator.pop(context, updatedProfile); // Return updated profile
+      } else {
+        print('Error updating address: ${addressResponse}');
+      }
+    } catch (error) {
+      print('Error saving profile: $error');
     }
   }
 
