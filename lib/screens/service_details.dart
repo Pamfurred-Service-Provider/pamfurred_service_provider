@@ -57,7 +57,6 @@ class ServiceDetails extends ConsumerWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => UpdateServiceScreen(
-                          serviceProviderId: '', // Update this field if needed
                           serviceId: serviceId,
                           serviceCategory: serviceCategory,
                           serviceData: firstItem,

@@ -7,33 +7,32 @@ import 'package:image_picker/image_picker.dart';
 import 'package:service_provider/Supabase/service_backend.dart';
 import 'package:service_provider/Widgets/add_service_dialog.dart';
 import 'package:service_provider/Widgets/confirmation_dialog.dart';
-import 'package:service_provider/Widgets/delete_dialog.dart';
+// import 'package:service_provider/Widgets/delete_dialog.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
 import 'package:service_provider/components/capitalize_first_letter.dart';
 import 'package:service_provider/components/custom_appbar.dart';
 import 'package:service_provider/components/globals.dart';
-import 'package:service_provider/components/width_expanded_button.dart';
+// import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:service_provider/providers/service_details_provider.dart';
 import 'package:service_provider/providers/sp_details_provider.dart';
 
 class UpdateServiceScreen extends ConsumerStatefulWidget {
-  final String serviceProviderId;
   final String? serviceCategory;
   final String? serviceId;
   final Map<String, dynamic> serviceData;
 
   const UpdateServiceScreen({
     super.key,
-    required this.serviceProviderId,
     this.serviceCategory,
     required this.serviceId,
     required this.serviceData,
   });
   @override
-  ConsumerState<UpdateServiceScreen> createState() => _AddServiceScreenState();
+  ConsumerState<UpdateServiceScreen> createState() =>
+      _UpdateServiceScreenState();
 }
 
-class _AddServiceScreenState extends ConsumerState<UpdateServiceScreen> {
+class _UpdateServiceScreenState extends ConsumerState<UpdateServiceScreen> {
   //Controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descController = TextEditingController();

@@ -47,7 +47,8 @@ class PackageDetails extends ConsumerWidget {
 
               return TextButton(
                 onPressed: () async {
-                  final String packageDesc = firstItem['package_desc'] ?? '';
+                  final String packageCategory =
+                      firstItem['category_name'] ?? '';
 
                   // Navigate to UpdatePackageScreen
                   try {
@@ -58,6 +59,7 @@ class PackageDetails extends ConsumerWidget {
                         builder: (context) => UpdatePackageScreen(
                           packageId: packageId,
                           packageData: firstItem,
+                          packageCategory: packageCategory,
                         ),
                       ),
                     );
