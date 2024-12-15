@@ -59,7 +59,7 @@ class RevenueChartState extends State<RevenueChart> {
 
       final userId = userSession.user.id;
       final response = await Supabase.instance.client.rpc(
-        'get_monthly_revenue1',
+        'get_monthly_revenue',
         params: {'user_sp_id': userId},
       );
 
@@ -71,12 +71,31 @@ class RevenueChartState extends State<RevenueChart> {
 
       // Preparing data based on the month number
       final chartData = List<double>.filled(12, 0.0);
+      // Map month names to indices
+      const monthMapping = {
+        'January': 0,
+        'February': 1,
+        'March': 2,
+        'April': 3,
+        'May': 4,
+        'June': 5,
+        'July': 6,
+        'August': 7,
+        'September': 8,
+        'October': 9,
+        'November': 10,
+        'December': 11
+      };
+
       for (var item in revenueData) {
-        final monthNumber = (item['month_number'] as int) - 1;
-        if (item['revenue_year'] == year.toString() &&
-            monthNumber >= 0 &&
-            monthNumber < 12) {
-          chartData[monthNumber] = (item['total_revenue'] as num).toDouble();
+        final monthString = item['revenue_month'] as String;
+        final monthNumber = monthMapping[monthString];
+
+        if (monthNumber != null && item['revenue_year'] == year.toString()) {
+          final revenue = item['total_revenue'] != null
+              ? (item['total_revenue'] as num).toDouble()
+              : 0.0; // Handle null by setting default value
+          chartData[monthNumber] = revenue;
         }
       }
 

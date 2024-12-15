@@ -214,8 +214,7 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
             // Appointment ID value section
             Center(
-              child: buildDetailSection(
-                '',
+              child: Text(
                 '${widget.appointment['appointment_id'] ?? ''}',
               ),
             ),
@@ -412,9 +411,12 @@ class AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const Spacer(),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 16),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 16),
+            textAlign: TextAlign.end,
+          ),
         ),
       ],
     );

@@ -94,7 +94,7 @@ class HomeScreenState extends State<HomeScreen> {
         serviceProviderName = response['name'] ?? '';
       });
     } catch (e) {
-      print("Error fetching user data: $e");
+      print("Error fetching user data");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to load user data')),
@@ -115,9 +115,9 @@ class HomeScreenState extends State<HomeScreen> {
           .rpc('get_monthly_service_counts', params: {
         'provider_id': userId,
         'year': selectedMostAvailedServicesYear,
-      }).execute();
+      });
 
-      final List<dynamic> services = response.data ?? [];
+      final List<dynamic> services = response ?? [];
 
       // Convert response to a list of maps
       final List<Map<String, dynamic>> processedServices =
@@ -132,7 +132,7 @@ class HomeScreenState extends State<HomeScreen> {
 
       return processedServices; // Return the processed services list
     } catch (e) {
-      print("Error fetching most availed services: $e");
+      print("Error fetching most availed services");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load most availed services')),
       );
@@ -149,10 +149,9 @@ class HomeScreenState extends State<HomeScreen> {
       final response = await Supabase.instance.client
           .from('feedback')
           .select('compound_score')
-          .eq('sp_id', userId)
-          .execute();
+          .eq('sp_id', userId);
 
-      final List<dynamic> feedbacks = response.data ?? [];
+      final List<dynamic> feedbacks = response ?? [];
       int satisfiedCount = 0, neutralCount = 0, negativeCount = 0;
 
       for (var feedback in feedbacks) {
@@ -176,7 +175,7 @@ class HomeScreenState extends State<HomeScreen> {
 
       setState(() {});
     } catch (e) {
-      print("Error fetching feedback data: $e");
+      print("Error fetching feedback");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load feedback data')),
       );
@@ -212,7 +211,7 @@ class HomeScreenState extends State<HomeScreen> {
         annualAppointmentData = monthlyCounts.map((e) => e.toDouble()).toList();
       });
     } catch (e) {
-      print("Error fetching appointment data: $e");
+      print("Error fetching appointment");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -105,8 +105,12 @@ class MostAvailedChartState extends State<MostAvailedChart> {
       alignment: WrapAlignment.center,
       spacing: 10.0,
       runSpacing: 10.0,
-      children: serviceColors.entries.map((entry) {
-        return buildLegendItem(entry.value, entry.key);
+      children: chartData.map((service) {
+        final serviceName = service['service'] as String;
+        final counts = service['counts'] as List<int>;
+        final totalCount = counts.fold(0, (sum, count) => sum + count);
+        return buildLegendItem(serviceColors[serviceName] ?? Colors.black,
+            '$serviceName ($totalCount)');
       }).toList(),
     );
   }
