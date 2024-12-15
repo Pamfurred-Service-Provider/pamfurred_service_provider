@@ -455,7 +455,7 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
                                         children: [
                                           Text(
                                             service['price'] != null
-                                                ? '₱${service['price']}' // Format price to 2 decimal places
+                                                ? 'from ₱${service['price']}' // Format price to 2 decimal places
                                                 : '₱N/A', // Fallback if price is null
                                           ),
                                         ],

@@ -72,6 +72,7 @@ class _AddNewServiceDialogState extends State<AddNewServiceDialog> {
         TextFormField(
           enabled: widget.enabled,
           controller: widget.nameController,
+          textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             hintText: 'Search or Add Service',
             border: OutlineInputBorder(

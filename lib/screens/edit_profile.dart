@@ -80,7 +80,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   List<String> generateTimeSlots(
       String timeOpen, String timeClose, int intervalMinutes, DateTime date) {
     final List<String> timeSlots = [];
-    final DateFormat inputFormat = DateFormat('hh:mm a'); // Input format
+    final DateFormat inputFormat = DateFormat('hh:mm'); // Input format
     final DateFormat outputFormat = DateFormat('HH:mm'); // Output format
 
     final DateTime timeOpenDateTime = inputFormat.parse(timeOpen);
@@ -112,22 +112,38 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     // Get selected days as a list of lowercase day names
     List<String> selectedDays = availability.entries
         .where((entry) => entry.value)
-        .map((entry) => entry.key.toLowerCase())
+        .map((entry) => entry.key)
         .toList();
 
     for (int i = 0; i < 30; i++) {
       DateTime currentDate = today.add(Duration(days: i));
       String dayName = DateFormat('EEEE').format(currentDate).toLowerCase();
+// Remove time slots for the days that are unchecked
+      for (int i = 0; i < 30; i++) {
+        DateTime currentDate = today.add(Duration(days: i));
+        String dayName = DateFormat('EEEE').format(currentDate).toLowerCase();
+        String formattedDate = DateFormat('yyyy-MM-dd').format(currentDate);
 
+        // If a day is unchecked, remove its time slots from the database
+        if (!selectedDays.contains(dayName)) {
+          await supabase
+              .from('service_provider_availability')
+              .delete()
+              .eq('availability_date', formattedDate)
+              .eq('sp_id', userId);
+          print("Removed time slots for: $formattedDate");
+        }
+      }
       if (selectedDays.contains(dayName)) {
+        String formattedDate = DateFormat('yyyy-MM-dd').format(currentDate);
+
+        // Insert or update the record
         final existingRecord = await supabase
             .from('service_provider_availability')
-            .select('sp _id')
-            .eq('availability_date',
-                DateFormat('yyyy-MM-dd').format(currentDate))
+            .select('sp_id')
+            .eq('availability_date', formattedDate)
             .eq('sp_id', userId)
             .maybeSingle();
-
         if (existingRecord == null) {
           // Proceed with adding new records
           final timeSlots = generateTimeSlots(
@@ -138,7 +154,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
             'sp_id': userId,
             'timeslots': timeSlots,
             'is_fully_booked': false,
-            'days_of_week': selectedDays,
             'service_time_interval': intervalMinutes,
           });
         }
@@ -153,7 +168,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         print("No days selected for availability.");
       }
     } catch (e) {
-      print("Error saving time slots: $e");
+      print("Error saving time slots");
     }
   }
 
@@ -174,7 +189,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         records.add({
           'availability_date': DateFormat('yyyy-MM-dd').format(currentDate),
           'sp_id': userId,
-          'timeslots': timeSlots, // Store as JSON array
+          'timeslots': timeSlots,
           'is_fully_booked': false,
         });
       }
@@ -204,7 +219,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       final response = await Supabase.instance.client
           .from('service_provider_availability') // Your table name
           .select(
-              'is_fully_booked, service_time_interval, days_of_week') // Select the availability status
+              'is_fully_booked, service_time_interval') // Select the availability status
           .eq('availability_date', formattedDate) // Match the date
           .eq('sp_id', userId)
           .maybeSingle(); // Use maybeSingle to handle null if no match is found
@@ -220,8 +235,8 @@ class EditProfileScreenState extends State<EditProfileScreen> {
             // Prefill service time interval
             selectedInterval = response['service_time_interval'] ?? '';
             // Prefill days of availability
-            List<String>.from(response['days_of_week'] ?? []);
-            final storedDays = List<String>.from(response['days_of_week']);
+            List<String>.from(response['availability_date'] ?? []);
+            final storedDays = List<String>.from(response['availability_date']);
             // setState(() {
             availability.updateAll((day, value) => storedDays.contains(day));
           });
@@ -231,7 +246,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       return response['is_fully_booked'] == false;
     } catch (error) {
       // Log error for debugging
-      print('Error fetching day availability: $error');
+      print('Error fetching day availability');
       // Handle errors gracefully (optional: mark as available by default)
       return true;
     }
@@ -242,20 +257,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     setState(() {
       _availability[date] = isFullyBooked;
     });
-  }
-
-  void saveAvailability() {
-    // Gather the selected days, work hours, and interval
-    List<String> selectedDays =
-        availability.keys.where((day) => availability[day] == true).toList();
-    String startTime = timeOpenController.text;
-    String endTime = timeCloseController.text;
-
-    // Display the saved data (you can save this to your database)
-    print('Selected Days: $selectedDays');
-    print('Start Time: $startTime');
-    print('End Time: $endTime');
-    print('Interval: $selectedInterval minutes');
   }
 
   @override
@@ -328,7 +329,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         print('Error fetching address data: ${addressResponse}');
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      print('Error fetching data');
     }
   }
 
@@ -406,7 +407,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         print('Error updating address: ${addressResponse}');
       }
     } catch (error) {
-      print('Error saving profile: $error');
+      print('Error saving profile. please try again');
     }
   }
 
@@ -598,7 +599,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               },
             );
           }).toList(),
-
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),

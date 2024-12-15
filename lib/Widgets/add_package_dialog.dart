@@ -139,6 +139,7 @@ class _AddNewPackageDialogState extends State<AddNewPackageDialog> {
           const SizedBox(height: 8),
           TextFormField(
             controller: widget.searchController,
+            textCapitalization: TextCapitalization.words,
             focusNode: focusNode,
             decoration: InputDecoration(
               hintText: 'Search or Add Service',
