@@ -15,9 +15,7 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => EditProfileScreenState();
 }
 
-//Static Data
-Map<DateTime, bool> _availability =
-    {}; // Track availability (fully booked or not)
+Map<DateTime, bool> _availability = {}; // Track availability
 List<String> petsList = ['dog'];
 final List<int> intervalOptions = [
   15,
@@ -121,12 +119,17 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       DateTime currentDate = today.add(Duration(days: i));
       String dayName = DateFormat('EEEE').format(currentDate).toLowerCase();
 
-      // Check if the day is selected
       if (selectedDays.contains(dayName)) {
-        // Prevent duplicate entries
-        if (!records.any((record) =>
-            record['availability_date'] ==
-            DateFormat('yyyy-MM-dd').format(currentDate))) {
+        final existingRecord = await supabase
+            .from('service_provider_availability')
+            .select('sp _id')
+            .eq('availability_date',
+                DateFormat('yyyy-MM-dd').format(currentDate))
+            .eq('sp_id', userId)
+            .maybeSingle();
+
+        if (existingRecord == null) {
+          // Proceed with adding new records
           final timeSlots = generateTimeSlots(
               timeOpen, timeClose, intervalMinutes, currentDate);
 
@@ -196,7 +199,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     // Format the selected day into the 'yyyy-MM-dd' format to match the `availability_date` format in your table
     String formattedDate =
         "${day.toLocal().year.toString().padLeft(4, '0')}-${day.toLocal().month.toString().padLeft(2, '0')}-${day.toLocal().day.toString().padLeft(2, '0')}";
-
     try {
       // Query the Supabase table to check availability for the given day
       final response = await Supabase.instance.client
@@ -204,8 +206,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           .select(
               'is_fully_booked, service_time_interval, days_of_week') // Select the availability status
           .eq('availability_date', formattedDate) // Match the date
-          .eq('sp_id',
-              userId) // Ensure you're checking for the current service provider's availability
+          .eq('sp_id', userId)
           .maybeSingle(); // Use maybeSingle to handle null if no match is found
 
       if (response == null) {
@@ -213,20 +214,20 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         return true;
       }
       if (response != null) {
-        setState(() {
-          // Prefill service time interval
-          selectedInterval = response['service_time_interval'] ?? '';
-          // availability = response['days_of_week'] ?? '';
-
-          // Prefill days of availability
-          List<String>.from(response['days_of_week'] ?? []);
-          final storedDays = List<String>.from(response['days_of_week']);
+        if (mounted) {
+          // Add this check
           setState(() {
+            // Prefill service time interval
+            selectedInterval = response['service_time_interval'] ?? '';
+            // Prefill days of availability
+            List<String>.from(response['days_of_week'] ?? []);
+            final storedDays = List<String>.from(response['days_of_week']);
+            // setState(() {
             availability.updateAll((day, value) => storedDays.contains(day));
           });
-        });
+          // });
+        }
       }
-      // Return true if not fully booked, false otherwise
       return response['is_fully_booked'] == false;
     } catch (error) {
       // Log error for debugging
@@ -264,8 +265,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     // Retrieve the user ID from the Supabase session
     final serviceSession = supabase.auth.currentSession;
     userId = serviceSession?.user.id ?? '';
-    print('User ID: $userId');
-
     // Fetch the user's service provider data from Supabase
     _fetchServiceProviderData();
   }
@@ -416,7 +415,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
       context,
       MaterialPageRoute(builder: (context) => const PinLocationNew()),
     );
-
     if (result != null) {
       setState(() {
         pinnedLatitude = result['latitude'];
@@ -424,7 +422,6 @@ class EditProfileScreenState extends State<EditProfileScreen> {
         pinnedAddress = result['address'];
 
         List<String> addressParts = pinnedAddress!.split(', ');
-
         // Populate form fields with address components
         streetController.text = addressParts.isNotEmpty ? addressParts[0] : '';
         barangayController.text =
@@ -591,9 +588,9 @@ class EditProfileScreenState extends State<EditProfileScreen> {
           const SizedBox(height: 10),
           ...availability.keys.map((day) {
             return CheckboxListTile(
-              title: Text(
-                  day[0].toUpperCase() + day.substring(1)), // Capitalize day
-              value: availability[day] ?? false, // Handle potential null values
+              title: Text(day[0].toUpperCase() +
+                  day.substring(1)), // Capitalize the day names
+              value: availability[day],
               onChanged: (bool? value) {
                 setState(() {
                   availability[day] = value ?? false;
@@ -601,6 +598,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
               },
             );
           }).toList(),
+
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),

@@ -6,12 +6,13 @@ class PasswordTextField extends StatefulWidget {
   final String label;
   final String controllerKey;
   final Map<String, TextEditingController> controllers;
-
+  final ValueChanged<bool> onValidationChanged;
   const PasswordTextField({
     super.key,
     required this.label,
     required this.controllerKey,
     required this.controllers,
+    required this.onValidationChanged,
   });
 
   @override
@@ -41,6 +42,20 @@ class PasswordTextFieldState extends State<PasswordTextField> {
     });
   }
 
+  void _validatePassword() {
+    final PasswordTextField = widget.controllers[widget.controllerKey]!.text;
+    bool isValid = DigitValidationRule().validate(PasswordTextField) &&
+        UppercaseValidationRule().validate(PasswordTextField) &&
+        LowercaseValidationRule().validate(PasswordTextField) &&
+        SpecialCharacterValidationRule().validate(PasswordTextField);
+    setState(() {
+      if (isValid) {
+        widget.controllers[widget.controllerKey]?.text = PasswordTextField;
+        widget.onValidationChanged(isValid);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -64,7 +79,7 @@ class PasswordTextFieldState extends State<PasswordTextField> {
             UppercaseValidationRule(),
             LowercaseValidationRule(),
             SpecialCharacterValidationRule(),
-            MinCharactersValidationRule(6),
+            // MinCharactersValidationRule(6),
           },
           validationRuleBuilder: (rules, value) {
             if (value.isEmpty) {

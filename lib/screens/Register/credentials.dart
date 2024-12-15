@@ -23,7 +23,7 @@ class CredentialsScreen extends ConsumerStatefulWidget {
 class CredentialsScreenState extends ConsumerState<CredentialsScreen> {
   bool isLoading = false;
   String? _errorMessage; // Declare the error message here
-
+  bool _isPasswordValid = false;
   bool _validateFields() {
     final email = widget.controllers['email']?.text.trim() ?? '';
     final password = widget.controllers['password']?.text ?? '';
@@ -33,7 +33,8 @@ class CredentialsScreenState extends ConsumerState<CredentialsScreen> {
     if (email.isEmpty ||
         !RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
             .hasMatch(email) ||
-        password.length < 6) {
+        password.length < 6 ||
+        !_isPasswordValid) {
       setState(() {
         _errorMessage =
             "Invalid input: Ensure all fields are filled and password must be secure.";
@@ -41,6 +42,12 @@ class CredentialsScreenState extends ConsumerState<CredentialsScreen> {
       return false;
     }
     return true;
+  }
+
+  void _onValidationChanged(bool isValid) {
+    setState(() {
+      _isPasswordValid = isValid;
+    });
   }
 
   @override
@@ -69,6 +76,7 @@ class CredentialsScreenState extends ConsumerState<CredentialsScreen> {
                 label: "Password",
                 controllerKey: "password",
                 controllers: widget.controllers,
+                onValidationChanged: _onValidationChanged,
               ),
               const SizedBox(height: secondarySizedBox),
               if (_errorMessage != null) ...[

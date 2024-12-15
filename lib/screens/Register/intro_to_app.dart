@@ -60,7 +60,7 @@ class StartYourJourneyScreenState extends State<StartYourJourneyScreen>
                 child: SizedBox(
                   width: 200,
                   child: Image.network(
-                    'https://www.flaticon.com/free-icon/haircut_6245461?term=pet+grooming&page=1&position=20&origin=search&related_id=6245461',
+                    'https://cdn-icons-png.freepik.com/256/6244/6244983.png?semt=ais_hybrid', // Direct link to an image file
                     fit: BoxFit.cover, // Ensure the image is scaled properly
                   ),
                 ),
