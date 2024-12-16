@@ -45,6 +45,8 @@ class _UpdateServiceScreenState extends ConsumerState<UpdateServiceScreen> {
   List<String> sizeList = []; // Dynamic size list
   Map<String, String> availabilityMap = {};
 
+  late String serviceImageUrl;
+
   // Add new entry for price, size, and weight
   void addEntry() {
     setState(() {
@@ -457,6 +459,8 @@ class _UpdateServiceScreenState extends ConsumerState<UpdateServiceScreen> {
           if (serviceDetails.isNotEmpty) {
             final service = serviceDetails[0];
 
+            serviceImageUrl = service['service_image'] ?? '';
+
             // Pre-fill name and description
             nameController.text = service['service_name'] ?? '';
             descController.text = service['service_desc'] ?? '';
@@ -540,10 +544,12 @@ class _UpdateServiceScreenState extends ConsumerState<UpdateServiceScreen> {
                         borderRadius:
                             BorderRadius.zero, // No rounding to keep it square
                         image: DecorationImage(
-                          image: _image == null
-                              ? const AssetImage(
-                                  'assets/pamfurred_secondarylogo.png')
-                              : FileImage(_image!) as ImageProvider,
+                          image: _image != null
+                              ? FileImage(_image!) as ImageProvider
+                              : serviceImageUrl.isEmpty
+                                  ? const AssetImage(
+                                      'assets/pamfurred_secondarylogo.png')
+                                  : NetworkImage(serviceImageUrl),
                           fit: BoxFit.cover,
                         ),
                       ),
