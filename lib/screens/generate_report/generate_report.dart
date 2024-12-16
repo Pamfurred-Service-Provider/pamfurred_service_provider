@@ -59,20 +59,28 @@ class _GenerateReportScreenState extends ConsumerState<GenerateReportScreen>
 
   // Select date range from DateRangePickerDialog
   void _selectDateRange(DateTimeRange? newSelectedDate) {
-    if (newSelectedDate != null) {
-      setState(() {
+    setState(() {
+      if (newSelectedDate != null) {
         _startDate.value = newSelectedDate.start;
         _endDate.value = newSelectedDate.end;
 
-        // Format dates for display in the provider
+        // Format dates for display
         selectedStartDate = DateFormat('yyyy-MM-dd').format(_startDate.value!);
         selectedEndDate = DateFormat('yyyy-MM-dd').format(_endDate.value!);
 
-        // Store the formatted dates in the provider
+        // Update the providers
         ref.read(reportStartDateProvider.notifier).state = selectedStartDate!;
         ref.read(reportEndDateProvider.notifier).state = selectedEndDate!;
-      });
-    }
+      } else {
+        // Reset the selected dates if no range is picked
+        selectedStartDate = null;
+        selectedEndDate = null;
+
+        // Reset the providers
+        ref.read(reportStartDateProvider.notifier).state = '';
+        ref.read(reportEndDateProvider.notifier).state = '';
+      }
+    });
   }
 
   // Fetch revenue data
@@ -138,130 +146,155 @@ class _GenerateReportScreenState extends ConsumerState<GenerateReportScreen>
             width: screenPadding(context),
             child: Column(
               children: [
-                // Fetch service provider data
-                FutureBuilder<Map<String, dynamic>>(
-                  future: _fetchServiceProviderData(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Error: ${snapshot.error}',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      );
-                    } else if (snapshot.hasData) {
-                      final sp = snapshot.data!;
-                      return Center(
-                        child: Column(
-                          children: [
-                            Text(
-                              '${sp['establishment_name']} Appointments on ${secondaryFormatDate(selectedStartDate ?? "")} - ${secondaryFormatDate(selectedEndDate ?? "")}',
-                              style: TextStyle(fontSize: regularText),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      return Center(child: Text('Unexpected error occurred.'));
-                    }
-                  },
-                ),
-                const SizedBox(height: secondarySizedBox),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    customPaddedOutlinedTextButton(
+                // If no dates are selected, show validation message
+                if (selectedStartDate == null || selectedEndDate == null) ...[
+                  Text(
+                    'Please select a date range to generate the report.',
+                    style: TextStyle(fontSize: regularText),
+                  ),
+                  const SizedBox(height: secondarySizedBox),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      customPaddedOutlinedTextButton(
                         text: 'Pick date range',
                         onPressed: () {
                           _restorableDateRangePickerRouteFuture.present();
                         },
-                        trailingIcon: Icon(Icons.calendar_month)),
-                  ],
-                ),
-                const SizedBox(height: secondarySizedBox),
-                // Fetch and display revenue data
-                FutureBuilder<List<dynamic>>(
-                  future: _fetchRevenueData(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Error fetching revenue data: ${snapshot.error}',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      );
-                    } else if (snapshot.hasData) {
-                      final revenueList = snapshot.data!;
-                      if (revenueList.isEmpty) {
+                        trailingIcon: Icon(Icons.calendar_month),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // Fetch service provider data
+                  FutureBuilder<Map<String, dynamic>>(
+                    future: _fetchServiceProviderData(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
                         return Center(
                           child: Text(
-                            'No revenue data available for this date range.',
-                            style: TextStyle(fontSize: regularText),
+                            'Error: ${snapshot.error}',
+                            style: TextStyle(color: Colors.red),
                           ),
                         );
+                      } else if (snapshot.hasData) {
+                        final sp = snapshot.data!;
+                        return Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                '${sp['establishment_name']} Appointments on ${secondaryFormatDate(selectedStartDate!)} - ${secondaryFormatDate(selectedEndDate!)}',
+                                style: TextStyle(fontSize: regularText),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        return Center(
+                            child: Text('Unexpected error occurred.'));
                       }
-                      return Expanded(
-                        child: ListView.builder(
-                          physics: BouncingScrollPhysics(),
-                          padding: EdgeInsets.only(bottom: 100),
-                          itemCount: revenueList.length,
-                          itemBuilder: (context, index) {
-                            final revenue = revenueList[index];
-                            return Card(
-                              color: lighterGreyColor,
-                              margin: EdgeInsets.symmetric(
-                                  vertical: primarySizedBox,
-                                  horizontal: primarySizedBox),
-                              elevation: 0.75,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(quaternarySizedBox),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Appointment ID: ${revenue['appointment_id']}',
-                                      style: TextStyle(
-                                        fontWeight: mediumWeight,
-                                        fontSize: regularText,
-                                      ),
-                                    ),
-                                    SizedBox(height: secondarySizedBox),
-                                    Text(
-                                      'Appointment date: ${revenue['appointment_date']}',
-                                      style: TextStyle(fontSize: 14),
-                                    ),
-                                    SizedBox(height: secondarySizedBox),
-                                    Text(
-                                      'Pet owner: ${revenue['pet_owner_name']}',
-                                      style: TextStyle(fontSize: 14),
-                                    ),
-                                    SizedBox(height: secondarySizedBox),
-                                    Text(
-                                      'Total amount: ₱${revenue['total_amount']}',
-                                      style: TextStyle(
-                                        fontWeight: mediumWeight,
-                                        fontSize: smallText,
-                                      ),
-                                    ),
-                                  ],
+                    },
+                  ),
+                  const SizedBox(height: secondarySizedBox),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      customPaddedOutlinedTextButton(
+                        text: 'Pick date range',
+                        onPressed: () {
+                          _restorableDateRangePickerRouteFuture.present();
+                        },
+                        trailingIcon: Icon(Icons.calendar_month),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: secondarySizedBox),
+                  // Fetch and display revenue data
+                  FutureBuilder<List<dynamic>>(
+                    future: _fetchRevenueData(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Error fetching revenue data: ${snapshot.error}',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        );
+                      } else if (snapshot.hasData) {
+                        final revenueList = snapshot.data!;
+                        if (revenueList.isEmpty) {
+                          return Center(
+                            child: Text(
+                              'No revenue data available for this date range.',
+                              style: TextStyle(fontSize: regularText),
+                            ),
+                          );
+                        }
+                        return Expanded(
+                          child: ListView.builder(
+                            physics: BouncingScrollPhysics(),
+                            padding: EdgeInsets.only(bottom: 100),
+                            itemCount: revenueList.length,
+                            itemBuilder: (context, index) {
+                              final revenue = revenueList[index];
+                              return Card(
+                                color: lighterGreyColor,
+                                margin: EdgeInsets.symmetric(
+                                    vertical: primarySizedBox,
+                                    horizontal: primarySizedBox),
+                                elevation: 0.75,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    } else {
-                      return Center(child: Text('Unexpected error occurred.'));
-                    }
-                  },
-                ),
+                                child: Padding(
+                                  padding: EdgeInsets.all(quaternarySizedBox),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Appointment ID: ${revenue['appointment_id']}',
+                                        style: TextStyle(
+                                          fontWeight: mediumWeight,
+                                          fontSize: regularText,
+                                        ),
+                                      ),
+                                      SizedBox(height: secondarySizedBox),
+                                      Text(
+                                        'Appointment date: ${revenue['appointment_date']}',
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                      SizedBox(height: secondarySizedBox),
+                                      Text(
+                                        'Pet owner: ${revenue['pet_owner_name']}',
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                      SizedBox(height: secondarySizedBox),
+                                      Text(
+                                        'Total amount: ₱${revenue['total_amount']}',
+                                        style: TextStyle(
+                                          fontWeight: mediumWeight,
+                                          fontSize: smallText,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      } else {
+                        return Center(
+                            child: Text('Unexpected error occurred.'));
+                      }
+                    },
+                  ),
+                ],
               ],
             ),
           ),
