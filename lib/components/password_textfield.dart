@@ -81,6 +81,9 @@ class PasswordTextFieldState extends State<PasswordTextField> {
             SpecialCharacterValidationRule(),
             // MinCharactersValidationRule(6),
           },
+          onChanged: (value) {
+            _validatePassword();
+          },
           validationRuleBuilder: (rules, value) {
             if (value.isEmpty) {
               return const SizedBox.shrink();

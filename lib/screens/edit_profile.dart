@@ -80,7 +80,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
   List<String> generateTimeSlots(
       String timeOpen, String timeClose, int intervalMinutes, DateTime date) {
     final List<String> timeSlots = [];
-    final DateFormat inputFormat = DateFormat('hh:mm'); // Input format
+    final DateFormat inputFormat = DateFormat('hh:mm a'); // Input format
     final DateFormat outputFormat = DateFormat('HH:mm'); // Output format
 
     final DateTime timeOpenDateTime = inputFormat.parse(timeOpen);
@@ -118,22 +118,7 @@ class EditProfileScreenState extends State<EditProfileScreen> {
     for (int i = 0; i < 30; i++) {
       DateTime currentDate = today.add(Duration(days: i));
       String dayName = DateFormat('EEEE').format(currentDate).toLowerCase();
-// Remove time slots for the days that are unchecked
-      for (int i = 0; i < 30; i++) {
-        DateTime currentDate = today.add(Duration(days: i));
-        String dayName = DateFormat('EEEE').format(currentDate).toLowerCase();
-        String formattedDate = DateFormat('yyyy-MM-dd').format(currentDate);
 
-        // If a day is unchecked, remove its time slots from the database
-        if (!selectedDays.contains(dayName)) {
-          await supabase
-              .from('service_provider_availability')
-              .delete()
-              .eq('availability_date', formattedDate)
-              .eq('sp_id', userId);
-          print("Removed time slots for: $formattedDate");
-        }
-      }
       if (selectedDays.contains(dayName)) {
         String formattedDate = DateFormat('yyyy-MM-dd').format(currentDate);
 
@@ -235,8 +220,11 @@ class EditProfileScreenState extends State<EditProfileScreen> {
             // Prefill service time interval
             selectedInterval = response['service_time_interval'] ?? '';
             // Prefill days of availability
-            List<String>.from(response['availability_date'] ?? []);
-            final storedDays = List<String>.from(response['availability_date']);
+            // List<String>.from(response['availability_date'] ?? []);
+            List<String> storedDays =
+                List<String>.from(response['availability_date'] ?? []);
+
+            // final storedDays = List<String>.from(response['availability_date']);
             // setState(() {
             availability.updateAll((day, value) => storedDays.contains(day));
           });

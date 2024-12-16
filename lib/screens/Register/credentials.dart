@@ -35,6 +35,9 @@ class CredentialsScreenState extends ConsumerState<CredentialsScreen> {
             .hasMatch(email) ||
         password.length < 6 ||
         !_isPasswordValid) {
+      print('Email: ${widget.controllers['email']?.text.trim()}');
+      print('Password: ${widget.controllers['password']?.text}');
+      print('_isPasswordValid: $_isPasswordValid');
       setState(() {
         _errorMessage =
             "Invalid input: Ensure all fields are filled and password must be secure.";

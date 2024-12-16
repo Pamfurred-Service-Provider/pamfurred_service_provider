@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:service_provider/Widgets/error_dialog.dart';
-import 'package:service_provider/components/screen_transitions.dart';
 import 'package:service_provider/providers/package_details_provider.dart';
 import 'package:service_provider/providers/service_details_provider.dart';
 import 'package:service_provider/providers/sp_details_provider.dart';

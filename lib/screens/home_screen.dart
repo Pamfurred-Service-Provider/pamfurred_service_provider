@@ -196,10 +196,9 @@ class HomeScreenState extends State<HomeScreen> {
           .gte('appointment_date',
               DateTime(selectedAnnualYear, 1, 1).toIso8601String())
           .lt('appointment_date',
-              DateTime(selectedAnnualYear + 1, 1, 1).toIso8601String())
-          .execute();
+              DateTime(selectedAnnualYear + 1, 1, 1).toIso8601String());
 
-      final List<dynamic> appointments = response.data ?? [];
+      final List<dynamic> appointments = response ?? [];
       final monthlyCounts = List<int>.filled(12, 0);
 
       for (var appointment in appointments) {

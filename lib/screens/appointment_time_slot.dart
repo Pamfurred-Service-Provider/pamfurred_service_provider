@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:service_provider/Widgets/delete_dialog.dart';
-import 'package:service_provider/components/globals.dart';
 import 'package:service_provider/components/width_expanded_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase package
 import 'package:service_provider/Widgets/error_dialog.dart';
