@@ -45,7 +45,7 @@ class _UpdateServiceScreenState extends ConsumerState<UpdateServiceScreen> {
   List<String> sizeList = []; // Dynamic size list
   Map<String, String> availabilityMap = {};
 
-  late String serviceImageUrl;
+  String? serviceImageUrl;
 
   // Add new entry for price, size, and weight
   void addEntry() {
@@ -546,10 +546,11 @@ class _UpdateServiceScreenState extends ConsumerState<UpdateServiceScreen> {
                         image: DecorationImage(
                           image: _image != null
                               ? FileImage(_image!) as ImageProvider
-                              : serviceImageUrl.isEmpty
+                              : (serviceImageUrl == null ||
+                                      serviceImageUrl!.isEmpty
                                   ? const AssetImage(
                                       'assets/pamfurred_secondarylogo.png')
-                                  : NetworkImage(serviceImageUrl),
+                                  : NetworkImage(serviceImageUrl!)),
                           fit: BoxFit.cover,
                         ),
                       ),

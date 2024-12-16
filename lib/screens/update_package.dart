@@ -45,6 +45,8 @@ class _UpdatePackageScreenState extends ConsumerState<UpdatePackageScreen> {
   List<String> sizeList = []; // Dynamic size list
   Map<String, String> availabilityMap = {};
 
+  String? packageImageUrl;
+
   void addEntry() {
     setState(() {
       // Check if any fields are empty or invalid before adding a new entry
@@ -370,7 +372,6 @@ class _UpdatePackageScreenState extends ConsumerState<UpdatePackageScreen> {
         'price': prices.isNotEmpty ? prices.first : null,
       });
       print("success!");
-
     } else {
       throw Exception('Failed to add package');
     }
@@ -442,6 +443,8 @@ class _UpdatePackageScreenState extends ConsumerState<UpdatePackageScreen> {
         data: (packageDetails) {
           if (packageDetails.isNotEmpty) {
             final package = packageDetails[0];
+
+            packageImageUrl = package['package_image'];
 
             // Pre-fill name and description
             nameController.text = package['package_name'] ?? '';
@@ -533,10 +536,13 @@ class _UpdatePackageScreenState extends ConsumerState<UpdatePackageScreen> {
                         borderRadius:
                             BorderRadius.zero, // No rounding to keep it square
                         image: DecorationImage(
-                          image: _image == null
-                              ? const AssetImage(
-                                  'assets/pamfurred_secondarylogo.png')
-                              : FileImage(_image!) as ImageProvider,
+                          image: _image != null
+                              ? FileImage(_image!) as ImageProvider
+                              : (packageImageUrl == null ||
+                                      packageImageUrl!.isEmpty
+                                  ? const AssetImage(
+                                      'assets/pamfurred_secondarylogo.png')
+                                  : NetworkImage(packageImageUrl!)),
                           fit: BoxFit.cover, // Cover the container
                         ),
                       ),
