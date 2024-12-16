@@ -92,50 +92,28 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
     }
   }
 
-// Delete service from Supabase
+// Mark service as deleted from Supabase
   Future<void> _deleteService(Map<String, dynamic> service) async {
     final serviceId = service['service_id'];
-    final imageUrl = service['service_images'];
 
-    print("Deleting service with ID: $service['service_id']");
-    print("Service Provider ID: $serviceProviderId");
     if (serviceId == null) {
       showErrorDialog(context, 'Failed to delete service: Invalid service ID');
       return;
     }
 
     try {
-      // Delete the image from the bucket (if URL exists)
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        final fileName =
-            imageUrl.split('/').last; // Get the file name from the URL
-        // Construct the full path for service images
-        final filePath =
-            'service_images/$fileName'; // Construct the correct file path
-
-        final response = await supabase.storage
-            .from('service_provider_images')
-            .remove([filePath]);
-        print("Image deleted from the bucket successfully.");
-      }
-
-      // First, delete from the bridge table
+      // Mark the service as deleted
       await supabase
-          .from('serviceprovider_service')
-          .delete()
-          .match({'sp_id': serviceProviderId, 'service_id': serviceId});
+          .from('service')
+          .update({'is_deleted': true}).match({'service_id': serviceId});
 
-      // Then, delete from the service table
-      await supabase.from('service').delete().match({'service_id': serviceId});
-
-      // Remove service from UI list if deletion is successful
+      // Remove service from UI list
       setState(() {
         services.removeWhere((s) => s['service_id'] == service['service_id']);
       });
     } catch (error) {
-      // Show error dialog if deletion fails
-      showErrorDialog(context,
-          'Failed to delete the service. There are existing appointments associated with it');
+      showErrorDialog(
+          context, 'Failed to delete the service. Please try again later.');
     }
   }
 
@@ -163,30 +141,28 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
     }
   }
 
-// Delete package from Supabase
+// Mark package as deleted from Supabase
   Future<void> _deletePackage(Map<String, dynamic> package) async {
     final packageId = package['package_id'];
 
-    print("Deleting package with ID: $package['package_id']");
-    print("Service Provider ID: $serviceProviderId");
+    if (packageId == null) {
+      showErrorDialog(context, 'Failed to delete package: Invalid package ID');
+      return;
+    }
+
     try {
-      // First, delete from the bridge table
+      // Mark the package as deleted
       await supabase
-          .from('serviceprovider_package')
-          .delete()
-          .match({'sp_id': serviceProviderId, 'package_id': packageId});
+          .from('package')
+          .update({'is_deleted': true}).match({'package_id': packageId});
 
-      // Then, delete from the package table
-      await supabase.from('package').delete().match({'package_id': packageId});
-
-      // Remove package from UI list if deletion is successful
+      // Remove package from UI list
       setState(() {
-        packages.removeWhere((p) => p['package_id'] == package['package_id']);
+        packages.removeWhere((p) => p['package_id'] == packageId);
       });
     } catch (error) {
-      // Show error dialog if deletion fails
-      showErrorDialog(context,
-          'Failed to delete packaghere are existing appointments associated with it');
+      showErrorDialog(
+          context, 'Failed to delete the package. Please try again.');
     }
   }
 
@@ -455,7 +431,7 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
                                         children: [
                                           Text(
                                             service['price'] != null
-                                                ? 'from ₱${service['price']}' // Format price to 2 decimal places
+                                                ? 'starts at ₱${service['price']}' // Format price to 2 decimal places
                                                 : '₱N/A', // Fallback if price is null
                                           ),
                                         ],
