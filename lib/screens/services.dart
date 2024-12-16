@@ -431,7 +431,7 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
                                         children: [
                                           Text(
                                             service['price'] != null
-                                                ? 'starts at ₱${service['price']}' // Format price to 2 decimal places
+                                                ? 'starts at\n ₱${service['price']}' // Format price to 2 decimal places
                                                 : '₱N/A', // Fallback if price is null
                                           ),
                                         ],
@@ -526,7 +526,8 @@ class ServicesScreenState extends ConsumerState<ServicesScreen> {
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Text('₱${package['price'] ?? 'N/A'}'),
+                                          Text(
+                                              'starts at\n ₱${package['price'] ?? 'N/A'}'),
                                         ],
                                       ),
                                       onTap: () async {
