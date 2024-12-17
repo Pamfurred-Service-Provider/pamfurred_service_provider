@@ -145,12 +145,11 @@ class AppointmentTimeSlotScreenState extends State<AppointmentTimeSlotScreen> {
 
     // Update the 'is_fully_booked' status after ensuring the record exists
     final newFullyBookedStatus = !isFullyBooked;
-    final response = await supabase
+    await supabase
         .from('service_provider_availability')
         .update({'is_fully_booked': newFullyBookedStatus})
         .eq('sp_id', widget.spId)
-        .eq('availability_date', selectedDateString)
-        .execute();
+        .eq('availability_date', selectedDateString);
   }
 
   void _removeTimeSlot(int index) {
